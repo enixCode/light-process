@@ -1,0 +1,70 @@
+{
+  "name": "light-process",
+  "version": "0.1.0-alpha.0",
+  "description": "Lightweight workflow engine with Docker container isolation and A2A protocol support.",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "bin": {
+    "light-process": "dist/cli.js",
+    "light": "dist/cli.js"
+  },
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js serve",
+    "link": "npm run build && npm link",
+    "test": "node --test test/unit/*.test.js",
+    "test:integration": "node --test test/integration/*.test.js",
+    "test:all": "node --test test/unit/*.test.js test/integration/*.test.js",
+    "lint": "npx biome check src/ test/",
+    "lint:fix": "npx biome check --write src/ test/",
+    "build:check": "tsc --noEmit",
+    "version:alpha": "npm version prerelease --preid=alpha --no-git-tag-version",
+    "version:beta": "npm version prerelease --preid=beta --no-git-tag-version",
+    "version:rc": "npm version prerelease --preid=rc --no-git-tag-version",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
+    "prepare": "node -e \"try{require('child_process').execSync('bash scripts/install-hooks.sh',{stdio:'ignore'})}catch{}\"",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "workflow",
+    "dag",
+    "docker",
+    "a2a",
+    "orchestration",
+    "container"
+  ],
+  "author": "enixcode",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enixcode/light-process.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@a2a-js/sdk": "^0.3.13",
+    "ajv": "^8.18.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.10",
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 280" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="900" y2="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#080810"/>
+      <stop offset="100%" stop-color="#0c0c1a"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="900" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00ff41" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#00ff41" stop-opacity=".08"/>
+      <stop offset="70%" stop-color="#00ff41" stop-opacity=".08"/>
+      <stop offset="100%" stop-color="#00ff41" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="txt-glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft-glow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r=".4" fill="#1a1a3e" opacity=".5"/>
+    </pattern>
+    <pattern id="scanlines" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="4" height="2" fill="transparent"/>
+      <rect x="0" y="2" width="4" height="2" fill="#000" opacity=".03"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="280" rx="12" fill="url(#bg)"/>
+  <rect width="900" height="280" rx="12" fill="url(#dots)"/>
+  <rect width="900" height="280" rx="12" fill="url(#scanlines)"/>
+
+  <!-- Border -->
+  <rect x=".5" y=".5" width="899" height="279" rx="12" stroke="#1a1a3e" stroke-width="1" fill="none"/>
+
+  <!-- Glow line at top -->
+  <rect x="0" y="0" width="900" height="1" rx="0" fill="url(#glow)"/>
+
+  <!-- Terminal prompt icon -->
+  <rect x="56" y="70" width="42" height="42" rx="6" stroke="#00ff41" stroke-width="1.5" fill="#080810" opacity=".9"/>
+  <text x="68" y="99" font-family="'Courier New',monospace" font-size="22" font-weight="bold" fill="#00ff41" filter="url(#soft-glow)">&gt;_</text>
+
+  <!-- Title -->
+  <text x="116" y="100" font-family="'Courier New','SF Mono',monospace" font-size="36" font-weight="bold" fill="#00ff41" filter="url(#txt-glow)" letter-spacing="3">LIGHT PROCESS</text>
+
+  <!-- Subtitle -->
+  <text x="60" y="145" font-family="'Courier New','SF Mono',monospace" font-size="14" fill="#556677" letter-spacing="1">Lightweight workflow engine with Docker isolation and A2A protocol</text>
+
+  <!-- DAG visualization -->
+  <!-- Node A -->
+  <rect x="60" y="175" width="110" height="36" rx="4" stroke="#1a1a3e" fill="#0c0c1a"/>
+  <text x="82" y="198" font-family="'Courier New',monospace" font-size="11" fill="#00ff41">validate</text>
+
+  <!-- Arrow 1 -->
+  <line x1="170" y1="193" x2="218" y2="183" stroke="#2a2a5e" stroke-width="1.2"/>
+  <polygon points="218,183 212,178 213,186" fill="#2a2a5e"/>
+
+  <!-- Arrow 2 -->
+  <line x1="170" y1="193" x2="218" y2="203" stroke="#ffaa00" stroke-width="1.2" stroke-dasharray="4 3" opacity=".6"/>
+  <polygon points="218,203 212,196 213,207" fill="#ffaa00" opacity=".6"/>
+
+  <!-- Node B -->
+  <rect x="220" y="165" width="110" height="36" rx="4" stroke="#1a1a3e" fill="#0c0c1a"/>
+  <text x="243" y="188" font-family="'Courier New',monospace" font-size="11" fill="#00ff41">process</text>
+
+  <!-- Node C -->
+  <rect x="220" y="210" width="110" height="36" rx="4" stroke="#ffaa00" stroke-width=".8" fill="#0c0c1a" opacity=".7"/>
+  <text x="247" y="233" font-family="'Courier New',monospace" font-size="11" fill="#ffaa00" opacity=".7">reject</text>
+
+  <!-- Arrow 3 -->
+  <line x1="330" y1="183" x2="378" y2="183" stroke="#2a2a5e" stroke-width="1.2"/>
+  <polygon points="378,183 372,178 372,188" fill="#2a2a5e"/>
+
+  <!-- Node D -->
+  <rect x="380" y="165" width="110" height="36" rx="4" stroke="#00ff41" stroke-width=".8" fill="#0c0c1a"/>
+  <rect x="380" y="165" width="110" height="36" rx="4" stroke="#00ff41" stroke-width="2" fill="none" opacity=".15"/>
+  <text x="407" y="188" font-family="'Courier New',monospace" font-size="11" fill="#00ff41">deploy</text>
+
+  <!-- Badges area -->
+  <!-- Docker badge -->
+  <rect x="556" y="172" width="72" height="22" rx="3" stroke="#1a1a3e" fill="#0c0c1a"/>
+  <text x="568" y="187" font-family="'Courier New',monospace" font-size="9" fill="#00d4ff" letter-spacing=".5">DOCKER</text>
+
+  <!-- A2A badge -->
+  <rect x="636" y="172" width="52" height="22" rx="3" stroke="#1a1a3e" fill="#0c0c1a"/>
+  <text x="647" y="187" font-family="'Courier New',monospace" font-size="9" fill="#ffaa00" letter-spacing=".5">A2A</text>
+
+  <!-- DAG badge -->
+  <rect x="696" y="172" width="48" height="22" rx="3" stroke="#1a1a3e" fill="#0c0c1a"/>
+  <text x="708" y="187" font-family="'Courier New',monospace" font-size="9" fill="#00ff41" letter-spacing=".5">DAG</text>
+
+  <!-- PWA badge -->
+  <rect x="752" y="172" width="48" height="22" rx="3" stroke="#1a1a3e" fill="#0c0c1a"/>
+  <text x="764" y="187" font-family="'Courier New',monospace" font-size="9" fill="#556677" letter-spacing=".5">PWA</text>
+
+  <!-- CLI badge -->
+  <rect x="808" y="172" width="44" height="22" rx="3" stroke="#1a1a3e" fill="#0c0c1a"/>
+  <text x="820" y="187" font-family="'Courier New',monospace" font-size="9" fill="#556677" letter-spacing=".5">CLI</text>
+
+  <!-- Bottom info -->
+  <text x="556" y="233" font-family="'Courier New',monospace" font-size="10" fill="#2a2a44">$ npm install -g light-process</text>
+  <text x="556" y="250" font-family="'Courier New',monospace" font-size="10" fill="#2a2a44">$ light init my-project</text>
+
+  <!-- Vignette edges -->
+  <rect width="900" height="280" rx="12" fill="url(#bg)" opacity=".15"/>
+</svg>

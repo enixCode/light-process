@@ -1,0 +1,15 @@
+#!/bin/sh
+# Pre-push: full build + tests
+echo "pre-push: build..."
+npm run build 2>&1
+if [ $? -ne 0 ]; then
+  echo "Build failed."
+  exit 1
+fi
+
+echo "pre-push: tests..."
+npm test 2>&1
+if [ $? -ne 0 ]; then
+  echo "Tests failed."
+  exit 1
+fi

@@ -1,0 +1,2470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Light Process - Lightweight workflow engine with Docker container isolation and A2A protocol support.">
+<title>Light Process - Documentation</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>&#9889;</text></svg>">
+<style>
+/* ================================================================
+   RESET & CSS VARIABLES
+   ================================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  /* Light theme */
+  --bg:#fff;
+  --bg-sidebar:#f9fafb;
+  --bg-code:#f3f4f6;
+  --bg-code-header:#e5e7eb;
+  --text:#111827;
+  --text-secondary:#6b7280;
+  --text-muted:#9ca3af;
+  --link:#2563eb;
+  --link-hover:#1d4ed8;
+  --border:#e5e7eb;
+  --border-strong:#d1d5db;
+  --accent:#2563eb;
+  --accent-light:#dbeafe;
+  --badge-bg:#eff6ff;
+  --badge-border:#bfdbfe;
+  --badge-text:#1e40af;
+  --badge-green-bg:#ecfdf5;
+  --badge-green-border:#a7f3d0;
+  --badge-green-text:#065f46;
+  --badge-amber-bg:#fffbeb;
+  --badge-amber-border:#fde68a;
+  --badge-amber-text:#92400e;
+  --badge-gray-bg:#f3f4f6;
+  --badge-gray-border:#d1d5db;
+  --badge-gray-text:#374151;
+  --table-stripe:#f9fafb;
+  --table-hover:#f3f4f6;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.1);
+  --search-bg:#f3f4f6;
+  --search-focus-bg:#fff;
+  --highlight-bg:#fef08a;
+  --card-bg:#fff;
+  --card-border:#e5e7eb;
+  --scrollbar-track:#f3f4f6;
+  --scrollbar-thumb:#d1d5db;
+  /* Syntax */
+  --syn-keyword:#7c3aed;
+  --syn-string:#059669;
+  --syn-function:#2563eb;
+  --syn-number:#d97706;
+  --syn-comment:#9ca3af;
+  --syn-operator:#6b7280;
+  --syn-key:#0891b2;
+  --syn-prompt:#059669;
+  --syn-ok:#059669;
+  --syn-flag:#d97706;
+  --syn-arrow:#d97706;
+
+  --sidebar-w:260px;
+  --header-h:56px;
+  --font-body:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif;
+  --font-mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+}
+
+[data-theme="dark"]{
+  --bg:#030712;
+  --bg-sidebar:#111827;
+  --bg-code:#1f2937;
+  --bg-code-header:#1f2937;
+  --text:#f3f4f6;
+  --text-secondary:#9ca3af;
+  --text-muted:#6b7280;
+  --link:#60a5fa;
+  --link-hover:#93bbfd;
+  --border:#1f2937;
+  --border-strong:#374151;
+  --accent:#60a5fa;
+  --accent-light:rgba(96,165,250,.1);
+  --badge-bg:rgba(96,165,250,.1);
+  --badge-border:rgba(96,165,250,.25);
+  --badge-text:#93c5fd;
+  --badge-green-bg:rgba(16,185,129,.1);
+  --badge-green-border:rgba(16,185,129,.25);
+  --badge-green-text:#6ee7b7;
+  --badge-amber-bg:rgba(245,158,11,.1);
+  --badge-amber-border:rgba(245,158,11,.25);
+  --badge-amber-text:#fcd34d;
+  --badge-gray-bg:rgba(107,114,128,.15);
+  --badge-gray-border:rgba(107,114,128,.3);
+  --badge-gray-text:#d1d5db;
+  --table-stripe:rgba(255,255,255,.02);
+  --table-hover:rgba(255,255,255,.05);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.4);
+  --search-bg:#1f2937;
+  --search-focus-bg:#111827;
+  --highlight-bg:rgba(250,204,21,.25);
+  --card-bg:#111827;
+  --card-border:#1f2937;
+  --scrollbar-track:#111827;
+  --scrollbar-thumb:#374151;
+  --syn-keyword:#c084fc;
+  --syn-string:#34d399;
+  --syn-function:#60a5fa;
+  --syn-number:#fbbf24;
+  --syn-comment:#6b7280;
+  --syn-operator:#9ca3af;
+  --syn-key:#22d3ee;
+  --syn-prompt:#34d399;
+  --syn-ok:#34d399;
+  --syn-flag:#fbbf24;
+  --syn-arrow:#fbbf24;
+}
+
+/* ================================================================
+   BASE
+   ================================================================ */
+html{scroll-behavior:smooth;background:var(--bg)}
+body{
+  min-height:100vh;background:var(--bg);color:var(--text);
+  font:16px/1.7 var(--font-body);-webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;overflow-x:hidden;
+  transition:background .2s,color .2s;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--scrollbar-track)}
+::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+
+::selection{background:var(--accent-light);color:var(--text)}
+
+/* ================================================================
+   HEADER
+   ================================================================ */
+.site-header{
+  position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header-h);
+  padding:0 24px;background:var(--bg);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;
+  transition:background .2s,border-color .2s;
+}
+.logo{
+  font:600 15px/1 var(--font-body);color:var(--text);
+  text-decoration:none;display:flex;align-items:center;gap:8px;
+  white-space:nowrap;letter-spacing:-.025em;
+}
+.logo-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;background:var(--accent);border-radius:6px;
+  font:700 14px var(--font-mono);color:#fff;
+}
+.header-version{
+  font:500 11px/1 var(--font-mono);color:var(--text-muted);
+  border:1px solid var(--border);padding:3px 8px;border-radius:12px;
+}
+
+/* Search */
+.header-search{
+  position:relative;flex:0 1 320px;margin-left:auto;
+}
+.header-search input{
+  width:100%;height:36px;padding:0 12px 0 36px;border:1px solid var(--border);
+  border-radius:8px;background:var(--search-bg);color:var(--text);
+  font:14px var(--font-body);outline:none;transition:all .2s;
+}
+.header-search input:focus{
+  background:var(--search-focus-bg);border-color:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-light);
+}
+.header-search input::placeholder{color:var(--text-muted)}
+.header-search .search-icon{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:18px;height:18px;color:var(--text-muted);pointer-events:none;
+}
+.header-search .search-kbd{
+  position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  font:500 11px var(--font-mono);color:var(--text-muted);
+  background:var(--bg);border:1px solid var(--border);
+  padding:1px 6px;border-radius:4px;pointer-events:none;
+}
+.search-results{
+  display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;
+  max-height:360px;overflow-y:auto;background:var(--bg);
+  border:1px solid var(--border);border-radius:8px;
+  box-shadow:var(--shadow-md);z-index:200;
+}
+.search-results.visible{display:block}
+.search-result-item{
+  display:block;padding:10px 14px;color:var(--text);text-decoration:none;
+  font-size:14px;border-bottom:1px solid var(--border);transition:background .1s;
+}
+.search-result-item:last-child{border-bottom:none}
+.search-result-item:hover,.search-result-item.focused{background:var(--table-hover)}
+.search-result-item .result-section{
+  font:500 11px var(--font-mono);color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;
+}
+.search-result-item .result-title{font-weight:600}
+.search-result-item mark{background:var(--highlight-bg);color:inherit;border-radius:2px;padding:0 1px}
+.search-no-results{padding:16px;text-align:center;color:var(--text-muted);font-size:14px}
+
+/* Header controls */
+.header-controls{display:flex;align-items:center;gap:8px;margin-left:12px}
+.theme-toggle{
+  width:36px;height:36px;border:1px solid var(--border);border-radius:8px;
+  background:transparent;color:var(--text-secondary);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;font-size:18px;
+}
+.theme-toggle:hover{background:var(--table-hover);color:var(--text)}
+.header-gh{
+  display:flex;align-items:center;justify-content:center;
+  width:36px;height:36px;border:1px solid var(--border);border-radius:8px;
+  color:var(--text-secondary);text-decoration:none;transition:all .2s;
+}
+.header-gh:hover{background:var(--table-hover);color:var(--text)}
+.header-gh svg{width:20px;height:20px}
+
+/* Hamburger */
+.hamburger{
+  display:none;background:none;border:1px solid var(--border);
+  color:var(--text);font-size:20px;cursor:pointer;
+  width:36px;height:36px;border-radius:8px;
+  align-items:center;justify-content:center;transition:background .2s;
+}
+.hamburger:hover{background:var(--table-hover)}
+
+/* ================================================================
+   SIDEBAR
+   ================================================================ */
+.sidebar{
+  position:fixed;top:var(--header-h);left:0;bottom:0;width:var(--sidebar-w);
+  background:var(--bg-sidebar);border-right:1px solid var(--border);
+  overflow-y:auto;z-index:90;padding:16px 0;
+  transition:transform .3s ease,background .2s,border-color .2s;
+}
+.nav-group{margin-top:8px}
+.nav-group-label{
+  padding:12px 20px 6px;font:600 11px/1 var(--font-body);
+  color:var(--text-muted);letter-spacing:.5px;text-transform:uppercase;
+}
+.sidebar a{
+  display:block;padding:6px 20px 6px 24px;
+  font:400 14px/1.5 var(--font-body);color:var(--text-secondary);
+  text-decoration:none;border-left:2px solid transparent;
+  transition:all .15s ease;
+}
+.sidebar a:hover{
+  color:var(--text);background:var(--table-hover);
+}
+.sidebar a.active{
+  color:var(--accent);border-left-color:var(--accent);
+  background:var(--accent-light);font-weight:500;
+}
+.sidebar-overlay{
+  display:none;position:fixed;inset:0;z-index:85;
+  background:rgba(0,0,0,.4);backdrop-filter:blur(2px);
+}
+.sidebar-overlay.open{display:block}
+
+/* ================================================================
+   MAIN CONTENT
+   ================================================================ */
+.main{
+  margin-left:var(--sidebar-w);margin-top:var(--header-h);
+  min-height:calc(100vh - var(--header-h));position:relative;
+  transition:margin .3s;
+}
+
+/* ================================================================
+   SECTIONS
+   ================================================================ */
+section{
+  padding:48px 48px 48px 56px;max-width:860px;
+  border-bottom:1px solid var(--border);
+  transition:border-color .2s;
+}
+section:last-of-type{border-bottom:none}
+
+section h2{
+  font:700 28px/1.3 var(--font-body);color:var(--text);
+  margin-bottom:8px;letter-spacing:-.02em;
+}
+section h2 + p{margin-top:4px}
+section h3{
+  font:600 20px/1.4 var(--font-body);color:var(--text);
+  margin:32px 0 12px;letter-spacing:-.01em;
+}
+section h4{
+  font:600 15px/1.4 var(--font-body);color:var(--text);
+  margin:24px 0 8px;
+}
+
+section p{
+  margin-bottom:16px;color:var(--text-secondary);line-height:1.75;font-size:15px;
+}
+section p code{
+  background:var(--bg-code);border:1px solid var(--border);border-radius:4px;
+  padding:2px 6px;font:13px/1.4 var(--font-mono);color:var(--text);
+  transition:background .2s,border-color .2s;
+}
+
+section a{color:var(--link);text-decoration:none;font-weight:500;transition:color .2s}
+section a:hover{color:var(--link-hover);text-decoration:underline}
+
+section ul,section ol{margin:0 0 16px 24px;color:var(--text-secondary);font-size:15px}
+section li{margin-bottom:8px;line-height:1.65}
+section li code{
+  background:var(--bg-code);border:1px solid var(--border);border-radius:4px;
+  padding:2px 5px;font:13px/1.4 var(--font-mono);color:var(--text);
+}
+section strong{color:var(--text);font-weight:600}
+
+/* ================================================================
+   HERO
+   ================================================================ */
+.hero{
+  padding:64px 48px 56px 56px;text-align:left;
+  border-bottom:1px solid var(--border);
+}
+.hero h1{
+  font:800 40px/1.2 var(--font-body);color:var(--text);
+  letter-spacing:-.03em;margin-bottom:12px;
+}
+.hero .tagline{
+  font:400 17px/1.6 var(--font-body);color:var(--text-secondary);
+  margin-bottom:28px;max-width:600px;
+}
+.hero .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+.badge{
+  font:500 12px/1 var(--font-body);padding:5px 12px;border-radius:16px;
+  display:inline-flex;align-items:center;
+}
+.badge-blue{border:1px solid var(--badge-border);color:var(--badge-text);background:var(--badge-bg)}
+.badge-green{border:1px solid var(--badge-green-border);color:var(--badge-green-text);background:var(--badge-green-bg)}
+.badge-amber{border:1px solid var(--badge-amber-border);color:var(--badge-amber-text);background:var(--badge-amber-bg)}
+.badge-gray{border:1px solid var(--badge-gray-border);color:var(--badge-gray-text);background:var(--badge-gray-bg)}
+
+.install-box{
+  background:var(--bg-code);border:1px solid var(--border);border-radius:8px;
+  padding:14px 20px;display:inline-flex;align-items:center;gap:8px;
+  font:14px var(--font-mono);color:var(--text);
+  transition:background .2s,border-color .2s;
+}
+.install-box .prompt{color:var(--syn-prompt);user-select:none}
+
+/* ================================================================
+   CODE BLOCKS
+   ================================================================ */
+.code-block{
+  position:relative;margin:16px 0 20px;border-radius:8px;overflow:hidden;
+  border:1px solid var(--border);background:var(--bg-code);
+  transition:background .2s,border-color .2s;
+}
+.code-header{
+  display:flex;align-items:center;padding:8px 14px;
+  background:var(--bg-code-header);border-bottom:1px solid var(--border);
+  transition:background .2s,border-color .2s;
+}
+.code-lang{
+  font:500 11px var(--font-mono);color:var(--text-muted);
+  letter-spacing:.5px;text-transform:uppercase;
+}
+.code-copy{
+  margin-left:auto;background:none;border:1px solid var(--border);
+  color:var(--text-muted);font:12px var(--font-mono);cursor:pointer;
+  padding:3px 10px;border-radius:4px;transition:all .2s;
+}
+.code-copy:hover{color:var(--text);border-color:var(--border-strong)}
+.code-copy.copied{color:var(--syn-ok);border-color:var(--syn-ok)}
+.code-block pre{
+  padding:16px 20px;overflow-x:auto;
+  font:14px/1.7 var(--font-mono);color:var(--text);tab-size:2;
+}
+.code-block pre code{font:inherit;background:none;border:none;padding:0;color:inherit}
+
+/* Syntax tokens */
+.code-block .hl-kw{color:var(--syn-keyword)}
+.code-block .hl-fn{color:var(--syn-function)}
+.code-block .hl-num{color:var(--syn-number)}
+.code-block .hl-cm{color:var(--syn-comment);font-style:italic}
+.code-block .hl-str{color:var(--syn-string)}
+.code-block .hl-prompt{color:var(--syn-prompt);user-select:none}
+.code-block .hl-op{color:var(--syn-operator)}
+.code-block .hl-flag{color:var(--syn-flag)}
+.code-block .hl-key{color:var(--syn-key)}
+.code-block .hl-ok{color:var(--syn-ok);font-weight:600}
+.code-block .hl-arrow{color:var(--syn-arrow)}
+
+/* ================================================================
+   TABLES
+   ================================================================ */
+.table-wrap{overflow-x:auto;margin:16px 0 20px;border:1px solid var(--border);border-radius:8px;transition:border-color .2s}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead th{
+  text-align:left;padding:10px 16px;font:600 13px var(--font-body);
+  color:var(--text);border-bottom:1px solid var(--border);
+  background:var(--bg-code);white-space:nowrap;
+  transition:background .2s,border-color .2s;
+}
+tbody td{
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  color:var(--text-secondary);vertical-align:top;
+  transition:border-color .2s;
+}
+tbody tr:last-child td{border-bottom:none}
+tbody td code{
+  background:var(--bg-code);border:1px solid var(--border);border-radius:4px;
+  padding:1px 5px;font:12px var(--font-mono);color:var(--text);
+}
+tbody tr:nth-child(even){background:var(--table-stripe)}
+tbody tr:hover{background:var(--table-hover)}
+
+/* ================================================================
+   ASCII DIAGRAMS
+   ================================================================ */
+.ascii-diagram{
+  background:var(--bg-code);border:1px solid var(--border);border-radius:8px;
+  padding:16px 20px;margin:16px 0 20px;overflow-x:auto;
+  font:14px/1.5 var(--font-mono);color:var(--text-secondary);white-space:pre;
+  transition:background .2s,border-color .2s;
+}
+
+/* ================================================================
+   USE CASE CARDS
+   ================================================================ */
+.use-case-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin:16px 0}
+.use-case-card{
+  border:1px solid var(--card-border);border-radius:8px;padding:20px;
+  background:var(--card-bg);transition:all .2s;
+}
+.use-case-card:hover{border-color:var(--border-strong);box-shadow:var(--shadow-sm)}
+.use-case-card h4{margin-top:0;margin-bottom:8px;font-size:15px;color:var(--text)}
+.use-case-card p{margin-bottom:0;font-size:13px;color:var(--text-muted);line-height:1.6}
+
+/* ================================================================
+   BACK TO TOP
+   ================================================================ */
+.back-to-top{
+  position:fixed;bottom:24px;right:24px;z-index:200;
+  width:40px;height:40px;border-radius:10px;
+  background:var(--bg);border:1px solid var(--border);
+  color:var(--text-secondary);font:500 18px var(--font-body);
+  cursor:pointer;display:none;align-items:center;justify-content:center;
+  transition:all .2s;box-shadow:var(--shadow-md);
+}
+.back-to-top:hover{border-color:var(--accent);color:var(--accent)}
+.back-to-top.visible{display:flex}
+
+/* ================================================================
+   FOOTER
+   ================================================================ */
+.site-footer{
+  padding:24px 56px;border-top:1px solid var(--border);
+  font:400 13px var(--font-body);color:var(--text-muted);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;transition:border-color .2s;
+}
+.site-footer a{color:var(--text-muted);text-decoration:none;transition:color .2s}
+.site-footer a:hover{color:var(--link)}
+
+/* ================================================================
+   MOBILE
+   ================================================================ */
+@media(max-width:840px){
+  .hamburger{display:flex}
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  section{padding:32px 20px}
+  .hero{padding:40px 20px 32px}
+  .hero h1{font-size:28px}
+  .header-search{flex:0 1 200px}
+  .header-search .search-kbd{display:none}
+  .site-footer{padding:24px 20px}
+}
+@media(max-width:480px){
+  .header-search{display:none}
+  .hero .badges{gap:6px}
+  .badge{font-size:11px;padding:4px 10px}
+}
+@media(min-width:841px){
+  .hamburger{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="site-header">
+  <button class="hamburger" id="hamburger" aria-label="Menu">&#9776;</button>
+  <a href="#hero" class="logo">
+    <span class="logo-icon">lp</span>
+    Light Process
+  </a>
+  <span class="header-version">v0.1.0-alpha.0</span>
+
+  <div class="header-search" id="search-container">
+    <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"/></svg>
+    <input type="text" id="search-input" placeholder="Search docs..." autocomplete="off" spellcheck="false">
+    <span class="search-kbd">/</span>
+    <div class="search-results" id="search-results"></div>
+  </div>
+
+  <div class="header-controls">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+      <span class="theme-icon-light" style="display:none">&#9790;</span>
+      <span class="theme-icon-dark" style="display:none">&#9728;</span>
+    </button>
+    <a href="https://github.com/enixcode/light-process" class="header-gh" target="_blank" rel="noopener" title="GitHub">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+    </a>
+  </div>
+</header>
+
+<!-- ============================================================
+     SIDEBAR
+     ============================================================ -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+<nav class="sidebar" id="sidebar">
+  <a href="#hero">Home</a>
+  <a href="#getting-started">Getting Started</a>
+  <a href="#use-cases">Use Cases</a>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Reference</div>
+    <a href="#cli">CLI Reference</a>
+    <a href="#sdk">SDK Guide</a>
+    <a href="#workflows">Workflows</a>
+    <a href="#conditions">Conditions</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Advanced</div>
+    <a href="#docker">Docker &amp; Security</a>
+    <a href="#a2a">A2A Protocol</a>
+    <a href="#schema">Schema Validation</a>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Project</div>
+    <a href="#versioning">Versioning</a>
+  </div>
+</nav>
+
+<!-- ============================================================
+     MAIN
+     ============================================================ -->
+<div class="main">
+
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section class="hero" id="hero">
+  <h1>Light Process</h1>
+  <p class="tagline">Lightweight workflow engine with Docker container isolation, conditional DAG execution, and A2A protocol support.</p>
+  <div class="badges">
+    <span class="badge badge-green">Docker Isolated</span>
+    <span class="badge badge-blue">DAG Engine</span>
+    <span class="badge badge-amber">A2A Protocol</span>
+    <span class="badge badge-gray">Node.js >= 18</span>
+    <span class="badge badge-gray">AGPL-3.0</span>
+  </div>
+  <div class="install-box">
+    <span class="prompt">$ </span><span>npm install -g light-process</span>
+  </div>
+</section>
+
+<!-- ============================================================
+     GETTING STARTED
+     ============================================================ -->
+<section id="getting-started">
+<h2>Getting Started</h2>
+
+<h3>Requirements</h3>
+<ul>
+  <li><strong>Node.js</strong> >= 18 (<a href="https://nodejs.org" target="_blank" rel="noopener">download</a>)</li>
+  <li><strong>Docker</strong> with daemon running (<a href="https://docs.docker.com/get-docker/" target="_blank" rel="noopener">download</a>)</li>
+</ul>
+
+<h3>Install</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>npm install -g light-process</code></pre>
+</div>
+
+<p>Verify your environment:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light doctor
+
+Checking environment...
+
+  <span class="hl-ok">[ok]</span> Node.js: v20.x.x
+  <span class="hl-ok">[ok]</span> Docker: Docker version 24.x.x
+  <span class="hl-ok">[ok]</span> Docker daemon: running
+
+<span class="hl-ok">[ok]</span> Ready</code></pre>
+</div>
+
+<h3>Create a project</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light init my-project
+<span class="hl-prompt">$ </span><span class="hl-kw">cd</span> my-project</code></pre>
+</div>
+
+<p>This creates:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">structure</span>
+  </div>
+  <pre><code>my-project/
+  package.json
+  main.js                           <span class="hl-cm"># SDK usage example</span>
+  workflows/
+    example/
+      workflow.json                  <span class="hl-cm"># DAG definition</span>
+      hello/
+        .node.json                   <span class="hl-cm"># node config</span>
+        index.js                     <span class="hl-cm"># code</span>
+        lp.js                        <span class="hl-cm"># helper</span></code></pre>
+</div>
+
+<h3>Run the example</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light run ./workflows/example
+
+Running: Example (from folder)
+&gt; Hello
+  [Hello] Input: {}
+  <span class="hl-ok">[ok]</span> Hello <span class="hl-num">2100</span>ms
+
+<span class="hl-arrow">-&gt;</span> {<span class="hl-str">"hello"</span>:<span class="hl-str">"world"</span>,<span class="hl-str">"input"</span>:{}}
+
+<span class="hl-ok">[ok]</span> <span class="hl-num">2108</span>ms</code></pre>
+</div>
+
+<h3>Run with input</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light run ./workflows/example <span class="hl-flag">--input</span> <span class="hl-str">'{"name": "Alice"}'</span>
+
+<span class="hl-arrow">-&gt;</span> {<span class="hl-str">"hello"</span>:<span class="hl-str">"world"</span>,<span class="hl-str">"input"</span>:{<span class="hl-str">"name"</span>:<span class="hl-str">"Alice"</span>}}</code></pre>
+</div>
+
+<h3>Validate a workflow</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light check ./workflows/example
+
+Checking: Example (from folder)
+
+  <span class="hl-ok">[ok]</span> workflow.json exists
+  <span class="hl-ok">[ok]</span> workflow.json structure
+  <span class="hl-ok">[ok]</span> Workflow loads
+  <span class="hl-ok">[ok]</span> Nodes valid - <span class="hl-num">1</span> node(s)
+  <span class="hl-ok">[ok]</span> Links valid - <span class="hl-num">0</span> link(s)
+  <span class="hl-ok">[ok]</span> Entry nodes - <span class="hl-num">1</span> entry node(s)
+
+<span class="hl-ok">[ok]</span> <span class="hl-num">6</span>/<span class="hl-num">6</span> checks passed</code></pre>
+</div>
+
+<h3>Visualize the DAG</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light describe ./workflows/example</code></pre>
+</div>
+<p>Outputs a text tree and generates <code>describe.html</code> with an interactive Mermaid diagram.</p>
+
+<h3>Start the dashboard</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">3000</span></code></pre>
+</div>
+<p>Open <code>http://localhost:3000</code> to see the web dashboard with your workflow DAG.</p>
+
+<h3>Add a new node</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span><span class="hl-kw">cd</span> workflows/example
+<span class="hl-prompt">$ </span>light init <span class="hl-flag">--node</span> ./transform</code></pre>
+</div>
+<p>This creates a <code>transform/</code> folder with <code>.node.json</code>, <code>index.js</code>, <code>lp.js</code>, and auto-registers it in <code>workflow.json</code>.</p>
+
+<h3>Add a Python node</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light init <span class="hl-flag">--node</span> ./analyze <span class="hl-flag">--lang</span> python</code></pre>
+</div>
+<p>Creates <code>analyze/</code> with <code>.node.json</code>, <code>main.py</code>, and <code>lp.py</code> using <code>python:3.12-alpine</code>.</p>
+
+</section>
+
+<!-- ============================================================
+     USE CASES
+     ============================================================ -->
+<section id="use-cases">
+<h2>Use Cases</h2>
+<p>Light Process is useful anywhere you need to run multi-step code pipelines with isolation, validation, and conditional routing.</p>
+
+<div class="use-case-grid">
+
+<div class="use-case-card">
+  <h4>Data Processing Pipelines</h4>
+  <p>Chain data transformations across languages. Each step runs in its own container with schema-validated I/O. Extract from APIs, clean with pandas, analyze with numpy, and generate reports - all in isolated containers.</p>
+</div>
+
+<div class="use-case-card">
+  <h4>AI/ML Workflows</h4>
+  <p>Orchestrate model training, evaluation, and deployment with GPU support and network isolation. Conditional routing based on evaluation metrics, back-links for retraining loops with iteration limits.</p>
+</div>
+
+<div class="use-case-card">
+  <h4>CI/CD and Build Pipelines</h4>
+  <p>Run build, test, and deploy steps in isolated containers. Parallel execution for independent steps, conditional deployment based on test results, and per-step timeouts to prevent hanging builds.</p>
+</div>
+
+<div class="use-case-card">
+  <h4>Document Processing</h4>
+  <p>Process documents through transformation stages with format validation. Parse PDFs, classify with ML models, and route conditionally by document type to specialized handlers.</p>
+</div>
+
+<div class="use-case-card">
+  <h4>API Orchestration</h4>
+  <p>Compose multiple API calls with error handling and conditional logic. Per-node network access, timeouts for slow services, and schema validation to enforce API contracts.</p>
+</div>
+
+<div class="use-case-card">
+  <h4>ETL (Extract-Transform-Load)</h4>
+  <p>Move data between systems with transformation steps. JSON Schema validation catches data quality issues. Conditional routing separates valid and invalid records.</p>
+</div>
+
+<div class="use-case-card">
+  <h4>Multi-Agent AI Systems (A2A)</h4>
+  <p>Expose workflows as A2A agents that other AI agents can discover and invoke. Each workflow appears as a skill in the agent card. Structured data exchange via JSON-RPC 2.0.</p>
+</div>
+
+<div class="use-case-card">
+  <h4>Automated Testing</h4>
+  <p>Run test suites in isolated environments across multiple runtime versions in parallel. Isolated containers prevent test interference. Merge results and report conditionally.</p>
+</div>
+
+</div>
+
+<h3>Key Advantages</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Feature</th><th>Benefit</th></tr></thead>
+  <tbody>
+    <tr><td>Docker isolation</td><td>Steps can't interfere with each other</td></tr>
+    <tr><td>Multi-language</td><td>Use the best tool for each step</td></tr>
+    <tr><td>Schema validation</td><td>Catch data issues between steps</td></tr>
+    <tr><td>Conditional routing</td><td>Handle success/failure/edge cases</td></tr>
+    <tr><td>Parallel execution</td><td>Fast pipelines with independent steps</td></tr>
+    <tr><td>A2A protocol</td><td>Integrate with AI agent ecosystems</td></tr>
+    <tr><td>Loop support</td><td>Retry and iteration patterns</td></tr>
+    <tr><td>Web dashboard</td><td>Visual inspection of workflow structure</td></tr>
+  </tbody>
+</table>
+</div>
+
+</section>
+
+<!-- ============================================================
+     CLI REFERENCE
+     ============================================================ -->
+<section id="cli">
+<h2>CLI Reference</h2>
+
+<h3>light run</h3>
+<p>Execute a workflow or single node.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light run &lt;file|dir|id|name&gt; [options]
+<span class="hl-prompt">$ </span>light run <span class="hl-flag">--node</span> [dir] [options]</code></pre>
+</div>
+
+<h4>Options</h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>--input &lt;file|json&gt;</code></td><td>Input data (JSON file or inline)</td><td><code>{}</code></td></tr>
+    <tr><td><code>--json</code></td><td>Output full result as JSON</td><td>off</td></tr>
+    <tr><td><code>--timeout &lt;ms&gt;</code></td><td>Global timeout</td><td>0 (none)</td></tr>
+    <tr><td><code>--dir &lt;dir&gt;</code></td><td>Workflow search directory</td><td><code>./workflows</code></td></tr>
+    <tr><td><code>--json-source</code></td><td>Prefer .json over folder</td><td>off</td></tr>
+    <tr><td><code>--node</code></td><td>Run current dir as single node</td><td>off</td></tr>
+    <tr><td><code>--verbose</code></td><td>Verbose output</td><td>off</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Examples</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-cm"># Run from folder</span>
+<span class="hl-prompt">$ </span>light run ./workflows/my-workflow
+
+<span class="hl-cm"># Run with inline JSON input</span>
+<span class="hl-prompt">$ </span>light run my-workflow <span class="hl-flag">--input</span> <span class="hl-str">'{"key": "value"}'</span>
+
+<span class="hl-cm"># Run with input file</span>
+<span class="hl-prompt">$ </span>light run my-workflow <span class="hl-flag">--input</span> data.json
+
+<span class="hl-cm"># Full JSON output (for piping)</span>
+<span class="hl-prompt">$ </span>light run my-workflow <span class="hl-flag">--json</span> | jq <span class="hl-str">'.results'</span>
+
+<span class="hl-cm"># Run a single node</span>
+<span class="hl-prompt">$ </span>light run <span class="hl-flag">--node</span> ./my-node
+
+<span class="hl-cm"># Single node with input.json auto-loaded</span>
+<span class="hl-prompt">$ </span><span class="hl-kw">cd</span> my-node && light run <span class="hl-flag">--node</span> .
+
+<span class="hl-cm"># Search by name in a directory</span>
+<span class="hl-prompt">$ </span>light run my-workflow <span class="hl-flag">--dir</span> ./custom-workflows</code></pre>
+</div>
+
+<h4>Resolution order</h4>
+<ol>
+  <li>If <code>--node</code>: loads <code>.node.json</code> from target directory</li>
+  <li>If target is a folder with <code>workflow.json</code>: loads from folder</li>
+  <li>If target is a <code>.json</code> file: loads directly</li>
+  <li>Searches <code>--dir</code> for matching workflow by ID or name</li>
+</ol>
+
+<h3>light serve</h3>
+<p>Start the A2A API server with web dashboard.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light serve [dir] [<span class="hl-flag">--port</span> <span class="hl-num">3000</span>] [<span class="hl-flag">--verbose</span>]</code></pre>
+</div>
+
+<h4>Endpoints</h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>GET</td><td><code>/</code></td><td>Web dashboard</td></tr>
+    <tr><td>GET</td><td><code>/health</code></td><td>Health check</td></tr>
+    <tr><td>GET</td><td><code>/.well-known/agent-card.json</code></td><td>A2A agent card</td></tr>
+    <tr><td>GET</td><td><code>/api/workflows</code></td><td>List workflows</td></tr>
+    <tr><td>GET</td><td><code>/api/workflows/:id</code></td><td>Workflow detail</td></tr>
+    <tr><td>POST</td><td><code>/</code> or <code>/a2a</code></td><td>A2A JSON-RPC 2.0</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h4>Examples</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-cm"># Serve all workflows in a directory</span>
+<span class="hl-prompt">$ </span>light serve ./workflows
+
+<span class="hl-cm"># Custom port</span>
+<span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">8080</span>
+
+<span class="hl-cm"># Verbose Docker logging</span>
+<span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--verbose</span></code></pre>
+</div>
+
+<h3>light init</h3>
+<p>Scaffold a new project or node.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light init [dir]                    <span class="hl-cm"># full project</span>
+<span class="hl-prompt">$ </span>light init <span class="hl-flag">--node</span> [dir] [<span class="hl-flag">--lang</span>]    <span class="hl-cm"># single node</span></code></pre>
+</div>
+
+<h4>Options</h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Flag</th><th>Description</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>--node</code></td><td>Create a node instead of project</td><td>off</td></tr>
+    <tr><td><code>--lang &lt;js|python&gt;</code></td><td>Node language</td><td><code>js</code></td></tr>
+    <tr><td><code>--verbose</code></td><td>Show created files</td><td>off</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p><strong>Project init creates:</strong></p>
+<ul>
+  <li><code>package.json</code> with start/check scripts</li>
+  <li><code>workflows/example/</code> with a hello node</li>
+  <li><code>main.js</code> with SDK example</li>
+</ul>
+
+<p><strong>Node init creates:</strong></p>
+<ul>
+  <li><code>.node.json</code> with image and entrypoint</li>
+  <li><code>index.js</code> or <code>main.py</code> (template code)</li>
+  <li><code>lp.js</code> and <code>lp.py</code> (helpers)</li>
+  <li><code>input.json</code> (empty test input)</li>
+  <li>Auto-registers in parent <code>workflow.json</code> if present</li>
+</ul>
+
+<h3>light check</h3>
+<p>Validate a workflow without running it.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light check &lt;file|dir&gt; [<span class="hl-flag">--fix</span>]</code></pre>
+</div>
+
+<h4>Checks performed</h4>
+<ol>
+  <li><code>workflow.json</code> exists and parses</li>
+  <li>Node folders exist</li>
+  <li><code>.node.json</code> files exist</li>
+  <li>Workflow loads (valid structure)</li>
+  <li>All nodes have images</li>
+  <li>All nodes have entrypoints or files</li>
+  <li>Entry nodes exist</li>
+</ol>
+<p><code>--fix</code> auto-removes dead node references from <code>workflow.json</code>.</p>
+
+<h3>light describe</h3>
+<p>Show workflow structure and generate a visual diagram.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light describe &lt;file|dir|id|name&gt; [<span class="hl-flag">--no-html</span>]</code></pre>
+</div>
+
+<h4>Example output</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">output</span>
+  </div>
+  <pre><code>  Order Pipeline (order-pipeline)
+  <span class="hl-num">3</span> nodes, <span class="hl-num">2</span> links
+
+  Validate (node:20-alpine)
+    <span class="hl-arrow">-&gt;</span> Process (<span class="hl-kw">when</span>: valid == true)
+  Process (python:3.12-alpine)
+    <span class="hl-arrow">-&gt;</span> Notify
+  Notify (node:20-alpine)</code></pre>
+</div>
+
+<h3>light doctor</h3>
+<p>Check environment health.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light doctor</code></pre>
+</div>
+<p><strong>Checks:</strong> Node.js version (>= 18), Docker installation, Docker daemon status, gVisor (runsc) availability, GPU support (nvidia-smi), Docker GPU plugin.</p>
+
+<h3>Global options</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>--version</code>, <code>-v</code></td><td>Show version</td></tr>
+    <tr><td><code>--help</code>, <code>-h</code></td><td>Show help</td></tr>
+    <tr><td><code>--verbose</code></td><td>Verbose output</td></tr>
+    <tr><td><code>--json</code></td><td>JSON output</td></tr>
+  </tbody>
+</table>
+</div>
+
+</section>
+
+<!-- ============================================================
+     SDK GUIDE
+     ============================================================ -->
+<section id="sdk">
+<h2>SDK Guide</h2>
+<p>Use light-process programmatically in Node.js to build, configure, and execute workflows.</p>
+
+<h3>Install</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>npm install light-process</code></pre>
+</div>
+
+<h3>Basic workflow</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">Workflow</span>, <span class="hl-fn">DockerRunner</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+
+<span class="hl-kw">const</span> wf = <span class="hl-kw">new</span> <span class="hl-fn">Workflow</span>({ name: <span class="hl-str">'hello'</span> });
+
+<span class="hl-kw">const</span> node = wf.<span class="hl-fn">addNode</span>({ name: <span class="hl-str">'Greet'</span>, image: <span class="hl-str">'node:20-alpine'</span> });
+node.<span class="hl-fn">setCode</span>((input) =&gt; ({ message: <span class="hl-str">`Hello, ${input.name}!`</span> }));
+
+<span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>(
+  { name: <span class="hl-str">'World'</span> },
+  { runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>() }
+);
+
+console.<span class="hl-fn">log</span>(result.success); <span class="hl-cm">// true</span>
+console.<span class="hl-fn">log</span>(result.results);</code></pre>
+</div>
+
+<h3>Multi-node pipeline</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">Workflow</span>, <span class="hl-fn">Schema</span>, <span class="hl-fn">DockerRunner</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+
+<span class="hl-kw">const</span> wf = <span class="hl-kw">new</span> <span class="hl-fn">Workflow</span>({ name: <span class="hl-str">'pipeline'</span> });
+
+<span class="hl-cm">// Node 1: validate</span>
+<span class="hl-kw">const</span> validate = wf.<span class="hl-fn">addNode</span>({ name: <span class="hl-str">'Validate'</span>, image: <span class="hl-str">'node:20-alpine'</span> });
+validate.inputs = <span class="hl-fn">Schema</span>.<span class="hl-fn">object</span>({ email: <span class="hl-fn">Schema</span>.<span class="hl-fn">string</span>() }, [<span class="hl-str">'email'</span>]);
+validate.<span class="hl-fn">setCode</span>((input) =&gt; ({
+  valid: input.email.<span class="hl-fn">includes</span>(<span class="hl-str">'@'</span>),
+  email: input.email,
+}));
+
+<span class="hl-cm">// Node 2: process (only runs if valid)</span>
+<span class="hl-kw">const</span> process = wf.<span class="hl-fn">addNode</span>({ name: <span class="hl-str">'Process'</span>, image: <span class="hl-str">'node:20-alpine'</span> });
+process.<span class="hl-fn">setCode</span>((input) =&gt; ({
+  processed: <span class="hl-kw">true</span>,
+  email: input.email,
+}));
+
+<span class="hl-cm">// Node 3: reject (only runs if invalid)</span>
+<span class="hl-kw">const</span> reject = wf.<span class="hl-fn">addNode</span>({ name: <span class="hl-str">'Reject'</span>, image: <span class="hl-str">'node:20-alpine'</span> });
+reject.<span class="hl-fn">setCode</span>((input) =&gt; ({
+  rejected: <span class="hl-kw">true</span>,
+  reason: <span class="hl-str">'Invalid email'</span>,
+}));
+
+<span class="hl-cm">// Conditional links</span>
+wf.<span class="hl-fn">addLink</span>({
+  from: validate.id,
+  to: process.id,
+  when: { valid: <span class="hl-kw">true</span> },
+});
+
+wf.<span class="hl-fn">addLink</span>({
+  from: validate.id,
+  to: reject.id,
+  when: { valid: { ne: <span class="hl-kw">true</span> } },
+});
+
+<span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>(
+  { email: <span class="hl-str">'alice@example.com'</span> },
+  { runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>() }
+);</code></pre>
+</div>
+
+<h3>Node from folder</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">Node</span>, <span class="hl-fn">loadDirectory</span>, <span class="hl-fn">DEFAULT_IGNORE</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+
+<span class="hl-kw">const</span> node = <span class="hl-kw">new</span> <span class="hl-fn">Node</span>({
+  name: <span class="hl-str">'My Node'</span>,
+  image: <span class="hl-str">'node:20-alpine'</span>,
+  entrypoint: <span class="hl-str">'node index.js'</span>,
+});
+
+<span class="hl-cm">// Load all files from a directory</span>
+<span class="hl-kw">const</span> files = <span class="hl-fn">loadDirectory</span>(<span class="hl-str">'./my-node'</span>, { ignore: <span class="hl-fn">DEFAULT_IGNORE</span> });
+node.<span class="hl-fn">addFiles</span>(files);
+
+<span class="hl-cm">// Or use the shorthand</span>
+node.<span class="hl-fn">addFolder</span>(<span class="hl-str">'./my-node'</span>, <span class="hl-str">'node index.js'</span>);</code></pre>
+</div>
+
+<h3>Load workflow from folder</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">loadWorkflowFromFolder</span>, <span class="hl-fn">DockerRunner</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+
+<span class="hl-kw">const</span> wf = <span class="hl-fn">loadWorkflowFromFolder</span>(<span class="hl-str">'./workflows/my-workflow'</span>);
+<span class="hl-kw">if</span> (!wf) {
+  console.<span class="hl-fn">error</span>(<span class="hl-str">'Invalid workflow folder'</span>);
+  process.<span class="hl-fn">exit</span>(<span class="hl-num">1</span>);
+}
+
+<span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>({}, { runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>() });</code></pre>
+</div>
+
+<h3>Export workflow to folder</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">exportWorkflowToFolder</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+
+<span class="hl-cm">// After building a workflow programmatically</span>
+<span class="hl-fn">exportWorkflowToFolder</span>(wf, <span class="hl-str">'./output/my-workflow'</span>);
+<span class="hl-cm">// Creates workflow.json + node folders with .node.json and code files</span></code></pre>
+</div>
+
+<h3>Execution callbacks</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>(input, {
+  runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>(),
+  timeout: <span class="hl-num">30000</span>, <span class="hl-cm">// 30s global timeout</span>
+
+  <span class="hl-fn">onNodeStart</span>: (nodeId, nodeName) =&gt; {
+    console.<span class="hl-fn">log</span>(<span class="hl-str">`Starting: ${nodeName}`</span>);
+  },
+
+  <span class="hl-fn">onNodeComplete</span>: (nodeId, nodeName, success, duration) =&gt; {
+    console.<span class="hl-fn">log</span>(<span class="hl-str">`${nodeName}: ${success ? 'ok' : 'failed'} (${duration}ms)`</span>);
+  },
+
+  <span class="hl-fn">onLog</span>: (nodeId, nodeName, log) =&gt; {
+    console.<span class="hl-fn">log</span>(<span class="hl-str">`[${nodeName}] ${log}`</span>);
+  },
+
+  <span class="hl-fn">onStatusChange</span>: (status) =&gt; {
+    console.<span class="hl-fn">log</span>(<span class="hl-str">`Current: ${status.currentNodeName}`</span>);
+    console.<span class="hl-fn">log</span>(<span class="hl-str">`Done: ${status.completedNodes.length}`</span>);
+  },
+});</code></pre>
+</div>
+
+<h3>DockerRunner options</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>({
+  memoryLimit: <span class="hl-str">'512m'</span>,
+  cpuLimit: <span class="hl-str">'1.5'</span>,
+  runtime: <span class="hl-str">'runsc'</span>,       <span class="hl-cm">// 'runc', 'runsc' (gVisor), 'kata'</span>
+  gpu: <span class="hl-str">'all'</span>,             <span class="hl-cm">// false, 'all', number, or device ID</span>
+  verbose: <span class="hl-kw">true</span>,
+  tempDir: <span class="hl-str">'/tmp/lp'</span>,
+});</code></pre>
+</div>
+
+<h3>Node.setCode</h3>
+<p>Wraps a JavaScript function as node code. The function receives input as an argument and returns the output.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>node.<span class="hl-fn">setCode</span>((input) =&gt; {
+  <span class="hl-cm">// input is the parsed JSON from stdin</span>
+  <span class="hl-kw">const</span> result = { doubled: input.value * <span class="hl-num">2</span> };
+  <span class="hl-kw">return</span> result; <span class="hl-cm">// written to .lp-output.json</span>
+});</code></pre>
+</div>
+<p><strong>Limitations:</strong> closures and external variables are not available at runtime (the function is serialized to a string).</p>
+
+<h3>Node.addHelper</h3>
+<p>Adds language-specific helper files (<code>lp.js</code>, <code>lp.py</code>) that provide <code>input</code> and <code>send</code>.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>node.<span class="hl-fn">addHelper</span>(<span class="hl-str">'javascript'</span>); <span class="hl-cm">// adds lp.js</span>
+node.<span class="hl-fn">addHelper</span>(<span class="hl-str">'python'</span>);     <span class="hl-cm">// adds lp.py</span>
+node.<span class="hl-fn">addHelper</span>();             <span class="hl-cm">// adds all helpers</span></code></pre>
+</div>
+
+<h3>Workflow serialization</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-cm">// To JSON</span>
+<span class="hl-kw">const</span> json = wf.<span class="hl-fn">toJSON</span>();
+<span class="hl-kw">const</span> str = JSON.<span class="hl-fn">stringify</span>(json, <span class="hl-kw">null</span>, <span class="hl-num">2</span>);
+
+<span class="hl-cm">// From JSON</span>
+<span class="hl-kw">const</span> restored = <span class="hl-fn">Workflow</span>.<span class="hl-fn">fromJSON</span>(json);</code></pre>
+</div>
+
+<h3>Error types</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">import</span> {
+  <span class="hl-fn">LightProcessError</span>,
+  <span class="hl-fn">LinkValidationError</span>,
+  <span class="hl-fn">CircularDependencyError</span>,
+  <span class="hl-fn">WorkflowTimeoutError</span>,
+} <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;</code></pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Error</th><th>Thrown when</th></tr></thead>
+  <tbody>
+    <tr><td><code>LinkValidationError</code></td><td>Invalid link (missing node, self-loop, cycle without maxIterations)</td></tr>
+    <tr><td><code>CircularDependencyError</code></td><td>No entry nodes in non-empty workflow</td></tr>
+    <tr><td><code>WorkflowTimeoutError</code></td><td>Execution exceeds timeout</td></tr>
+  </tbody>
+</table>
+</div>
+
+</section>
+
+<!-- ============================================================
+     WORKFLOWS
+     ============================================================ -->
+<section id="workflows">
+<h2>Workflows</h2>
+<p>A workflow is a directed acyclic graph (DAG) of nodes connected by links. Each node runs code in a Docker container.</p>
+
+<h3>Folder structure</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">structure</span>
+  </div>
+  <pre><code>my-workflow/
+  workflow.json          <span class="hl-cm"># DAG definition</span>
+  node-a/
+    .node.json           <span class="hl-cm"># node config</span>
+    index.js             <span class="hl-cm"># code</span>
+    lp.js                <span class="hl-cm"># helper</span>
+  node-b/
+    .node.json
+    main.py
+    lp.py</code></pre>
+</div>
+
+<h3>workflow.json</h3>
+<p>Defines the DAG structure:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{
+  <span class="hl-key">"id"</span>: <span class="hl-str">"my-workflow"</span>,
+  <span class="hl-key">"name"</span>: <span class="hl-str">"My Workflow"</span>,
+  <span class="hl-key">"network"</span>: <span class="hl-kw">null</span>,
+  <span class="hl-key">"nodes"</span>: [
+    { <span class="hl-key">"id"</span>: <span class="hl-str">"node-a"</span>, <span class="hl-key">"name"</span>: <span class="hl-str">"Node A"</span>, <span class="hl-key">"dir"</span>: <span class="hl-str">"node-a"</span> },
+    { <span class="hl-key">"id"</span>: <span class="hl-str">"node-b"</span>, <span class="hl-key">"name"</span>: <span class="hl-str">"Node B"</span>, <span class="hl-key">"dir"</span>: <span class="hl-str">"node-b"</span> }
+  ],
+  <span class="hl-key">"links"</span>: [
+    { <span class="hl-key">"from"</span>: <span class="hl-str">"node-a"</span>, <span class="hl-key">"to"</span>: <span class="hl-str">"node-b"</span> }
+  ]
+}</code></pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>yes</td><td>Unique identifier</td></tr>
+    <tr><td><code>name</code></td><td>yes</td><td>Display name</td></tr>
+    <tr><td><code>network</code></td><td>no</td><td>Docker network for all nodes (null = <code>lp-isolated</code>)</td></tr>
+    <tr><td><code>nodes</code></td><td>yes</td><td>Array of node references (<code>id</code>, <code>name</code>, <code>dir</code>)</td></tr>
+    <tr><td><code>links</code></td><td>no</td><td>Array of links between nodes</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>.node.json</h3>
+<p>Configures a single node:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{
+  <span class="hl-key">"id"</span>: <span class="hl-str">"node-a"</span>,
+  <span class="hl-key">"name"</span>: <span class="hl-str">"Node A"</span>,
+  <span class="hl-key">"image"</span>: <span class="hl-str">"node:20-alpine"</span>,
+  <span class="hl-key">"entrypoint"</span>: <span class="hl-str">"node index.js"</span>,
+  <span class="hl-key">"setup"</span>: [<span class="hl-str">"npm install axios"</span>],
+  <span class="hl-key">"timeout"</span>: <span class="hl-num">10000</span>,
+  <span class="hl-key">"network"</span>: <span class="hl-kw">null</span>,
+  <span class="hl-key">"inputs"</span>: <span class="hl-kw">null</span>,
+  <span class="hl-key">"outputs"</span>: <span class="hl-kw">null</span>
+}</code></pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>yes</td><td>Unique identifier</td></tr>
+    <tr><td><code>name</code></td><td>yes</td><td>Display name</td></tr>
+    <tr><td><code>image</code></td><td>yes</td><td>Docker image</td></tr>
+    <tr><td><code>entrypoint</code></td><td>yes</td><td>Command to run</td></tr>
+    <tr><td><code>setup</code></td><td>no</td><td>Shell commands before entrypoint</td></tr>
+    <tr><td><code>timeout</code></td><td>no</td><td>Node timeout in ms (0 = none)</td></tr>
+    <tr><td><code>network</code></td><td>no</td><td>Override workflow network</td></tr>
+    <tr><td><code>inputs</code></td><td>no</td><td>JSON Schema for input validation</td></tr>
+    <tr><td><code>outputs</code></td><td>no</td><td>JSON Schema for output validation</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Links</h3>
+<p>Links connect nodes and control data flow:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{
+  <span class="hl-key">"from"</span>: <span class="hl-str">"node-a"</span>,
+  <span class="hl-key">"to"</span>: <span class="hl-str">"node-b"</span>,
+  <span class="hl-key">"when"</span>: { <span class="hl-key">"status"</span>: <span class="hl-str">"ok"</span> },
+  <span class="hl-key">"data"</span>: { <span class="hl-key">"extra"</span>: <span class="hl-str">"value"</span> },
+  <span class="hl-key">"maxIterations"</span>: <span class="hl-kw">null</span>
+}</code></pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>from</code></td><td>yes</td><td>Source node ID</td></tr>
+    <tr><td><code>to</code></td><td>yes</td><td>Target node ID</td></tr>
+    <tr><td><code>when</code></td><td>no</td><td>Condition on source output (see <a href="#conditions">Conditions</a>)</td></tr>
+    <tr><td><code>data</code></td><td>no</td><td>Extra data merged into target input</td></tr>
+    <tr><td><code>maxIterations</code></td><td>no</td><td>Loop limit for back-links</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Execution model</h3>
+<ol>
+  <li><strong>Entry nodes</strong> (no incoming forward links) start first with the initial input</li>
+  <li>Nodes in the same layer run <strong>in parallel</strong> via <code>Promise.all()</code></li>
+  <li>After a node completes, outgoing links are evaluated</li>
+  <li>If a link has <code>when</code>, it only fires if the condition matches the output</li>
+  <li>Target nodes start when <strong>all</strong> incoming links have data ready</li>
+  <li>Multiple incoming links merge their outputs with <code>Object.assign()</code></li>
+  <li>Link <code>data</code> is merged on top of the source output</li>
+  <li>If any node fails, the workflow stops</li>
+</ol>
+
+<h3>Back-links (loops)</h3>
+<p>A link that creates a cycle requires <code>maxIterations</code>:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{
+  <span class="hl-key">"from"</span>: <span class="hl-str">"process"</span>,
+  <span class="hl-key">"to"</span>: <span class="hl-str">"validate"</span>,
+  <span class="hl-key">"when"</span>: { <span class="hl-key">"retry"</span>: <span class="hl-kw">true</span> },
+  <span class="hl-key">"maxIterations"</span>: <span class="hl-num">3</span>
+}</code></pre>
+</div>
+<p>Without <code>maxIterations</code>, adding a cycle throws <code>LinkValidationError</code>.</p>
+
+<h3>Network inheritance</h3>
+<ul>
+  <li>Workflow <code>network</code> applies to all nodes with <code>network: null</code></li>
+  <li>Node <code>network</code> overrides the workflow network</li>
+  <li>Default network is <code>lp-isolated</code> (bridge, no inter-container communication)</li>
+  <li>Set <code>network: "none"</code> to fully isolate a node</li>
+</ul>
+
+<h3>Data flow</h3>
+<div class="ascii-diagram">Input -> [Node A] -> output A
+                      |
+                      v (merged with link.data)
+                  [Node B] -> output B
+                      |
+                      v
+                  [Node C] -> final output</div>
+
+<p>When multiple nodes feed into one:</p>
+<div class="ascii-diagram">[Node A] -> output A -+
+                      |-> merged input -> [Node C]
+[Node B] -> output B -+</div>
+<p>Merge order follows link evaluation order. Later values overwrite earlier ones.</p>
+
+</section>
+
+<!-- ============================================================
+     CONDITIONS
+     ============================================================ -->
+<section id="conditions">
+<h2>Conditions</h2>
+<p>Links support MongoDB-style <code>when</code> conditions to control routing based on node output.</p>
+
+<h3>Operators</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Operator</th><th>Example</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>(none)</td><td><code>{ status: "ok" }</code></td><td>Exact equality</td></tr>
+    <tr><td><code>gt</code></td><td><code>{ count: { gt: 5 } }</code></td><td>Greater than</td></tr>
+    <tr><td><code>gte</code></td><td><code>{ count: { gte: 5 } }</code></td><td>Greater or equal</td></tr>
+    <tr><td><code>lt</code></td><td><code>{ count: { lt: 10 } }</code></td><td>Less than</td></tr>
+    <tr><td><code>lte</code></td><td><code>{ count: { lte: 10 } }</code></td><td>Less or equal</td></tr>
+    <tr><td><code>ne</code></td><td><code>{ status: { ne: "error" } }</code></td><td>Not equal</td></tr>
+    <tr><td><code>in</code></td><td><code>{ role: { in: ["admin", "mod"] } }</code></td><td>Value in array</td></tr>
+    <tr><td><code>exists</code></td><td><code>{ token: { exists: true } }</code></td><td>Field exists</td></tr>
+    <tr><td><code>or</code></td><td><code>{ or: [{...}, {...}] }</code></td><td>Logical OR</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Logic</h3>
+<ul>
+  <li>All top-level fields are <strong>AND</strong> (all must match)</li>
+  <li>Use <code>or</code> for <strong>OR</strong> logic</li>
+  <li>Conditions are evaluated against the source node's output</li>
+</ul>
+
+<h3>Examples</h3>
+
+<h4>Simple equality</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{ <span class="hl-key">"status"</span>: <span class="hl-str">"ok"</span> }</code></pre>
+</div>
+<p>Matches if output contains <code>{ "status": "ok" }</code>.</p>
+
+<h4>Multiple conditions (AND)</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{ <span class="hl-key">"status"</span>: <span class="hl-str">"ok"</span>, <span class="hl-key">"count"</span>: { <span class="hl-key">"gte"</span>: <span class="hl-num">10</span> } }</code></pre>
+</div>
+<p>Matches if status is "ok" AND count is >= 10.</p>
+
+<h4>OR logic</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{
+  <span class="hl-key">"or"</span>: [
+    { <span class="hl-key">"status"</span>: <span class="hl-str">"ok"</span> },
+    { <span class="hl-key">"status"</span>: <span class="hl-str">"warning"</span> }
+  ]
+}</code></pre>
+</div>
+<p>Matches if status is "ok" OR "warning".</p>
+
+<h4>Field existence</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{ <span class="hl-key">"token"</span>: { <span class="hl-key">"exists"</span>: <span class="hl-kw">true</span> } }
+<span class="hl-cm">// Matches if the output has a "token" field</span>
+
+{ <span class="hl-key">"error"</span>: { <span class="hl-key">"exists"</span>: <span class="hl-kw">false</span> } }
+<span class="hl-cm">// Matches if the output does NOT have an "error" field</span></code></pre>
+</div>
+
+<h4>Membership</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{ <span class="hl-key">"role"</span>: { <span class="hl-key">"in"</span>: [<span class="hl-str">"admin"</span>, <span class="hl-str">"moderator"</span>, <span class="hl-str">"owner"</span>] } }</code></pre>
+</div>
+
+<h4>Numeric range</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{ <span class="hl-key">"score"</span>: { <span class="hl-key">"gte"</span>: <span class="hl-num">0</span>, <span class="hl-key">"lte"</span>: <span class="hl-num">100</span> } }</code></pre>
+</div>
+
+<h4>Not equal</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{ <span class="hl-key">"status"</span>: { <span class="hl-key">"ne"</span>: <span class="hl-str">"error"</span> } }</code></pre>
+</div>
+
+<h3>Usage in links</h3>
+<h4>workflow.json</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{
+  <span class="hl-key">"links"</span>: [
+    {
+      <span class="hl-key">"from"</span>: <span class="hl-str">"validate"</span>,
+      <span class="hl-key">"to"</span>: <span class="hl-str">"process"</span>,
+      <span class="hl-key">"when"</span>: { <span class="hl-key">"valid"</span>: <span class="hl-kw">true</span>, <span class="hl-key">"score"</span>: { <span class="hl-key">"gte"</span>: <span class="hl-num">80</span> } }
+    },
+    {
+      <span class="hl-key">"from"</span>: <span class="hl-str">"validate"</span>,
+      <span class="hl-key">"to"</span>: <span class="hl-str">"reject"</span>,
+      <span class="hl-key">"when"</span>: { <span class="hl-key">"valid"</span>: { <span class="hl-key">"ne"</span>: <span class="hl-kw">true</span> } }
+    }
+  ]
+}</code></pre>
+</div>
+
+<h4>SDK</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>wf.<span class="hl-fn">addLink</span>({
+  from: validate.id,
+  to: process.id,
+  when: { valid: <span class="hl-kw">true</span>, score: { gte: <span class="hl-num">80</span> } },
+});</code></pre>
+</div>
+
+<h3>Validation</h3>
+<p>Conditions are validated when a link is added. Unknown operators throw <code>LinkValidationError</code>:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">output</span>
+  </div>
+  <pre><code>Link "my-link" has invalid 'when' condition: Unknown operator: foo</code></pre>
+</div>
+
+</section>
+
+<!-- ============================================================
+     DOCKER & SECURITY
+     ============================================================ -->
+<section id="docker">
+<h2>Docker &amp; Security</h2>
+<p>Each node runs in an isolated Docker container with security hardening.</p>
+
+<h3>Container lifecycle</h3>
+<ol>
+  <li>Node files are written to a temp directory</li>
+  <li>An entrypoint script is generated from <code>setup</code> + <code>entrypoint</code></li>
+  <li><code>docker run</code> starts the container with volume mounts</li>
+  <li>Input is piped to stdin as JSON</li>
+  <li>Output is read from <code>.lp-output.json</code> in the container</li>
+  <li>Container is removed after execution (<code>--rm</code>)</li>
+</ol>
+
+<h3>DockerRunner options</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>({
+  memoryLimit: <span class="hl-str">'512m'</span>,     <span class="hl-cm">// --memory flag</span>
+  cpuLimit: <span class="hl-str">'1.5'</span>,         <span class="hl-cm">// --cpus flag</span>
+  runtime: <span class="hl-str">'runsc'</span>,        <span class="hl-cm">// --runtime flag</span>
+  gpu: <span class="hl-str">'all'</span>,              <span class="hl-cm">// --gpus flag</span>
+  noNewPrivileges: <span class="hl-kw">true</span>,   <span class="hl-cm">// --security-opt (default: true)</span>
+  verbose: <span class="hl-kw">false</span>,          <span class="hl-cm">// log Docker commands</span>
+  tempDir: <span class="hl-str">'/tmp/lp'</span>,      <span class="hl-cm">// custom temp directory</span>
+});</code></pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>memoryLimit</code></td><td>string</td><td>none</td><td>Container memory limit (e.g. "256m", "2g")</td></tr>
+    <tr><td><code>cpuLimit</code></td><td>string</td><td>none</td><td>CPU cores (e.g. "0.5", "2")</td></tr>
+    <tr><td><code>runtime</code></td><td>string</td><td>"runc"</td><td>Container runtime: "runc", "runsc" (gVisor), "kata"</td></tr>
+    <tr><td><code>gpu</code></td><td>boolean/string/number</td><td>false</td><td>GPU access: false, "all", count, device ID</td></tr>
+    <tr><td><code>noNewPrivileges</code></td><td>boolean</td><td>true</td><td>Prevent privilege escalation</td></tr>
+    <tr><td><code>verbose</code></td><td>boolean</td><td>false</td><td>Log Docker commands</td></tr>
+    <tr><td><code>tempDir</code></td><td>string</td><td>OS temp</td><td>Directory for node files</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Security hardening</h3>
+<h4>Capabilities dropped</h4>
+<p>The following dangerous capabilities are always dropped:</p>
+<ul>
+  <li><code>NET_RAW</code> - raw socket access</li>
+  <li><code>MKNOD</code> - device file creation</li>
+  <li><code>SYS_CHROOT</code> - chroot</li>
+  <li><code>SETPCAP</code> - capability modification</li>
+  <li><code>SETFCAP</code> - file capability modification</li>
+  <li><code>AUDIT_WRITE</code> - audit log writing</li>
+</ul>
+
+<h4>Other security measures</h4>
+<ul>
+  <li><code>--no-new-privileges</code> prevents privilege escalation</li>
+  <li><code>--pids-limit 100</code> limits process count</li>
+  <li>Temp files cleaned up after execution</li>
+  <li>Path traversal checks on file operations</li>
+  <li>Prototype pollution prevention on JSON parsing</li>
+</ul>
+
+<h3>Networks</h3>
+<h4>Default: lp-isolated</h4>
+<p>By default, all containers run on a shared <code>lp-isolated</code> bridge network with inter-container communication disabled (ICC=false).</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-cm"># Created automatically on first use:</span>
+<span class="hl-prompt">$ </span>docker network create <span class="hl-flag">--driver</span> bridge \
+  <span class="hl-flag">-o</span> com.docker.network.bridge.enable_icc=false \
+  lp-isolated</code></pre>
+</div>
+
+<h4>Network options</h4>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Value</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>null</code></td><td>Use workflow network (default: <code>lp-isolated</code>)</td></tr>
+    <tr><td><code>"none"</code></td><td>No network access</td></tr>
+    <tr><td><code>"host"</code></td><td>Host network (no isolation)</td></tr>
+    <tr><td><code>"my-net"</code></td><td>Custom Docker network</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p>Set per-node in <code>.node.json</code>:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{ <span class="hl-key">"network"</span>: <span class="hl-str">"none"</span> }</code></pre>
+</div>
+
+<p>Or per-workflow in <code>workflow.json</code>:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{ <span class="hl-key">"network"</span>: <span class="hl-str">"my-custom-network"</span> }</code></pre>
+</div>
+<p>Node network overrides workflow network.</p>
+
+<h3>GPU support</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>({ gpu: <span class="hl-str">'all'</span> });</code></pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Value</th><th>Docker flag</th></tr></thead>
+  <tbody>
+    <tr><td><code>false</code></td><td>no GPU</td></tr>
+    <tr><td><code>'all'</code></td><td><code>--gpus all</code></td></tr>
+    <tr><td><code>2</code></td><td><code>--gpus 2</code></td></tr>
+    <tr><td><code>'"device=0,1"'</code></td><td><code>--gpus "device=0,1"</code></td></tr>
+  </tbody>
+</table>
+</div>
+<p>Requires NVIDIA Container Toolkit. Check with <code>light doctor</code>.</p>
+
+<h3>Runtimes</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Runtime</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>runc</code></td><td>Default OCI runtime</td></tr>
+    <tr><td><code>runsc</code></td><td>gVisor sandbox (stronger isolation)</td></tr>
+    <tr><td><code>kata</code></td><td>Kata Containers (VM-level isolation)</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Check availability with <code>light doctor</code>.</p>
+
+<h3>Container naming</h3>
+<p>Containers are named <code>lp-&lt;nodeId&gt;-&lt;timestamp&gt;-&lt;seq&gt;</code> for easy identification:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">output</span>
+  </div>
+  <pre><code>lp-hello-<span class="hl-num">1712345678901</span>-<span class="hl-num">0</span></code></pre>
+</div>
+
+<h3>Cancellation</h3>
+<p>Workflows support cancellation via <code>AbortController</code>:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">const</span> controller = <span class="hl-kw">new</span> <span class="hl-fn">AbortController</span>();
+
+<span class="hl-cm">// Cancel after 5 seconds</span>
+<span class="hl-fn">setTimeout</span>(() =&gt; controller.<span class="hl-fn">abort</span>(), <span class="hl-num">5000</span>);
+
+<span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>(input, {
+  runner,
+  signal: controller.signal,
+});</code></pre>
+</div>
+<p>Cancelled containers are killed with <code>docker kill</code>.</p>
+
+</section>
+
+<!-- ============================================================
+     A2A PROTOCOL
+     ============================================================ -->
+<section id="a2a">
+<h2>A2A Protocol</h2>
+<p>Light Process implements the <a href="https://google.github.io/A2A/" target="_blank" rel="noopener">A2A protocol</a> (Agent-to-Agent) for exposing workflows as AI agents.</p>
+
+<h3>Start the server</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">3000</span></code></pre>
+</div>
+<p>This starts:</p>
+<ul>
+  <li><strong>Web dashboard</strong> at <code>http://localhost:3000/</code></li>
+  <li><strong>A2A agent</strong> at <code>http://localhost:3000/</code></li>
+  <li><strong>Agent card</strong> at <code>http://localhost:3000/.well-known/agent-card.json</code></li>
+</ul>
+
+<h3>Agent discovery</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/.well-known/agent-card.json</code></pre>
+</div>
+
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{
+  <span class="hl-key">"name"</span>: <span class="hl-str">"Light Process"</span>,
+  <span class="hl-key">"description"</span>: <span class="hl-str">"Workflow engine with Docker container isolation"</span>,
+  <span class="hl-key">"url"</span>: <span class="hl-str">"http://localhost:3000"</span>,
+  <span class="hl-key">"protocolVersion"</span>: <span class="hl-str">"0.2.1"</span>,
+  <span class="hl-key">"capabilities"</span>: {
+    <span class="hl-key">"streaming"</span>: <span class="hl-kw">true</span>,
+    <span class="hl-key">"pushNotifications"</span>: <span class="hl-kw">false</span>,
+    <span class="hl-key">"stateTransitionHistory"</span>: <span class="hl-kw">true</span>
+  },
+  <span class="hl-key">"defaultInputModes"</span>: [<span class="hl-str">"application/json"</span>],
+  <span class="hl-key">"defaultOutputModes"</span>: [<span class="hl-str">"application/json"</span>],
+  <span class="hl-key">"skills"</span>: [
+    {
+      <span class="hl-key">"id"</span>: <span class="hl-str">"my-workflow"</span>,
+      <span class="hl-key">"name"</span>: <span class="hl-str">"My Workflow"</span>,
+      <span class="hl-key">"description"</span>: <span class="hl-str">"Workflow: My Workflow (3 nodes)"</span>,
+      <span class="hl-key">"tags"</span>: [<span class="hl-str">"workflow"</span>]
+    }
+  ]
+}</code></pre>
+</div>
+<p>Each registered workflow appears as a <strong>skill</strong>.</p>
+
+<h3>Send a task</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>curl -X POST http://localhost:<span class="hl-num">3000</span> \
+  <span class="hl-flag">-H</span> <span class="hl-str">"Content-Type: application/json"</span> \
+  <span class="hl-flag">-d</span> <span class="hl-str">'{
+    "jsonrpc": "2.0",
+    "id": "1",
+    "method": "message/send",
+    "params": {
+      "message": {
+        "messageId": "msg-1",
+        "role": "user",
+        "parts": [{
+          "kind": "data",
+          "data": {
+            "workflowId": "my-workflow",
+            "name": "Alice"
+          }
+        }]
+      }
+    }
+  }'</span></code></pre>
+</div>
+
+<h3>Workflow resolution</h3>
+<p>The executor selects a workflow using these rules:</p>
+<ol>
+  <li>If <code>workflowId</code> is in the data, use that workflow</li>
+  <li>If <code>workflowName</code> is in the data, match by name (case-insensitive)</li>
+  <li>If only one workflow is registered, use it automatically</li>
+  <li>Otherwise, return an error with available workflow names</li>
+</ol>
+
+<h3>REST API</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-cm"># List all workflows</span>
+<span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/api/workflows
+
+<span class="hl-cm"># Get workflow detail (nodes + links, without file contents)</span>
+<span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/api/workflows/my-workflow-id
+
+<span class="hl-cm"># Health check</span>
+<span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/health</code></pre>
+</div>
+
+<h3>SDK usage</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">createA2AServer</span>, <span class="hl-fn">Workflow</span>, <span class="hl-fn">DockerRunner</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+
+<span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>();
+<span class="hl-kw">const</span> app = <span class="hl-fn">createA2AServer</span>({ port: <span class="hl-num">3000</span>, runner });
+
+<span class="hl-cm">// Register workflows</span>
+app.<span class="hl-fn">registerWorkflow</span>(myWorkflow);
+
+<span class="hl-cm">// Start listening</span>
+<span class="hl-kw">await</span> app.<span class="hl-fn">listen</span>();
+
+<span class="hl-cm">// Later: stop</span>
+<span class="hl-kw">await</span> app.<span class="hl-fn">close</span>();</code></pre>
+</div>
+
+<h4>Server options</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-fn">createA2AServer</span>({
+  port: <span class="hl-num">3000</span>,              <span class="hl-cm">// listen port (default: 3000)</span>
+  host: <span class="hl-str">'0.0.0.0'</span>,         <span class="hl-cm">// bind host (default: '0.0.0.0')</span>
+  runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>(), <span class="hl-cm">// shared runner instance</span>
+  card: {
+    name: <span class="hl-str">'My Agent'</span>,       <span class="hl-cm">// agent name</span>
+    description: <span class="hl-str">'Custom'</span>,  <span class="hl-cm">// agent description</span>
+    url: <span class="hl-str">'https://my.host'</span>, <span class="hl-cm">// public URL</span>
+  },
+});</code></pre>
+</div>
+
+<h3>Task lifecycle</h3>
+<p>When a task is received via <code>message/send</code>:</p>
+<ol>
+  <li><strong>working</strong> - workflow execution starts</li>
+  <li><strong>working</strong> - status update per node start</li>
+  <li><strong>artifact-update</strong> - result per node completion</li>
+  <li><strong>completed</strong> or <strong>failed</strong> - final status with workflow result</li>
+</ol>
+
+<h3>CORS</h3>
+<p>The server allows cross-origin requests:</p>
+<ul>
+  <li><code>Access-Control-Allow-Origin: *</code></li>
+  <li><code>Access-Control-Allow-Methods: GET, POST, OPTIONS</code></li>
+  <li><code>Access-Control-Allow-Headers: Content-Type</code></li>
+</ul>
+
+</section>
+
+<!-- ============================================================
+     SCHEMA VALIDATION
+     ============================================================ -->
+<section id="schema">
+<h2>Schema Validation</h2>
+<p>Nodes can define JSON Schema for input and output validation. Validation runs automatically during workflow execution.</p>
+
+<h3>Schema helpers</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">Schema</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+
+<span class="hl-fn">Schema</span>.<span class="hl-fn">string</span>()                  <span class="hl-cm">// { type: 'string' }</span>
+<span class="hl-fn">Schema</span>.<span class="hl-fn">string</span>({ minLength: <span class="hl-num">1</span> }) <span class="hl-cm">// { type: 'string', minLength: 1 }</span>
+<span class="hl-fn">Schema</span>.<span class="hl-fn">number</span>()                  <span class="hl-cm">// { type: 'number' }</span>
+<span class="hl-fn">Schema</span>.<span class="hl-fn">number</span>({ minimum: <span class="hl-num">0</span> })   <span class="hl-cm">// { type: 'number', minimum: 0 }</span>
+<span class="hl-fn">Schema</span>.<span class="hl-fn">integer</span>()                 <span class="hl-cm">// { type: 'integer' }</span>
+<span class="hl-fn">Schema</span>.<span class="hl-fn">boolean</span>()                 <span class="hl-cm">// { type: 'boolean' }</span>
+<span class="hl-fn">Schema</span>.<span class="hl-fn">array</span>(<span class="hl-fn">Schema</span>.<span class="hl-fn">string</span>())   <span class="hl-cm">// { type: 'array', items: { type: 'string' } }</span>
+<span class="hl-fn">Schema</span>.<span class="hl-fn">object</span>(props, required)   <span class="hl-cm">// { type: 'object', properties, required }</span></code></pre>
+</div>
+
+<h3>Define on a node</h3>
+<h4>SDK</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>node.inputs = <span class="hl-fn">Schema</span>.<span class="hl-fn">object</span>({
+  name: <span class="hl-fn">Schema</span>.<span class="hl-fn">string</span>({ minLength: <span class="hl-num">1</span> }),
+  age: <span class="hl-fn">Schema</span>.<span class="hl-fn">integer</span>({ minimum: <span class="hl-num">0</span>, maximum: <span class="hl-num">150</span> }),
+  tags: <span class="hl-fn">Schema</span>.<span class="hl-fn">array</span>(<span class="hl-fn">Schema</span>.<span class="hl-fn">string</span>(), { minItems: <span class="hl-num">1</span> }),
+  active: <span class="hl-fn">Schema</span>.<span class="hl-fn">boolean</span>(),
+}, [<span class="hl-str">'name'</span>, <span class="hl-str">'age'</span>]); <span class="hl-cm">// required fields</span>
+
+node.outputs = <span class="hl-fn">Schema</span>.<span class="hl-fn">object</span>({
+  result: <span class="hl-fn">Schema</span>.<span class="hl-fn">string</span>(),
+  score: <span class="hl-fn">Schema</span>.<span class="hl-fn">number</span>({ minimum: <span class="hl-num">0</span>, maximum: <span class="hl-num">100</span> }),
+});</code></pre>
+</div>
+
+<h4>.node.json</h4>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">json</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code>{
+  <span class="hl-key">"inputs"</span>: {
+    <span class="hl-key">"type"</span>: <span class="hl-str">"object"</span>,
+    <span class="hl-key">"properties"</span>: {
+      <span class="hl-key">"name"</span>: { <span class="hl-key">"type"</span>: <span class="hl-str">"string"</span>, <span class="hl-key">"minLength"</span>: <span class="hl-num">1</span> },
+      <span class="hl-key">"age"</span>: { <span class="hl-key">"type"</span>: <span class="hl-str">"integer"</span>, <span class="hl-key">"minimum"</span>: <span class="hl-num">0</span> }
+    },
+    <span class="hl-key">"required"</span>: [<span class="hl-str">"name"</span>, <span class="hl-str">"age"</span>]
+  },
+  <span class="hl-key">"outputs"</span>: {
+    <span class="hl-key">"type"</span>: <span class="hl-str">"object"</span>,
+    <span class="hl-key">"properties"</span>: {
+      <span class="hl-key">"result"</span>: { <span class="hl-key">"type"</span>: <span class="hl-str">"string"</span> }
+    }
+  }
+}</code></pre>
+</div>
+
+<h3>Validation behavior</h3>
+<ul>
+  <li><strong>Input validation</strong> runs before the node executes</li>
+  <li><strong>Output validation</strong> runs after the node completes (only if successful)</li>
+  <li>If validation fails, the node result is marked as failed with the error details</li>
+  <li>If <code>inputs</code> or <code>outputs</code> is <code>null</code>, validation is skipped</li>
+</ul>
+
+<h3>Supported JSON Schema properties</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Property</th><th>Applies to</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>type</code></td><td>all</td><td>"string", "number", "integer", "boolean", "array", "object"</td></tr>
+    <tr><td><code>properties</code></td><td>object</td><td>Field definitions</td></tr>
+    <tr><td><code>required</code></td><td>object</td><td>Required field names</td></tr>
+    <tr><td><code>items</code></td><td>array</td><td>Item schema</td></tr>
+    <tr><td><code>minItems</code></td><td>array</td><td>Minimum array length</td></tr>
+    <tr><td><code>maxItems</code></td><td>array</td><td>Maximum array length</td></tr>
+    <tr><td><code>minimum</code></td><td>number/integer</td><td>Minimum value</td></tr>
+    <tr><td><code>maximum</code></td><td>number/integer</td><td>Maximum value</td></tr>
+    <tr><td><code>minLength</code></td><td>string</td><td>Minimum string length</td></tr>
+    <tr><td><code>maxLength</code></td><td>string</td><td>Maximum string length</td></tr>
+    <tr><td><code>pattern</code></td><td>string</td><td>Regex pattern</td></tr>
+    <tr><td><code>enum</code></td><td>all</td><td>Allowed values</td></tr>
+    <tr><td><code>default</code></td><td>all</td><td>Default value</td></tr>
+    <tr><td><code>description</code></td><td>all</td><td>Human-readable description</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Error format</h3>
+<p>Validation errors include the field path:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">output</span>
+  </div>
+  <pre><code>Input validation failed: input.name: must NOT have fewer than <span class="hl-num">1</span> characters
+Output validation failed: output.score: must be >= <span class="hl-num">0</span></code></pre>
+</div>
+
+<h3>Manual validation</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">javascript</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">validate</span>, <span class="hl-fn">validateInput</span>, <span class="hl-fn">validateOutput</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+
+<span class="hl-kw">const</span> schema = <span class="hl-fn">Schema</span>.<span class="hl-fn">object</span>({
+  name: <span class="hl-fn">Schema</span>.<span class="hl-fn">string</span>({ minLength: <span class="hl-num">1</span> }),
+}, [<span class="hl-str">'name'</span>]);
+
+<span class="hl-kw">const</span> result = <span class="hl-fn">validateInput</span>({ name: <span class="hl-str">''</span> }, schema);
+<span class="hl-cm">// { valid: false, errors: ['input.name: must NOT have fewer than 1 characters'] }</span>
+
+<span class="hl-kw">const</span> result2 = <span class="hl-fn">validateInput</span>({ name: <span class="hl-str">'Alice'</span> }, schema);
+<span class="hl-cm">// { valid: true, errors: [] }</span></code></pre>
+</div>
+
+</section>
+
+<!-- ============================================================
+     VERSIONING
+     ============================================================ -->
+<section id="versioning">
+<h2>Versioning</h2>
+<p>Light Process follows <a href="https://semver.org/" target="_blank" rel="noopener">Semantic Versioning</a> (semver).</p>
+
+<h3>Format</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">format</span>
+  </div>
+  <pre><code>MAJOR.MINOR.PATCH-PRERELEASE</code></pre>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Part</th><th>Meaning</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td>MAJOR</td><td>Breaking API changes</td><td>1.0.0 -> 2.0.0</td></tr>
+    <tr><td>MINOR</td><td>New features (backwards-compatible)</td><td>0.1.0 -> 0.2.0</td></tr>
+    <tr><td>PATCH</td><td>Bug fixes (backwards-compatible)</td><td>0.1.0 -> 0.1.1</td></tr>
+    <tr><td>PRERELEASE</td><td>Pre-release tag</td><td>0.1.0-alpha.0</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Pre-1.0 (current)</h3>
+<p>While the major version is <code>0</code>, the API is not considered stable. Minor version bumps may include breaking changes.</p>
+
+<h3>Release lifecycle</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">lifecycle</span>
+  </div>
+  <pre><code><span class="hl-num">0.1.0-alpha.0</span>   First alpha - core features, may have bugs
+<span class="hl-num">0.1.0-alpha.2</span>   Second alpha - bug fixes from alpha.1
+<span class="hl-num">0.1.0-beta.1</span>    Feature-complete, testing phase
+<span class="hl-num">0.1.0-beta.2</span>    Bug fixes from beta.1
+<span class="hl-num">0.1.0-rc.1</span>      Release candidate - final testing
+<span class="hl-num">0.1.0</span>            Stable release
+<span class="hl-num">0.1.1</span>            Patch - bug fix
+<span class="hl-num">0.2.0</span>            Minor - new features
+<span class="hl-num">1.0.0</span>            First major - stable API commitment</code></pre>
+</div>
+
+<h3>Pre-release ordering</h3>
+<p>npm and semver sort pre-releases correctly:</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">order</span>
+  </div>
+  <pre><code><span class="hl-num">0.1.0-alpha.0</span> &lt; <span class="hl-num">0.1.0-alpha.2</span> &lt; <span class="hl-num">0.1.0-beta.1</span> &lt; <span class="hl-num">0.1.0-rc.1</span> &lt; <span class="hl-num">0.1.0</span></code></pre>
+</div>
+
+<h3>Installing pre-releases</h3>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-cm"># Install latest stable (skips pre-releases)</span>
+<span class="hl-prompt">$ </span>npm install light-process
+
+<span class="hl-cm"># Install specific pre-release</span>
+<span class="hl-prompt">$ </span>npm install light-process@<span class="hl-num">0.1.0</span>-alpha.<span class="hl-num">0</span>
+
+<span class="hl-cm"># Install latest including pre-releases</span>
+<span class="hl-prompt">$ </span>npm install light-process@next</code></pre>
+</div>
+
+<h3>Current version</h3>
+<p>Check <code>package.json</code> for the current version - it is the single source of truth.</p>
+
+<h4>What's included</h4>
+<ul>
+  <li>Core workflow engine (DAG execution, parallel batches)</li>
+  <li>Node model (Docker containers, code files, I/O schema)</li>
+  <li>Link model (conditions, data injection, back-links)</li>
+  <li>CLI (run, serve, init, check, describe, doctor)</li>
+  <li>A2A protocol server with web dashboard</li>
+  <li>JavaScript and Python helpers</li>
+  <li>JSON Schema validation</li>
+</ul>
+
+<h4>What's not stable yet</h4>
+<ul>
+  <li>API surface may change</li>
+  <li>A2A integration (SDK compatibility)</li>
+  <li>Dashboard features (roadmap items)</li>
+</ul>
+
+</section>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <span>Light Process v0.1.0-alpha.0 - AGPL-3.0</span>
+  <a href="https://github.com/enixcode/light-process" target="_blank" rel="noopener">github.com/enixcode/light-process</a>
+</footer>
+
+</div><!-- end .main -->
+
+<!-- Back to top -->
+<button class="back-to-top" id="back-to-top" aria-label="Back to top">&uarr;</button>
+
+<script>
+(function(){
+  /* ================================================================
+     THEME
+     ================================================================ */
+  var root = document.documentElement;
+  var toggle = document.getElementById('theme-toggle');
+  var iconLight = toggle.querySelector('.theme-icon-light');
+  var iconDark = toggle.querySelector('.theme-icon-dark');
+
+  function getPreferred(){
+    var stored = localStorage.getItem('lp-theme');
+    if(stored) return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme){
+    if(theme === 'dark'){
+      root.setAttribute('data-theme','dark');
+      iconLight.style.display = 'none';
+      iconDark.style.display = 'inline';
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#030712');
+    } else {
+      root.removeAttribute('data-theme');
+      iconLight.style.display = 'inline';
+      iconDark.style.display = 'none';
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content','#ffffff');
+    }
+  }
+
+  var currentTheme = getPreferred();
+  applyTheme(currentTheme);
+
+  // add theme-color meta if missing
+  if(!document.querySelector('meta[name="theme-color"]')){
+    var m = document.createElement('meta');
+    m.name='theme-color';m.content = currentTheme==='dark'?'#030712':'#ffffff';
+    document.head.appendChild(m);
+  }
+
+  toggle.addEventListener('click', function(){
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('lp-theme', currentTheme);
+    applyTheme(currentTheme);
+  });
+
+  // react to system changes if no manual preference
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e){
+    if(!localStorage.getItem('lp-theme')){
+      currentTheme = e.matches ? 'dark' : 'light';
+      applyTheme(currentTheme);
+    }
+  });
+
+  /* ================================================================
+     SIDEBAR
+     ================================================================ */
+  var sidebar = document.getElementById('sidebar');
+  var sidebarOverlay = document.getElementById('sidebar-overlay');
+  var hamburger = document.getElementById('hamburger');
+  var navLinks = sidebar.querySelectorAll('a[href^="#"]');
+  var sections = document.querySelectorAll('section[id], .hero[id]');
+
+  hamburger.addEventListener('click', function(){
+    sidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('open');
+  });
+  sidebarOverlay.addEventListener('click', function(){
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('open');
+  });
+  navLinks.forEach(function(link){
+    link.addEventListener('click', function(){
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('open');
+    });
+  });
+
+  // Active section tracking
+  function updateActive(){
+    var scrollY = window.scrollY + 100;
+    var current = '';
+    sections.forEach(function(s){
+      if(s.offsetTop <= scrollY) current = s.id;
+    });
+    navLinks.forEach(function(link){
+      var href = link.getAttribute('href').slice(1);
+      link.classList.toggle('active', href === current);
+    });
+  }
+  window.addEventListener('scroll', updateActive, {passive:true});
+  updateActive();
+
+  /* ================================================================
+     BACK TO TOP
+     ================================================================ */
+  var btt = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function(){
+    btt.classList.toggle('visible', window.scrollY > 400);
+  }, {passive:true});
+  btt.addEventListener('click', function(){
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  /* ================================================================
+     COPY BUTTONS
+     ================================================================ */
+  document.querySelectorAll('.code-copy').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var pre = btn.closest('.code-block').querySelector('pre');
+      var text = pre.textContent;
+      // strip leading $ prompts for shell blocks
+      text = text.replace(/^\$ /gm, '');
+      navigator.clipboard.writeText(text).then(function(){
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(function(){
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    });
+  });
+
+  /* ================================================================
+     SEARCH
+     ================================================================ */
+  var searchInput = document.getElementById('search-input');
+  var searchResults = document.getElementById('search-results');
+  var searchContainer = document.getElementById('search-container');
+  var focusedIndex = -1;
+
+  // build search index from sections
+  var searchIndex = [];
+  document.querySelectorAll('section[id]').forEach(function(sec){
+    var sectionId = sec.id;
+    var sectionTitle = '';
+    var h2 = sec.querySelector('h2');
+    if(h2) sectionTitle = h2.textContent.replace(/_$/, '').trim();
+
+    // index the section itself
+    searchIndex.push({
+      id: sectionId,
+      section: sectionTitle,
+      title: sectionTitle,
+      text: sectionTitle.toLowerCase(),
+      element: sec
+    });
+
+    // index h3/h4 within
+    sec.querySelectorAll('h3, h4').forEach(function(heading){
+      var title = heading.textContent.trim();
+      searchIndex.push({
+        id: sectionId,
+        section: sectionTitle,
+        title: title,
+        text: title.toLowerCase(),
+        element: heading
+      });
+    });
+  });
+
+  function escapeHtml(s){
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function highlightMatch(text, query){
+    var idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if(idx === -1) return escapeHtml(text);
+    return escapeHtml(text.substring(0, idx)) +
+      '<mark>' + escapeHtml(text.substring(idx, idx + query.length)) + '</mark>' +
+      escapeHtml(text.substring(idx + query.length));
+  }
+
+  function doSearch(query){
+    query = query.trim();
+    if(!query || query.length < 2){
+      searchResults.classList.remove('visible');
+      searchResults.innerHTML = '';
+      focusedIndex = -1;
+      return;
+    }
+
+    var q = query.toLowerCase();
+    var matches = [];
+    var seen = {};
+    searchIndex.forEach(function(item){
+      if(item.text.indexOf(q) !== -1){
+        var key = item.id + ':' + item.title;
+        if(!seen[key]){
+          seen[key] = true;
+          matches.push(item);
+        }
+      }
+    });
+
+    if(matches.length === 0){
+      searchResults.innerHTML = '<div class="search-no-results">No results for "' + escapeHtml(query) + '"</div>';
+      searchResults.classList.add('visible');
+      focusedIndex = -1;
+      return;
+    }
+
+    var html = '';
+    matches.slice(0, 12).forEach(function(m){
+      html += '<a class="search-result-item" href="#' + m.id + '" data-element-id="' + m.id + '">' +
+        '<div class="result-section">' + escapeHtml(m.section) + '</div>' +
+        '<div class="result-title">' + highlightMatch(m.title, query) + '</div>' +
+        '</a>';
+    });
+    searchResults.innerHTML = html;
+    searchResults.classList.add('visible');
+    focusedIndex = -1;
+
+    // click handlers
+    searchResults.querySelectorAll('.search-result-item').forEach(function(item){
+      item.addEventListener('click', function(){
+        searchResults.classList.remove('visible');
+        searchInput.value = '';
+      });
+    });
+  }
+
+  searchInput.addEventListener('input', function(){
+    doSearch(this.value);
+  });
+
+  searchInput.addEventListener('keydown', function(e){
+    var items = searchResults.querySelectorAll('.search-result-item');
+    if(!items.length) return;
+
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      focusedIndex = Math.min(focusedIndex + 1, items.length - 1);
+      items.forEach(function(it, i){ it.classList.toggle('focused', i === focusedIndex); });
+    } else if(e.key === 'ArrowUp'){
+      e.preventDefault();
+      focusedIndex = Math.max(focusedIndex - 1, 0);
+      items.forEach(function(it, i){ it.classList.toggle('focused', i === focusedIndex); });
+    } else if(e.key === 'Enter' && focusedIndex >= 0){
+      e.preventDefault();
+      items[focusedIndex].click();
+    } else if(e.key === 'Escape'){
+      searchResults.classList.remove('visible');
+      searchInput.blur();
+    }
+  });
+
+  // close search on outside click
+  document.addEventListener('click', function(e){
+    if(!searchContainer.contains(e.target)){
+      searchResults.classList.remove('visible');
+    }
+  });
+
+  // "/" shortcut to focus search
+  document.addEventListener('keydown', function(e){
+    if(e.key === '/' && document.activeElement !== searchInput && !e.ctrlKey && !e.metaKey){
+      var tag = document.activeElement?.tagName;
+      if(tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      e.preventDefault();
+      searchInput.focus();
+    }
+  });
+})();
+</script>
+</body>
+</html>

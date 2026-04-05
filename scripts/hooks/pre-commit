@@ -1,0 +1,15 @@
+#!/bin/sh
+# Pre-commit: lint + type-check (fast, sub-second)
+echo "pre-commit: lint..."
+npx biome check src/ test/ 2>&1
+if [ $? -ne 0 ]; then
+  echo "Lint failed. Run: npm run lint:fix"
+  exit 1
+fi
+
+echo "pre-commit: type-check..."
+npx tsc --noEmit 2>&1
+if [ $? -ne 0 ]; then
+  echo "Type-check failed."
+  exit 1
+fi
