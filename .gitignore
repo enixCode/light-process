@@ -1,0 +1,9 @@
+node_modules/
+dist/
+_archive/
+*.tgz
+.light.pid
+.DS_Store
+.playwright-mcp/
+.vscode/
+.claude/settings.local.json

@@ -1,0 +1,9 @@
+services:
+  light-process:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./workflows:/workflows
+    restart: unless-stopped
