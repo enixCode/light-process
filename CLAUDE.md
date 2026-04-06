@@ -80,6 +80,14 @@ MongoDB-style operators: `gt`, `gte`, `lt`, `lte`, `ne`, `in`, `exists`, `or`.
 
 All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 
+## API key authentication
+
+- `light serve` always enables API key auth (secure by default)
+- Auto-generates a random key on startup if `LP_API_KEY` env var is not set
+- Protects POST routes and `/api/*` routes - requires `Authorization: Bearer <key>` header
+- GET routes like `/health` and `/.well-known/agent-card.json` are public
+- AgentCard advertises security schemes when auth is enabled
+
 ## Docker isolation
 
 - Default network: `lp-isolated` (bridge, icc=false)

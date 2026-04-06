@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { createA2AServer } from '../a2a/server.js';
@@ -39,9 +40,14 @@ export const serve: Command = {
   async run() {
     const dir = getPositional(0) || '.';
     const port = parseInt(getFlagValue('--port', '3000'), 10);
+    let apiKey = process.env.LP_API_KEY;
+    if (!apiKey) {
+      apiKey = randomBytes(32).toString('hex');
+      console.log(`  Generated API key: ${apiKey}`);
+    }
     const runner = new DockerRunner({ verbose: hasFlag('--verbose') });
 
-    const app = createA2AServer({ port, runner });
+    const app = createA2AServer({ port, runner, apiKey });
 
     const workflows = loadWorkflowsFromDir(dir);
     for (const wf of workflows) {

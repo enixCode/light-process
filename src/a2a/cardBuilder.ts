@@ -14,6 +14,8 @@ export interface CardOptions {
   protocolVersion?: string;
   /** Documentation URL */
   documentationUrl?: string;
+  /** Whether API key auth is enabled (advertises securitySchemes in the card) */
+  apiKey?: boolean;
 }
 
 function describeSchema(schema: IOSchema): string {
@@ -187,6 +189,13 @@ export function buildAgentCard(workflows: Map<string, Workflow>, options: CardOp
 
   if (options.documentationUrl) {
     card.documentationUrl = options.documentationUrl;
+  }
+
+  if (options.apiKey) {
+    card.securitySchemes = {
+      apiKey: { type: 'apiKey', name: 'Authorization', in: 'header', description: 'Bearer token' },
+    };
+    card.security = [{ apiKey: [] }];
   }
 
   return card;

@@ -1,5 +1,6 @@
 import type { AgentCard } from '@a2a-js/sdk';
 import { DefaultRequestHandler, InMemoryTaskStore, JsonRpcTransportHandler } from '@a2a-js/sdk/server';
+import { timingSafeEqual } from 'crypto';
 import { readFileSync } from 'fs';
 import { createServer as httpCreateServer, type IncomingMessage, type ServerResponse } from 'http';
 import { dirname, join } from 'path';
@@ -23,6 +24,8 @@ export interface A2AServerOptions {
   runner?: DockerRunner;
   /** Agent card options */
   card?: CardOptions;
+  /** API key for Bearer token authentication (optional - no auth when unset) */
+  apiKey?: string;
 }
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -39,8 +42,21 @@ function json(res: ServerResponse, status: number, data: unknown): void {
   res.end(JSON.stringify(data));
 }
 
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return timingSafeEqual(bufA, bufA) && false;
+  return timingSafeEqual(bufA, bufB);
+}
+
+function isProtectedRoute(method: string, pathname: string): boolean {
+  if (method === 'POST') return true;
+  if (pathname.startsWith('/api/')) return true;
+  return false;
+}
+
 export function createA2AServer(options: A2AServerOptions = {}) {
-  const { port = 3000, host = '0.0.0.0', runner = new DockerRunner() } = options;
+  const { port = 3000, host = '0.0.0.0', runner = new DockerRunner(), apiKey } = options;
 
   const workflows = new Map<string, Workflow>();
 
@@ -52,6 +68,7 @@ export function createA2AServer(options: A2AServerOptions = {}) {
     agentCard = buildAgentCard(workflows, {
       ...options.card,
       url: options.card?.url || `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`,
+      apiKey: !!apiKey,
     });
     const taskStore = new InMemoryTaskStore();
     const executor = new WorkflowExecutor(workflows, runner);
@@ -68,12 +85,22 @@ export function createA2AServer(options: A2AServerOptions = {}) {
 
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (method === 'OPTIONS') {
       res.writeHead(204);
       res.end();
       return;
+    }
+
+    // API key auth check
+    if (apiKey && isProtectedRoute(method, pathname)) {
+      const auth = req.headers['authorization'] || '';
+      const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+      if (!token || !safeEqual(token, apiKey)) {
+        json(res, 401, { error: 'Unauthorized' });
+        return;
+      }
     }
 
     try {
@@ -205,6 +232,7 @@ export function createA2AServer(options: A2AServerOptions = {}) {
         console.log(`Light Process A2A agent listening on ${base}`);
         console.log(`Dashboard:  ${base}/`);
         console.log(`Agent Card: ${base}/.well-known/agent-card.json`);
+        if (apiKey) console.log(`Auth:       Bearer token required on API routes`);
         resolve();
       });
     });

@@ -910,8 +910,27 @@ Checking: Example (from folder)
 <span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">8080</span>
 
 <span class="hl-cm"># Verbose Docker logging</span>
-<span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--verbose</span></code></pre>
+<span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--verbose</span>
+
+<span class="hl-cm"># Set a custom API key</span>
+<span class="hl-prompt">$ </span>LP_API_KEY=my-secret-key light serve ./workflows</code></pre>
 </div>
+
+<h4>Authentication</h4>
+<p>API key authentication is always enabled (secure by default). On startup, the server auto-generates a random API key if the <code>LP_API_KEY</code> environment variable is not set. The key is printed to the console on startup.</p>
+<p>Protected routes (POST and <code>/api/*</code>) require a Bearer token in the <code>Authorization</code> header. GET routes like <code>/health</code> and <code>/.well-known/agent-card.json</code> are public.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-cm"># Public - no auth needed</span>
+<span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/health
+
+<span class="hl-cm"># Protected - requires Bearer token</span>
+<span class="hl-prompt">$ </span>curl <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> http://localhost:<span class="hl-num">3000</span>/api/workflows</code></pre>
+</div>
+<p>The AgentCard at <code>/.well-known/agent-card.json</code> advertises the security scheme so that A2A clients can discover that authentication is required.</p>
 
 <h3>light init</h3>
 <p>Scaffold a new project or node.</p>
@@ -1806,7 +1825,11 @@ node.<span class="hl-fn">addHelper</span>();             <span class="hl-cm">// 
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">3000</span></code></pre>
+  <pre><code><span class="hl-cm"># Auto-generates API key (printed to console)</span>
+<span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">3000</span>
+
+<span class="hl-cm"># Or set your own API key</span>
+<span class="hl-prompt">$ </span>LP_API_KEY=my-secret-key light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">3000</span></code></pre>
 </div>
 <p>This starts:</p>
 <ul>
@@ -1814,6 +1837,7 @@ node.<span class="hl-fn">addHelper</span>();             <span class="hl-cm">// 
   <li><strong>A2A agent</strong> at <code>http://localhost:3000/</code></li>
   <li><strong>Agent card</strong> at <code>http://localhost:3000/.well-known/agent-card.json</code></li>
 </ul>
+<p>API key authentication is always on. POST routes and <code>/api/*</code> routes require a Bearer token in the <code>Authorization</code> header. See <a href="#cli">light serve - Authentication</a> for details.</p>
 
 <h3>Agent discovery</h3>
 <div class="code-block">
@@ -1861,6 +1885,7 @@ node.<span class="hl-fn">addHelper</span>();             <span class="hl-cm">// 
   </div>
   <pre><code><span class="hl-prompt">$ </span>curl -X POST http://localhost:<span class="hl-num">3000</span> \
   <span class="hl-flag">-H</span> <span class="hl-str">"Content-Type: application/json"</span> \
+  <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> \
   <span class="hl-flag">-d</span> <span class="hl-str">'{
     "jsonrpc": "2.0",
     "id": "1",
@@ -1896,13 +1921,13 @@ node.<span class="hl-fn">addHelper</span>();             <span class="hl-cm">// 
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-cm"># List all workflows</span>
-<span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/api/workflows
+  <pre><code><span class="hl-cm"># List all workflows (auth required)</span>
+<span class="hl-prompt">$ </span>curl <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> http://localhost:<span class="hl-num">3000</span>/api/workflows
 
-<span class="hl-cm"># Get workflow detail (nodes + links, without file contents)</span>
-<span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/api/workflows/my-workflow-id
+<span class="hl-cm"># Get workflow detail (auth required)</span>
+<span class="hl-prompt">$ </span>curl <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> http://localhost:<span class="hl-num">3000</span>/api/workflows/my-workflow-id
 
-<span class="hl-cm"># Health check</span>
+<span class="hl-cm"># Health check (no auth required)</span>
 <span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/health</code></pre>
 </div>
 
@@ -1959,7 +1984,7 @@ app.<span class="hl-fn">registerWorkflow</span>(myWorkflow);
 <ul>
   <li><code>Access-Control-Allow-Origin: *</code></li>
   <li><code>Access-Control-Allow-Methods: GET, POST, OPTIONS</code></li>
-  <li><code>Access-Control-Allow-Headers: Content-Type</code></li>
+  <li><code>Access-Control-Allow-Headers: Content-Type, Authorization</code></li>
 </ul>
 
 </section>

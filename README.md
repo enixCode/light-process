@@ -104,20 +104,28 @@ light run my-workflow --timeout 30000
 light serve ./workflows --port 3000
 ```
 
-Opens a web dashboard at `http://localhost:3000/` and exposes the A2A API:
+Opens a web dashboard at `http://localhost:3000/` and exposes the A2A API.
+
+**API key authentication** is always enabled (secure by default). On startup, the server auto-generates a random API key if the `LP_API_KEY` environment variable is not set. Set `LP_API_KEY` to use your own key:
 
 ```bash
-# Health check
+LP_API_KEY=my-secret-key light serve ./workflows --port 3000
+```
+
+Protected routes (POST and `/api/*`) require a Bearer token in the Authorization header:
+
+```bash
+# Health check (no auth required)
 curl http://localhost:3000/health
 
-# Agent card (A2A discovery)
+# Agent card (no auth required)
 curl http://localhost:3000/.well-known/agent-card.json
 
-# List workflows (API)
-curl http://localhost:3000/api/workflows
+# List workflows (auth required)
+curl -H "Authorization: Bearer <your-api-key>" http://localhost:3000/api/workflows
 
-# Workflow detail (API)
-curl http://localhost:3000/api/workflows/my-workflow-id
+# Workflow detail (auth required)
+curl -H "Authorization: Bearer <your-api-key>" http://localhost:3000/api/workflows/my-workflow-id
 ```
 
 ### Init examples
@@ -358,15 +366,19 @@ const runner = new DockerRunner({
 Light Process implements the [A2A protocol](https://google.github.io/A2A/) for agent-to-agent communication.
 
 ```bash
-# Start the server
+# Start the server (auto-generates API key, printed to console)
 light serve ./workflows --port 3000
 
-# Discover the agent
+# Or set your own API key
+LP_API_KEY=my-secret-key light serve ./workflows --port 3000
+
+# Discover the agent (no auth required)
 curl http://localhost:3000/.well-known/agent-card.json
 
-# Send a task via JSON-RPC 2.0
+# Send a task via JSON-RPC 2.0 (auth required)
 curl -X POST http://localhost:3000 \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-api-key>" \
   -d '{
     "jsonrpc": "2.0",
     "id": "1",
