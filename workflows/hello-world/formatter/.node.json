@@ -1,0 +1,21 @@
+{
+  "id": "formatter",
+  "name": "Formatter",
+  "image": "node:20-alpine",
+  "entrypoint": "node index.js",
+  "setup": [],
+  "timeout": 0,
+  "network": null,
+  "inputs": {
+    "type": "object",
+    "properties": {
+      "greeting": { "type": "string" }
+    }
+  },
+  "outputs": {
+    "type": "object",
+    "properties": {
+      "result": { "type": "string" }
+    }
+  }
+}

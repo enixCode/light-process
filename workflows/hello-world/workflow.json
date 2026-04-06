@@ -1,0 +1,12 @@
+{
+  "id": "hello-world",
+  "name": "Hello World",
+  "network": null,
+  "nodes": [
+    { "id": "greeter", "name": "Greeter", "dir": "greeter" },
+    { "id": "formatter", "name": "Formatter", "dir": "formatter" }
+  ],
+  "links": [
+    { "from": "greeter", "to": "formatter" }
+  ]
+}
