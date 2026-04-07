@@ -6,7 +6,7 @@ import { createServer as httpCreateServer, type IncomingMessage, type ServerResp
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { DockerRunner } from '../runner/index.js';
-import type { Workflow } from '../Workflow.js';
+import { Workflow } from '../Workflow.js';
 import { buildAgentCard, type CardOptions } from './cardBuilder.js';
 import { MANIFEST_JSON, SERVICE_WORKER_JS, UI_HTML } from './ui.js';
 import { WorkflowExecutor } from './WorkflowExecutor.js';
@@ -84,7 +84,7 @@ export function createA2AServer(options: A2AServerOptions = {}) {
     const method = req.method?.toUpperCase() || 'GET';
 
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (method === 'OPTIONS') {
@@ -170,6 +170,40 @@ export function createA2AServer(options: A2AServerOptions = {}) {
         return;
       }
 
+      if (method === 'POST' && pathname === '/api/workflows') {
+        const body = await readBody(req);
+        let data: unknown;
+        try {
+          data = JSON.parse(body);
+        } catch {
+          json(res, 400, { error: 'Invalid JSON' });
+          return;
+        }
+        try {
+          const wf = Workflow.fromJSON(data as Parameters<typeof Workflow.fromJSON>[0]);
+          if (workflows.has(wf.id)) {
+            json(res, 409, { error: 'Workflow already exists', id: wf.id });
+            return;
+          }
+          registerWorkflow(wf);
+          json(res, 201, { id: wf.id, name: wf.name });
+        } catch (err) {
+          json(res, 400, { error: (err as Error).message });
+        }
+        return;
+      }
+
+      if (method === 'DELETE' && wfMatch) {
+        const id = wfMatch[1];
+        if (!workflows.has(id)) {
+          json(res, 404, { error: 'Workflow not found' });
+          return;
+        }
+        unregisterWorkflow(id);
+        json(res, 200, { deleted: true, id });
+        return;
+      }
+
       // ROADMAP: GET /api/workflows/:id/history - execution logs
       // ROADMAP: POST /api/workflows/:id/run - trigger execution
       // ROADMAP: GET /api/workflows/:id/stream - SSE live updates
@@ -225,6 +259,12 @@ export function createA2AServer(options: A2AServerOptions = {}) {
     rebuildHandler();
   }
 
+  function unregisterWorkflow(id: string): boolean {
+    const deleted = workflows.delete(id);
+    if (deleted) rebuildHandler();
+    return deleted;
+  }
+
   function listen(): Promise<void> {
     return new Promise((resolve) => {
       server.listen(port, host, () => {
@@ -247,5 +287,5 @@ export function createA2AServer(options: A2AServerOptions = {}) {
     });
   }
 
-  return { server, listen, close, registerWorkflow, workflows };
+  return { server, listen, close, registerWorkflow, unregisterWorkflow, workflows };
 }

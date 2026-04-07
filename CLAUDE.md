@@ -87,6 +87,9 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - Protects POST routes and `/api/*` routes - requires `Authorization: Bearer <key>` header
 - GET routes like `/health` and `/.well-known/agent-card.json` are public
 - AgentCard advertises security schemes when auth is enabled
+- `POST /api/workflows` - add a workflow at runtime (JSON body with workflow definition)
+- `DELETE /api/workflows/:id` - remove a workflow at runtime
+- Adding/removing workflows calls `rebuildHandler()` to update the AgentCard and transport
 
 ## Docker isolation
 

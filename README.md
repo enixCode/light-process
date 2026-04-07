@@ -126,6 +126,16 @@ curl -H "Authorization: Bearer <your-api-key>" http://localhost:3000/api/workflo
 
 # Workflow detail (auth required)
 curl -H "Authorization: Bearer <your-api-key>" http://localhost:3000/api/workflows/my-workflow-id
+
+# Add a workflow dynamically (auth required)
+curl -X POST -H "Authorization: Bearer <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"my-wf","name":"My Workflow","nodes":[...],"links":[]}' \
+  http://localhost:3000/api/workflows
+
+# Remove a workflow (auth required)
+curl -X DELETE -H "Authorization: Bearer <your-api-key>" \
+  http://localhost:3000/api/workflows/my-wf
 ```
 
 ### Init examples

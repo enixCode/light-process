@@ -892,6 +892,8 @@ Checking: Example (from folder)
     <tr><td>GET</td><td><code>/.well-known/agent-card.json</code></td><td>A2A agent card</td></tr>
     <tr><td>GET</td><td><code>/api/workflows</code></td><td>List workflows</td></tr>
     <tr><td>GET</td><td><code>/api/workflows/:id</code></td><td>Workflow detail</td></tr>
+    <tr><td>POST</td><td><code>/api/workflows</code></td><td>Add a workflow</td></tr>
+    <tr><td>DELETE</td><td><code>/api/workflows/:id</code></td><td>Remove a workflow</td></tr>
     <tr><td>POST</td><td><code>/</code> or <code>/a2a</code></td><td>A2A JSON-RPC 2.0</td></tr>
   </tbody>
 </table>
@@ -1928,7 +1930,17 @@ node.<span class="hl-fn">addHelper</span>();             <span class="hl-cm">// 
 <span class="hl-prompt">$ </span>curl <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> http://localhost:<span class="hl-num">3000</span>/api/workflows/my-workflow-id
 
 <span class="hl-cm"># Health check (no auth required)</span>
-<span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/health</code></pre>
+<span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/health
+
+<span class="hl-cm"># Add a workflow dynamically (auth required)</span>
+<span class="hl-prompt">$ </span>curl <span class="hl-flag">-X POST</span> <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> \
+  <span class="hl-flag">-H</span> <span class="hl-str">"Content-Type: application/json"</span> \
+  <span class="hl-flag">-d</span> <span class="hl-str">'{"id":"my-wf","name":"My Workflow","nodes":[...],"links":[]}'</span> \
+  http://localhost:<span class="hl-num">3000</span>/api/workflows
+
+<span class="hl-cm"># Remove a workflow (auth required)</span>
+<span class="hl-prompt">$ </span>curl <span class="hl-flag">-X DELETE</span> <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> \
+  http://localhost:<span class="hl-num">3000</span>/api/workflows/my-wf</code></pre>
 </div>
 
 <h3>SDK usage</h3>
