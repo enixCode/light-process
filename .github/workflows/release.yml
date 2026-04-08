@@ -1,14 +1,20 @@
 name: Release
 
+# Every push to dev publishes an alpha: <base>-alpha.<commit-count>
+# Every push to main publishes the stable <base> from package.json
+# package.json is NEVER committed by this workflow - the bump is done
+# in-memory in the runner just before npm publish.
+
 on:
   push:
     branches: [main, dev]
-    paths: [package.json]
 
 jobs:
   release:
-    name: Tag + Publish + GitHub Release
+    name: Build + Publish
     runs-on: ubuntu-latest
+    # Skip commits that were themselves created by bots or explicit skip markers
+    if: "!contains(github.event.head_commit.message, '[skip release]')"
 
     permissions:
       contents: write
@@ -17,67 +23,75 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
-
-      - name: Check if version changed
-        id: version
-        run: |
-          NEW=$(node -p "require('./package.json').version")
-          OLD=$(git show HEAD~1:package.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0,'utf-8')).version" 2>/dev/null || echo "")
-          if [ "$NEW" = "$OLD" ]; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
-            echo "version=$NEW" >> $GITHUB_OUTPUT
-            echo "tag=v$NEW" >> $GITHUB_OUTPUT
-            if echo "$NEW" | grep -q -- "-"; then
-              echo "prerelease=--prerelease" >> $GITHUB_OUTPUT
-            else
-              echo "prerelease=" >> $GITHUB_OUTPUT
-            fi
-            if echo "$NEW" | grep -q "alpha"; then
-              echo "npm_tag=alpha" >> $GITHUB_OUTPUT
-            elif echo "$NEW" | grep -q "beta"; then
-              echo "npm_tag=beta" >> $GITHUB_OUTPUT
-            elif echo "$NEW" | grep -q "rc"; then
-              echo "npm_tag=rc" >> $GITHUB_OUTPUT
-            else
-              echo "npm_tag=latest" >> $GITHUB_OUTPUT
-            fi
-          fi
-
-      - name: Stop if version unchanged
-        if: steps.version.outputs.changed == 'false'
-        run: echo "Version unchanged, skipping release." && exit 0
+          fetch-depth: 0
 
       - name: Setup Node.js
-        if: steps.version.outputs.changed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
 
+      - name: Compute version
+        id: v
+        run: |
+          BASE=$(node -p "require('./package.json').version.split('-')[0]")
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            VERSION="$BASE"
+            NPM_TAG="latest"
+            PRERELEASE=""
+          else
+            COUNT=$(git rev-list --count HEAD)
+            VERSION="${BASE}-alpha.${COUNT}"
+            NPM_TAG="alpha"
+            PRERELEASE="--prerelease"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "npm_tag=$NPM_TAG" >> $GITHUB_OUTPUT
+          echo "prerelease=$PRERELEASE" >> $GITHUB_OUTPUT
+          echo "Publishing $VERSION as @$NPM_TAG"
+
+      - name: Guard - main must be stable version
+        if: github.ref_name == 'main' && contains(steps.v.outputs.version, '-')
+        run: |
+          echo "main branch must publish a stable version (no pre-release suffix)"
+          exit 1
+
+      - name: Skip if tag already exists
+        id: tag_check
+        run: |
+          if git rev-parse "${{ steps.v.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag ${{ steps.v.outputs.tag }} already exists, skipping."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install, lint, build, test
-        if: steps.version.outputs.changed == 'true'
+        if: steps.tag_check.outputs.exists == 'false'
         run: |
           npm ci
           npx biome check src/ test/
           npm run build
           npm test
 
-      - name: Publish to npm (trusted publishing via OIDC)
-        if: steps.version.outputs.changed == 'true'
-        run: npm publish --tag ${{ steps.version.outputs.npm_tag }}
+      - name: Set version in-memory
+        if: steps.tag_check.outputs.exists == 'false'
+        run: npm version ${{ steps.v.outputs.version }} --no-git-tag-version --allow-same-version
+
+      - name: Publish to npm (OIDC trusted publishing)
+        if: steps.tag_check.outputs.exists == 'false'
+        run: npm publish --tag ${{ steps.v.outputs.npm_tag }}
 
       - name: Create git tag
-        if: steps.version.outputs.changed == 'true'
+        if: steps.tag_check.outputs.exists == 'false'
         run: |
-          git tag ${{ steps.version.outputs.tag }}
-          git push origin ${{ steps.version.outputs.tag }}
+          git tag ${{ steps.v.outputs.tag }}
+          git push origin ${{ steps.v.outputs.tag }}
 
       - name: Create GitHub Release
-        if: steps.version.outputs.changed == 'true'
-        run: gh release create ${{ steps.version.outputs.tag }} --generate-notes ${{ steps.version.outputs.prerelease }}
+        if: steps.tag_check.outputs.exists == 'false'
+        run: gh release create ${{ steps.v.outputs.tag }} --generate-notes ${{ steps.v.outputs.prerelease }}
         env:
           GH_TOKEN: ${{ github.token }}
