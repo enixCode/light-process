@@ -47,9 +47,25 @@ export class WorkflowExecutor implements AgentExecutor {
 
   async execute(context: RequestContext, eventBus: ExecutionEventBus): Promise<void> {
     const taskId = context.taskId;
+    const contextId = context.contextId;
 
-    const input = extractInput(context.userMessage.parts);
-    const workflow = resolveWorkflow(this.workflows, input);
+    // Seed a task so the A2A SDK can return it on message/send
+    eventBus.publish({
+      kind: 'task',
+      id: taskId,
+      contextId,
+      status: { state: 'submitted' },
+      history: [context.userMessage],
+      artifacts: [],
+    } as never);
+
+    const rawInput = extractInput(context.userMessage.parts);
+    const workflow = resolveWorkflow(this.workflows, rawInput);
+    // If the caller nested the workflow input under a dedicated field, unwrap it.
+    const input =
+      rawInput.input && typeof rawInput.input === 'object'
+        ? (rawInput.input as Record<string, unknown>)
+        : Object.fromEntries(Object.entries(rawInput).filter(([k]) => k !== 'workflowId' && k !== 'workflowName'));
 
     if (!workflow) {
       const names = Array.from(this.workflows.values()).map((w) => w.name);
@@ -111,7 +127,6 @@ export class WorkflowExecutor implements AgentExecutor {
           } as TaskStatusUpdateEvent);
         },
         onNodeComplete: (nodeId, nodeName, success, duration) => {
-          const nodeResult = result?.results?.[nodeId];
           eventBus.publish({
             kind: 'artifact-update',
             taskId,
