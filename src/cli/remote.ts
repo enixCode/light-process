@@ -1,14 +1,6 @@
 import { readFileSync } from 'node:fs';
-import {
-  getRemote,
-  listRemotes,
-  loadConfig,
-  removeRemote,
-  saveConfig,
-  setDefaultRemote,
-  setRemote,
-} from '../config.js';
-import { deleteWorkflow, listWorkflows, ping, sendMessage } from '../remoteClient.js';
+import { getRemote, listRemotes, loadConfig, removeRemote, setDefaultRemote, setRemote } from '../config.js';
+import { deleteWorkflow, listWorkflows, ping, sendMessage, type WorkflowSummary } from '../remoteClient.js';
 import type { Command } from './utils.js';
 import { getFlagValue, getPositional, hasFlag } from './utils.js';
 
@@ -34,26 +26,51 @@ async function confirm(msg: string): Promise<boolean> {
   });
 }
 
+function printRemotes(): void {
+  const remotes = listRemotes();
+  const cfg = loadConfig();
+  const names = Object.keys(remotes);
+  if (names.length === 0) {
+    console.log('No remotes. Bind one with: light remote bind <url> --key <key>');
+    return;
+  }
+  if (hasFlag('--json')) {
+    console.log(JSON.stringify({ default: cfg.defaultRemote, remotes }, null, 2));
+    return;
+  }
+  for (const name of names) {
+    const marker = name === cfg.defaultRemote ? '*' : ' ';
+    console.log(`${marker} ${name.padEnd(20)} ${remotes[name].url}`);
+  }
+}
+
+function printWorkflows(list: WorkflowSummary[]): void {
+  if (hasFlag('--json')) {
+    console.log(JSON.stringify(list, null, 2));
+    return;
+  }
+  if (list.length === 0) {
+    console.log('No workflows on remote.');
+    return;
+  }
+  for (const wf of list) {
+    const nodes = `${wf.nodeCount} node${wf.nodeCount !== 1 ? 's' : ''}`;
+    const links = `${wf.linkCount} link${wf.linkCount !== 1 ? 's' : ''}`;
+    console.log(`  ${wf.id.padEnd(24)} ${wf.name.padEnd(30)} ${nodes}, ${links}`);
+  }
+}
+
 export const remote: Command = {
   desc: 'Manage remote light-process servers',
-  usage: 'light remote <bind|list|use|forget|ping|run|delete> [...]',
+  usage: 'light remote <bind|use|forget|ping|ls|run|delete> [...]',
   async run() {
     const action = getPositional(0);
     const nameFlag = getFlagValue('--name');
     const remoteOverride = getFlagValue('--remote');
 
-    if (!action || action === 'list' || action === 'ls') {
-      const remotes = listRemotes();
-      const cfg = loadConfig();
-      const names = Object.keys(remotes);
-      if (names.length === 0) {
-        console.log('No remotes. Bind one with: light remote bind <url> --key <key>');
-        return;
-      }
-      for (const name of names) {
-        const marker = name === cfg.defaultRemote ? '*' : ' ';
-        console.log(`${marker} ${name.padEnd(20)} ${remotes[name].url}`);
-      }
+    // No action: list remote profiles (like `git remote`)
+    if (!action) {
+      printRemotes();
       return;
     }
 
@@ -106,21 +123,19 @@ export const remote: Command = {
       return;
     }
 
-    if (action === 'ls-workflows') {
+    // ls = list workflows on the current remote (the common case)
+    if (action === 'ls') {
       const r = resolveRemoteOrFail(remoteOverride);
       const list = await listWorkflows(r.remote);
-      if (hasFlag('--pretty')) {
-        for (const wf of list) console.log(`${wf.id.padEnd(24)} ${wf.name}  (${wf.nodeCount} nodes)`);
-      } else {
-        console.log(JSON.stringify(list, null, hasFlag('--pretty') ? 2 : 0));
-      }
+      if (!hasFlag('--json')) console.log(`Remote: ${r.name} (${r.remote.url})`);
+      printWorkflows(list);
       return;
     }
 
     if (action === 'run') {
       const id = getPositional(1);
       if (!id) {
-        console.error('Usage: light remote run <id> --input <json> | --input-file <path>');
+        console.error('Usage: light remote run <id> [--input <json> | --input-file <path>] [--json]');
         process.exit(1);
       }
       const r = resolveRemoteOrFail(remoteOverride);
@@ -130,11 +145,12 @@ export const remote: Command = {
       if (inputStr) input = JSON.parse(inputStr);
       else if (inputFile) input = JSON.parse(readFileSync(inputFile, 'utf-8'));
       const result = await sendMessage(r.remote, id, input);
-      console.log(JSON.stringify(result, null, hasFlag('--pretty') ? 2 : 0));
+      // Default: pretty-printed JSON. `--json` gives compact raw JSON.
+      console.log(JSON.stringify(result, null, hasFlag('--json') ? 0 : 2));
       return;
     }
 
-    if (action === 'delete' || action === 'rm-workflow') {
+    if (action === 'delete' || action === 'rm') {
       const id = getPositional(1);
       if (!id) {
         console.error('Usage: light remote delete <id> [--soft] [--yes]');
@@ -148,7 +164,7 @@ export const remote: Command = {
         return;
       }
       const res = await deleteWorkflow(r.remote, id, !soft);
-      console.log(JSON.stringify(res));
+      console.log(`Deleted "${res.id}" from ${r.name}${res.unpersisted ? ' (and removed from disk)' : ''}`);
       return;
     }
 
@@ -156,6 +172,3 @@ export const remote: Command = {
     process.exit(1);
   },
 };
-
-// Silence unused warning
-void saveConfig;
