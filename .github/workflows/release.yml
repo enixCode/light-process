@@ -82,7 +82,7 @@ jobs:
 
       - name: Publish to npm (OIDC trusted publishing)
         if: steps.tag_check.outputs.exists == 'false'
-        run: npm publish --tag ${{ steps.v.outputs.npm_tag }}
+        run: npm publish --tag ${{ steps.v.outputs.npm_tag }} --provenance --access public
 
       - name: Create git tag
         if: steps.tag_check.outputs.exists == 'false'
