@@ -23,6 +23,7 @@
     "test": "node --test test/unit/*.test.js",
     "test:integration": "node --test test/integration/*.test.js",
     "test:all": "node --test test/unit/*.test.js test/integration/*.test.js",
+    "test:e2e": "node test/e2e-adversarial/run.mjs",
     "lint": "npx biome check src/ test/",
     "lint:fix": "npx biome check --write src/ test/",
     "build:check": "tsc --noEmit",
