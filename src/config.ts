@@ -1,6 +1,6 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { homedir, platform } from 'os';
-import { dirname, join } from 'path';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir, platform } from 'node:os';
+import { dirname, join } from 'node:path';
 import { safeJsonParse } from './CodeLoader.js';
 
 export interface RemoteConfig {

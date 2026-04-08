@@ -43,7 +43,15 @@ src/
     check.ts          Validate workflow structure
     describe.ts       DAG visualization (text + Mermaid HTML)
     doctor.ts         Environment health check
+    config.ts         Read/write global config (~/.light/config.json)
+    remote.ts         Manage remote profiles, ping, ls, run, delete
+    pull.ts           Pull a workflow from remote into ./workflows/<id>/
+    push.ts           Push local workflow folder(s) to remote (POST or PUT)
+    link.ts           Edit links/conditions in a workflow folder
     utils.ts          Arg parsing, workflow resolution
+
+  config.ts           Global config manager (remotes, defaults, override resolution)
+  remoteClient.ts     HTTP client for the A2A server (list/get/create/update/delete/ping/run)
 
   a2a/
     server.ts         HTTP server with JSON-RPC + SSE
@@ -110,6 +118,19 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - Commit messages: just the message + "build with cc"
 - Follow KISS, SOLID, YAGNI
 - Version: single source of truth in `package.json` - the server reads it at runtime
+
+## Remote workflow (client-server)
+
+- Global config at `~/.light/config.json`. Per-workflow override via `.light-remote` file inside the workflow folder
+- `light remote bind <url> --key <key> [--name <name>]` - register a remote (first one becomes default)
+- `light remote list|use|forget|ping`
+- `light remote ls-workflows`, `light remote run <id> --input '...'|--input-file f.json`
+- `light remote delete <id> [--soft] [--yes]`
+- `light pull <id> [--path <dir>] [--force]` - default target `./workflows/<id>/`. `--force` wipes target first
+- `light push [<name>] [--path <dir>]` - no-arg pushes all in `./workflows/`. Auto POST/PUT (PUT prompts confirm unless `--yes`)
+- `light link <dir>` - interactive link editor (or `--from/--to/--when` inline, `--list`, `--remove <id>`)
+- Server: `GET /api/workflows/:id?full=true` returns the full workflow JSON for pull
+- Server: `PUT /api/workflows/:id?persist=true` atomic update used by push
 
 ## CI/CD
 

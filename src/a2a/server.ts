@@ -147,6 +147,10 @@ export function createA2AServer(options: A2AServerOptions = {}) {
           json(res, 404, { error: 'Workflow not found' });
           return;
         }
+        if (url.searchParams.get('full') === 'true') {
+          json(res, 200, wf.toJSON());
+          return;
+        }
         json(res, 200, {
           id: wf.id,
           name: wf.name,

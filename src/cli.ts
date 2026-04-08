@@ -4,9 +4,14 @@ import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { check } from './cli/check.js';
+import { config } from './cli/config.js';
 import { describe } from './cli/describe.js';
 import { doctor } from './cli/doctor.js';
 import { init } from './cli/init.js';
+import { link } from './cli/link.js';
+import { pull } from './cli/pull.js';
+import { push } from './cli/push.js';
+import { remote } from './cli/remote.js';
 import { run } from './cli/run.js';
 import { serve } from './cli/serve.js';
 import type { Command } from './cli/utils.js';
@@ -26,6 +31,11 @@ const commands: Record<string, Command> = {
   check,
   describe,
   doctor,
+  config,
+  remote,
+  pull,
+  push,
+  link,
   help: {
     desc: 'Show help',
     usage: 'light help [command]',

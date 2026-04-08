@@ -13,7 +13,9 @@ const args = process.argv.slice(2);
 
 const VALUE_FLAGS = new Set([
   '--input',
+  '--input-file',
   '--dir',
+  '--path',
   '--output',
   '--port',
   '--temp-dir',
@@ -24,6 +26,12 @@ const VALUE_FLAGS = new Set([
   '--when',
   '--data',
   '--max-iterations',
+  '--key',
+  '--name',
+  '--remote',
+  '--from',
+  '--to',
+  '--remove',
 ]);
 
 export function getPositional(n: number): string | undefined {
