@@ -94,6 +94,7 @@ export function loadWorkflowFromFolder(dir: string): Workflow | null {
       workdir: DEFAULT_WORKDIR,
       timeout: nodeMeta.timeout ?? 0,
       network: nodeMeta.network ?? null,
+      env: nodeMeta.env ?? [],
     });
   }
 
@@ -138,6 +139,7 @@ export function exportWorkflowToFolder(workflow: Workflow, dir: string): void {
           network: node.network,
           inputs: node.inputs,
           outputs: node.outputs,
+          env: node.env && node.env.length > 0 ? node.env : undefined,
         },
         null,
         2,

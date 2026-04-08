@@ -26,6 +26,8 @@ export interface NodeJSON {
   timeout: number;
   /** Docker network name - null uses default, 'none' isolates the container */
   network: string | null;
+  /** Names of environment variables to pass through from the server env to the container. Values are never serialized. */
+  env?: string[];
 }
 
 export interface NodeConfig {
@@ -41,6 +43,7 @@ export interface NodeConfig {
   network?: string | null;
   inputs?: import('../schema.js').IOSchema | null;
   outputs?: import('../schema.js').IOSchema | null;
+  env?: string[];
 }
 
 export class Node implements NodeJSON {
@@ -56,6 +59,7 @@ export class Node implements NodeJSON {
   public workdir: string;
   public timeout: number;
   public network: string | null;
+  public env: string[];
 
   constructor(config: NodeConfig) {
     this.id = config.id || uuidv4();
@@ -70,6 +74,16 @@ export class Node implements NodeJSON {
     this.workdir = config.workdir || DEFAULT_WORKDIR;
     this.timeout = config.timeout ?? 0; // 0 = no timeout
     this.network = config.network ?? null;
+    const envNames = config.env ?? [];
+    for (const name of envNames) {
+      if (!/^[A-Z_][A-Z0-9_]*$/i.test(name)) {
+        throw new Error(`Invalid env name: "${name}" (must match [A-Z_][A-Z0-9_]*)`);
+      }
+      if (name.startsWith('LP_')) {
+        throw new Error(`Reserved env name: "${name}" (LP_* is reserved for the system)`);
+      }
+    }
+    this.env = envNames;
   }
 
   addFiles(files: CodeFiles): this {
@@ -145,6 +159,7 @@ process.stdin.on('end', async () => {
       workdir: this.workdir,
       timeout: this.timeout,
       network: this.network,
+      env: this.env.length > 0 ? this.env : undefined,
     };
   }
 

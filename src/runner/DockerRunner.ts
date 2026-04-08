@@ -270,6 +270,15 @@ export class DockerRunner {
     args.push('-w', node.workdir);
     args.push('-v', `${toDockerPath(tempDir)}:${node.workdir}`);
 
+    for (const name of node.env ?? []) {
+      const value = process.env[name];
+      if (value === undefined) {
+        if (this.verbose) console.warn(`[DockerRunner] env "${name}" not set on server, skipping`);
+        continue;
+      }
+      args.push('-e', `${name}=${value}`);
+    }
+
     if (node.network === 'none') {
       args.push('--network', 'none');
     } else if (node.network) {
