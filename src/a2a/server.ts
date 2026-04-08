@@ -211,6 +211,49 @@ export function createA2AServer(options: A2AServerOptions = {}) {
         return;
       }
 
+      if (method === 'PUT' && wfMatch) {
+        const id = wfMatch[1];
+        if (!workflows.has(id)) {
+          json(res, 404, { error: 'Workflow not found' });
+          return;
+        }
+        const body = await readBody(req);
+        let data: unknown;
+        try {
+          data = JSON.parse(body);
+        } catch {
+          json(res, 400, { error: 'Invalid JSON' });
+          return;
+        }
+        try {
+          const wf = Workflow.fromJSON(data as Parameters<typeof Workflow.fromJSON>[0]);
+          if (wf.id !== id) {
+            json(res, 400, { error: `Body id "${wf.id}" does not match URL id "${id}"` });
+            return;
+          }
+          workflows.set(id, wf);
+          rebuildHandler();
+          let persisted = false;
+          if (url.searchParams.get('persist') === 'true') {
+            if (!persistPath) {
+              json(res, 400, { error: 'Persistence not enabled (server has no workflows directory)' });
+              return;
+            }
+            try {
+              writeFileSync(persistFile(id), JSON.stringify(data, null, 2));
+              persisted = true;
+            } catch (err) {
+              json(res, 500, { error: `Persist failed: ${(err as Error).message}` });
+              return;
+            }
+          }
+          json(res, 200, { id, name: wf.name, updated: true, persisted });
+        } catch (err) {
+          json(res, 400, { error: (err as Error).message });
+        }
+        return;
+      }
+
       if (method === 'DELETE' && wfMatch) {
         const id = wfMatch[1];
         if (!workflows.has(id)) {
