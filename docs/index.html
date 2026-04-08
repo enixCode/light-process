@@ -892,8 +892,8 @@ Checking: Example (from folder)
     <tr><td>GET</td><td><code>/.well-known/agent-card.json</code></td><td>A2A agent card</td></tr>
     <tr><td>GET</td><td><code>/api/workflows</code></td><td>List workflows</td></tr>
     <tr><td>GET</td><td><code>/api/workflows/:id</code></td><td>Workflow detail</td></tr>
-    <tr><td>POST</td><td><code>/api/workflows</code></td><td>Add a workflow</td></tr>
-    <tr><td>DELETE</td><td><code>/api/workflows/:id</code></td><td>Remove a workflow</td></tr>
+    <tr><td>POST</td><td><code>/api/workflows</code></td><td>Add a workflow (in-memory). Add <code>?persist=true</code> to also save to disk</td></tr>
+    <tr><td>DELETE</td><td><code>/api/workflows/:id</code></td><td>Remove a workflow. Add <code>?persist=true</code> to also delete file</td></tr>
     <tr><td>POST</td><td><code>/</code> or <code>/a2a</code></td><td>A2A JSON-RPC 2.0</td></tr>
   </tbody>
 </table>

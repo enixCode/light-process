@@ -1,9 +1,9 @@
 import type { AgentCard } from '@a2a-js/sdk';
 import { DefaultRequestHandler, InMemoryTaskStore, JsonRpcTransportHandler } from '@a2a-js/sdk/server';
 import { timingSafeEqual } from 'crypto';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 import { createServer as httpCreateServer, type IncomingMessage, type ServerResponse } from 'http';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { DockerRunner } from '../runner/index.js';
 import { Workflow } from '../Workflow.js';
@@ -26,6 +26,8 @@ export interface A2AServerOptions {
   card?: CardOptions;
   /** API key for Bearer token authentication (optional - no auth when unset) */
   apiKey?: string;
+  /** Directory used to persist runtime-added workflows when ?persist=true */
+  persistDir?: string;
 }
 
 function readBody(req: IncomingMessage): Promise<string> {
@@ -56,7 +58,9 @@ function isProtectedRoute(method: string, pathname: string): boolean {
 }
 
 export function createA2AServer(options: A2AServerOptions = {}) {
-  const { port = 3000, host = '0.0.0.0', runner = new DockerRunner(), apiKey } = options;
+  const { port = 3000, host = '0.0.0.0', runner = new DockerRunner(), apiKey, persistDir } = options;
+  const persistPath = persistDir ? resolve(persistDir) : null;
+  const persistFile = (id: string) => join(persistPath as string, `${id}.json`);
 
   const workflows = new Map<string, Workflow>();
 
@@ -186,7 +190,21 @@ export function createA2AServer(options: A2AServerOptions = {}) {
             return;
           }
           registerWorkflow(wf);
-          json(res, 201, { id: wf.id, name: wf.name });
+          let persisted = false;
+          if (url.searchParams.get('persist') === 'true') {
+            if (!persistPath) {
+              json(res, 400, { error: 'Persistence not enabled (server has no workflows directory)' });
+              return;
+            }
+            try {
+              writeFileSync(persistFile(wf.id), JSON.stringify(data, null, 2));
+              persisted = true;
+            } catch (err) {
+              json(res, 500, { error: `Persist failed: ${(err as Error).message}` });
+              return;
+            }
+          }
+          json(res, 201, { id: wf.id, name: wf.name, persisted });
         } catch (err) {
           json(res, 400, { error: (err as Error).message });
         }
@@ -200,7 +218,20 @@ export function createA2AServer(options: A2AServerOptions = {}) {
           return;
         }
         unregisterWorkflow(id);
-        json(res, 200, { deleted: true, id });
+        let unpersisted = false;
+        if (url.searchParams.get('persist') === 'true' && persistPath) {
+          const file = persistFile(id);
+          if (existsSync(file)) {
+            try {
+              unlinkSync(file);
+              unpersisted = true;
+            } catch (err) {
+              json(res, 500, { error: `Unpersist failed: ${(err as Error).message}` });
+              return;
+            }
+          }
+        }
+        json(res, 200, { deleted: true, id, unpersisted });
         return;
       }
 

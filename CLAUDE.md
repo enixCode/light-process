@@ -87,9 +87,10 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - Protects POST routes and `/api/*` routes - requires `Authorization: Bearer <key>` header
 - GET routes like `/health` and `/.well-known/agent-card.json` are public
 - AgentCard advertises security schemes when auth is enabled
-- `POST /api/workflows` - add a workflow at runtime (JSON body with workflow definition)
-- `DELETE /api/workflows/:id` - remove a workflow at runtime
+- `POST /api/workflows` - add a workflow at runtime (JSON body). In-memory only by default. Add `?persist=true` to also write `<workflows-dir>/<id>.json` so it survives restarts
+- `DELETE /api/workflows/:id` - remove a workflow at runtime. Add `?persist=true` to also delete the file from disk
 - Adding/removing workflows calls `rebuildHandler()` to update the AgentCard and transport
+- The persist directory is set by `light serve [dir]` (defaults to `.`) and passed as `persistDir` to `createA2AServer`
 
 ## Docker isolation
 

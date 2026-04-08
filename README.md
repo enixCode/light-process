@@ -127,15 +127,25 @@ curl -H "Authorization: Bearer <your-api-key>" http://localhost:3000/api/workflo
 # Workflow detail (auth required)
 curl -H "Authorization: Bearer <your-api-key>" http://localhost:3000/api/workflows/my-workflow-id
 
-# Add a workflow dynamically (auth required)
+# Add a workflow dynamically (in-memory only)
 curl -X POST -H "Authorization: Bearer <your-api-key>" \
   -H "Content-Type: application/json" \
   -d '{"id":"my-wf","name":"My Workflow","nodes":[...],"links":[]}' \
   http://localhost:3000/api/workflows
 
-# Remove a workflow (auth required)
+# Add a workflow AND persist it to disk (survives restart)
+curl -X POST -H "Authorization: Bearer <your-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"my-wf","name":"My Workflow","nodes":[...],"links":[]}' \
+  "http://localhost:3000/api/workflows?persist=true"
+
+# Remove a workflow (in-memory only)
 curl -X DELETE -H "Authorization: Bearer <your-api-key>" \
   http://localhost:3000/api/workflows/my-wf
+
+# Remove a workflow AND delete its file from disk
+curl -X DELETE -H "Authorization: Bearer <your-api-key>" \
+  "http://localhost:3000/api/workflows/my-wf?persist=true"
 ```
 
 ### Init examples

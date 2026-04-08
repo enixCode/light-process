@@ -45,7 +45,7 @@ export const serve: Command = {
     }
     const runner = new DockerRunner({ verbose: hasFlag('--verbose') });
 
-    const app = createA2AServer({ port, runner, apiKey });
+    const app = createA2AServer({ port, runner, apiKey, persistDir: resolve(dir) });
 
     const workflows = loadWorkflowsFromDir(dir);
     for (const wf of workflows) {
