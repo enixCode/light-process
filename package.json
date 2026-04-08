@@ -48,7 +48,7 @@
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/enixcode/light-process.git"
+    "url": "git+https://github.com/enixCode/light-process.git"
   },
   "engines": {
     "node": ">=18.0.0"
