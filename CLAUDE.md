@@ -82,8 +82,8 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 
 ## API key authentication
 
-- `light serve` always enables API key auth (secure by default)
-- Auto-generates a random key on startup if `LP_API_KEY` env var is not set
+- `light serve` enables API key auth only when `LP_API_KEY` env var is set
+- If `LP_API_KEY` is unset, auth is disabled (all routes public)
 - Protects POST routes and `/api/*` routes - requires `Authorization: Bearer <key>` header
 - GET routes like `/health` and `/.well-known/agent-card.json` are public
 - AgentCard advertises security schemes when auth is enabled
@@ -109,6 +109,14 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - Commit messages: just the message + "build with cc"
 - Follow KISS, SOLID, YAGNI
 - Version: single source of truth in `package.json` - the server reads it at runtime
+
+## CI/CD
+
+- Published on npm as `light-process` (bins: `light`, `light-process`). Install: `npm i -g light-process`
+- `.github/workflows/ci.yml` - lint/build/test
+- `.github/workflows/release.yml` - on push to `main`/`dev` touching `package.json`, if version changed: lint + build + test + `npm publish` via OIDC trusted publishing + git tag + GitHub Release. npm dist-tag auto-detected from version suffix (`alpha`/`beta`/`rc`/`latest`)
+- `.github/workflows/deploy.yml` - on push to `main`, SSH deploy runs `light-process` on the server
+- No Docker image is published for light-process itself - it runs on the host and uses Docker only to execute node containers
 
 ## Documentation
 

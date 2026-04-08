@@ -106,7 +106,7 @@ light serve ./workflows --port 3000
 
 Opens a web dashboard at `http://localhost:3000/` and exposes the A2A API.
 
-**API key authentication** is always enabled (secure by default). On startup, the server auto-generates a random API key if the `LP_API_KEY` environment variable is not set. Set `LP_API_KEY` to use your own key:
+**API key authentication** is opt-in. Set `LP_API_KEY` to enable Bearer auth on POST and `/api/*` routes. If unset, auth is disabled and all routes are public:
 
 ```bash
 LP_API_KEY=my-secret-key light serve ./workflows --port 3000
@@ -376,10 +376,10 @@ const runner = new DockerRunner({
 Light Process implements the [A2A protocol](https://google.github.io/A2A/) for agent-to-agent communication.
 
 ```bash
-# Start the server (auto-generates API key, printed to console)
+# Start the server (no auth - public)
 light serve ./workflows --port 3000
 
-# Or set your own API key
+# Enable Bearer auth by setting LP_API_KEY
 LP_API_KEY=my-secret-key light serve ./workflows --port 3000
 
 # Discover the agent (no auth required)
