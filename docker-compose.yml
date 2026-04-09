@@ -5,6 +5,8 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    environment:
+      - COMMIT_SHA=${COMMIT_SHA:-unknown}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./workflows:/workflows

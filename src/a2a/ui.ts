@@ -288,6 +288,7 @@ footer .roadmap-items span{
     Light Process
   </div>
   <span class="version">__VERSION__</span>
+  <span class="version" id="commit-badge" style="display:none">__COMMIT__</span>
   <div class="header-right">
     <span class="status-indicator"><span class="status-dot"></span>Online</span>
   </div>

@@ -111,7 +111,10 @@ export function createA2AServer(options: A2AServerOptions = {}) {
       // UI routes
       if (method === 'GET' && pathname === '/') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(UI_HTML.replace('__VERSION__', 'v' + VERSION));
+        const commit = process.env.COMMIT_SHA || '';
+        let html = UI_HTML.replace('__VERSION__', 'v' + VERSION);
+        if (commit) html = html.replace('__COMMIT__', commit).replace('display:none', '');
+        res.end(html);
         return;
       }
 
@@ -292,7 +295,7 @@ export function createA2AServer(options: A2AServerOptions = {}) {
       }
 
       if (method === 'GET' && pathname === '/health') {
-        json(res, 200, { status: 'ok' });
+        json(res, 200, { status: 'ok', version: VERSION, commit: process.env.COMMIT_SHA || 'unknown' });
         return;
       }
 
