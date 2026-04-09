@@ -38,7 +38,7 @@ export const pull: Command = {
 Pull workflow(s) from a remote server into local folders.
 
 Options:
-  --path <dir>      Target directory (default: ./workflows/<id>)
+  --path <dir>      Target directory (default: ./<id>)
   --force           Overwrite existing target directory
   --remote <name>   Use a specific remote profile
   --all             Pull all workflows from the remote
@@ -61,7 +61,7 @@ Examples:
         process.exit(1);
       }
       const list = await listWorkflows(r.remote);
-      const base = customPath ?? './workflows';
+      const base = customPath ?? '.';
       for (const wf of list) {
         const target = pathResolve(join(base, wf.id));
         await pullOne(remoteName, wf.id, target, force);
@@ -74,7 +74,7 @@ Examples:
       console.error('Usage: light pull <id> [--path <dir>] [--force] [--remote <name>]');
       process.exit(1);
     }
-    const target = pathResolve(customPath ?? join('./workflows', id));
+    const target = pathResolve(customPath ?? id);
     await pullOne(remoteName, id, target, force);
   },
 };

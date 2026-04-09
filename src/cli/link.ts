@@ -121,11 +121,11 @@ Options:
   --max-iterations <n>    Max iterations for back-links
 
 Examples:
-  light link ./workflows/example
-  light link ./workflows/example --from nodeA --to nodeB
-  light link ./workflows/example --from a --to b --when '{"status": "ok"}'
-  light link ./workflows/example --list
-  light link ./workflows/example --remove a-b-1`);
+  light link example
+  light link example --from nodeA --to nodeB
+  light link example --from a --to b --when '{"status": "ok"}'
+  light link example --list
+  light link example --remove a-b-1`);
       return;
     }
 

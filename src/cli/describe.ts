@@ -45,8 +45,8 @@ Shows the DAG structure of a workflow: nodes, links, entry points, and schemas.
 Generates describe.html with Mermaid visualization (use --no-html to skip).
 
 Examples:
-  light describe ./workflows/example.json
-  light describe my-workflow --dir ./workflows
+  light describe example.json
+  light describe my-workflow
   light describe . --no-html`);
       return;
     }
@@ -57,7 +57,7 @@ Examples:
       process.exit(1);
     }
 
-    const dir = getFlagValue('--dir', './workflows');
+    const dir = getFlagValue('--dir', '.');
     const resolved = resolve(target);
 
     let workflow: Workflow;

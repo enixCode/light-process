@@ -4,7 +4,7 @@ import { loadWorkflowFromFolder } from '../CodeLoader.js';
 import { resolveWorkflowRemote } from '../config.js';
 import { createWorkflow, getWorkflow, updateWorkflow } from '../remoteClient.js';
 import type { Command } from './utils.js';
-import { confirm, getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
+import { confirm, getFlagValue, getPositional, wantsHelp } from './utils.js';
 
 async function pushOne(dir: string, remoteOverrideName: string | undefined): Promise<void> {
   const wf = loadWorkflowFromFolder(dir);
@@ -64,7 +64,7 @@ export const push: Command = {
   light push [<name>] [options]
 
 Push local workflow folder(s) to a remote server.
-With no arguments, pushes all workflows in ./workflows/.
+With no arguments, pushes all workflows in current directory.
 
 Options:
   --path <dir>      Workflow folder path (instead of name lookup)
@@ -87,7 +87,7 @@ Examples:
       return;
     }
     if (name) {
-      const dir = pathResolve(join('./workflows', name));
+      const dir = pathResolve(name);
       if (!existsSync(dir)) {
         console.error(`Not found: ${dir}`);
         process.exit(1);
@@ -96,10 +96,10 @@ Examples:
       return;
     }
 
-    // No arg: push all under ./workflows
-    const dirs = findWorkflowDirs(pathResolve('./workflows'));
+    // No arg: push all in current directory
+    const dirs = findWorkflowDirs(pathResolve('.'));
     if (dirs.length === 0) {
-      console.error('No workflows found in ./workflows');
+      console.error('No workflows found in current directory');
       process.exit(1);
     }
     for (const d of dirs) await pushOne(d, remoteName);

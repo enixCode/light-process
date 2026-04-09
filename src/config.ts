@@ -22,7 +22,7 @@ export interface LightConfig {
 
 const DEFAULT_CONFIG: LightConfig = {
   remotes: {},
-  defaults: { workflowsDir: './workflows', outputFormat: 'json' },
+  defaults: { workflowsDir: '.', outputFormat: 'json' },
 };
 
 export function getConfigPath(): string {

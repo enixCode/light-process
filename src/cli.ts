@@ -9,13 +9,14 @@ import { describe } from './cli/describe.js';
 import { doctor } from './cli/doctor.js';
 import { init } from './cli/init.js';
 import { link } from './cli/link.js';
+import { list } from './cli/list.js';
 import { pack } from './cli/pack.js';
 import { pull } from './cli/pull.js';
 import { push } from './cli/push.js';
-import { unpack } from './cli/unpack.js';
 import { remote } from './cli/remote.js';
 import { run } from './cli/run.js';
 import { serve } from './cli/serve.js';
+import { unpack } from './cli/unpack.js';
 import type { Command } from './cli/utils.js';
 
 const MIN_NODE_MAJOR = 18;
@@ -39,6 +40,7 @@ const commands: Record<string, Command> = {
   push,
   pack,
   unpack,
+  list,
   link,
   help: {
     desc: 'Show help',
@@ -64,7 +66,7 @@ Options:
   --help, -h      Show help for a command
 
 Examples:
-  light run ./workflows/example
+  light run example
   light run --node ./my-node
 `);
     },

@@ -1,37 +1,8 @@
-import { readdirSync, readFileSync, statSync } from 'fs';
-import { join, resolve } from 'path';
+import { resolve } from 'path';
 import { createA2AServer } from '../a2a/server.js';
-import { loadWorkflowFromFolder } from '../CodeLoader.js';
 import { DockerRunner } from '../runner/index.js';
-import { Workflow } from '../Workflow.js';
 import type { Command } from './utils.js';
-import { getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
-
-function loadWorkflowsFromDir(dir: string): Workflow[] {
-  const workflows: Workflow[] = [];
-  const absDir = resolve(dir);
-
-  for (const entry of readdirSync(absDir)) {
-    const fullPath = join(absDir, entry);
-    if (entry.endsWith('.json') && !entry.startsWith('.')) {
-      try {
-        const raw = JSON.parse(readFileSync(fullPath, 'utf-8'));
-        if (raw.nodes && raw.name) {
-          workflows.push(Workflow.fromJSON(raw));
-        }
-      } catch {
-        // Skip invalid files
-      }
-    }
-    if (statSync(fullPath).isDirectory()) {
-      const wf = loadWorkflowFromFolder(fullPath);
-      if (wf) {
-        workflows.push(wf);
-      }
-    }
-  }
-  return workflows;
-}
+import { getFlagValue, getPositional, hasFlag, loadWorkflowsFromDir, wantsHelp } from './utils.js';
 
 export const serve: Command = {
   desc: 'Start the A2A API server',
@@ -49,9 +20,9 @@ Environment:
   LP_API_KEY        Enable API key authentication
 
 Examples:
-  light serve ./workflows
-  light serve ./workflows --port 8080
-  LP_API_KEY=secret light serve ./workflows`);
+  light serve
+  light serve --port 8080
+  LP_API_KEY=secret light serve`);
       return;
     }
 

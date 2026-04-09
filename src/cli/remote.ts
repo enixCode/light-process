@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { getRemote, listRemotes, loadConfig, removeRemote, setDefaultRemote, setRemote } from '../config.js';
 import { deleteWorkflow, listWorkflows, ping, sendMessage, type WorkflowSummary } from '../remoteClient.js';
 import type { Command } from './utils.js';
@@ -159,7 +159,13 @@ Examples:
       const inputStr = getFlagValue('--input');
       const inputFile = getFlagValue('--input-file');
       if (inputStr) input = JSON.parse(inputStr);
-      else if (inputFile) input = JSON.parse(readFileSync(inputFile, 'utf-8'));
+      else if (inputFile) {
+        if (!existsSync(inputFile)) {
+          console.error(`Input file not found: ${inputFile}`);
+          process.exit(1);
+        }
+        input = JSON.parse(readFileSync(inputFile, 'utf-8'));
+      }
       const result = await sendMessage(r.remote, id, input);
       // Default: pretty-printed JSON. `--json` gives compact raw JSON.
       console.log(JSON.stringify(result, null, hasFlag('--json') ? 0 : 2));

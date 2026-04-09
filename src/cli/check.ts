@@ -65,7 +65,7 @@ function runChecks(resolved: string): CheckReport {
         checks.push({ name: 'workflow.json valid JSON', passed: false, message: (err as Error).message });
       }
     }
-  } else {
+  } else if (existsSync(resolved)) {
     try {
       const content = readFileSync(resolved, 'utf-8');
       const json = JSON.parse(content);
@@ -74,6 +74,8 @@ function runChecks(resolved: string): CheckReport {
     } catch (err: unknown) {
       checks.push({ name: 'Workflow loads', passed: false, message: (err as Error).message });
     }
+  } else {
+    checks.push({ name: 'Workflow exists', passed: false, message: `not found: ${resolved}` });
   }
 
   if (workflow) {
@@ -134,8 +136,8 @@ Options:
   --fix   Auto-fix issues (e.g., remove dead node references)
 
 Examples:
-  light check ./workflows/example
-  light check ./workflows/example --fix`);
+  light check example
+  light check example --fix`);
       return;
     }
 

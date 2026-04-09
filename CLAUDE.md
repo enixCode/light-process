@@ -45,8 +45,11 @@ src/
     doctor.ts         Environment health check
     config.ts         Read/write global config (~/.light/config.json)
     remote.ts         Manage remote profiles, ping, ls, run, delete
-    pull.ts           Pull a workflow from remote into ./workflows/<id>/
+    pull.ts           Pull a workflow from remote into ./<id>/
     push.ts           Push local workflow folder(s) to remote (POST or PUT)
+    pack.ts           Convert workflow folder to single JSON file
+    unpack.ts         Convert JSON file to workflow folder
+    list.ts           List workflows in a directory
     link.ts           Edit links/conditions in a workflow folder
     utils.ts          Arg parsing, workflow resolution
 
@@ -67,16 +70,26 @@ src/
 - **Entry nodes** = nodes with no incoming forward links (back-links excluded)
 - **Execution** = queue-based batches with `Promise.all()` for parallel nodes
 
-## Folder structure for workflows
+## Workflow formats
+
+Workflows exist in two formats - folder (for editing) and JSON (for transport/deploy):
 
 ```
-workflows/my-workflow/
-  workflow.json          # id, name, network, nodes[], links[]
+my-workflow/                     # folder format - the working copy
+  workflow.json                  # id, name, network, nodes[], links[]
   node-a/
-    .node.json           # id, name, image, entrypoint, setup, I/O schema
-    index.js             # code
-    lp.js                # helper
+    .node.json                   # id, name, image, entrypoint, setup, I/O schema
+    index.js                     # code
+    lp.js                        # helper
+
+my-workflow.json                 # JSON format - single portable file
 ```
+
+- `light pack <name>` converts folder to JSON (removes the folder)
+- `light unpack <name>` converts JSON to folder (removes the JSON)
+- `light list` shows all workflows in the current directory
+- Use `--keep` on pack/unpack to preserve the source
+- All commands search the current directory by default
 
 ## Conditions system (link.when)
 
@@ -126,8 +139,8 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - `light remote list|use|forget|ping`
 - `light remote ls`, `light remote run <id> --input '...'|--input-file f.json`
 - `light remote delete|rm <id> [--soft] [--yes]`
-- `light pull <id> [--path <dir>] [--force]` - default target `./workflows/<id>/`. `--force` wipes target first
-- `light push [<name>] [--path <dir>]` - no-arg pushes all in `./workflows/`. Auto POST/PUT (PUT prompts confirm unless `--yes`)
+- `light pull <id> [--path <dir>] [--force]` - default target `./<id>/`. `--force` wipes target first
+- `light push [<name>] [--path <dir>]` - no-arg pushes all in current directory. Auto POST/PUT (PUT prompts confirm unless `--yes`)
 - `light link <dir>` - interactive link editor (or `--from/--to/--when` inline, `--list`, `--remove <id>`)
 - Server: `GET /api/workflows/:id?full=true` returns the full workflow JSON for pull
 - Server: `PUT /api/workflows/:id?persist=true` atomic update used by push

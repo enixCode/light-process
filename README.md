@@ -37,7 +37,7 @@ npm install -g light-process
 light doctor                    # check Node + Docker
 light init my-project           # scaffold a project
 cd my-project
-light run ./workflows/example   # run the example workflow
+light run example               # run the example workflow
 ```
 
 Output:
@@ -74,13 +74,18 @@ Running: Example (from folder)
 | `light init [dir]` | Scaffold a new project or node |
 | `light check <target>` | Validate workflow structure |
 | `light describe <target>` | Visualize the DAG |
+| `light list` | List workflows in a directory |
+| `light pack <target>` | Convert workflow folder to JSON |
+| `light unpack <target>` | Convert JSON to workflow folder |
 | `light doctor` | Check environment |
+
+All commands search the current directory by default.
 
 ### Run examples
 
 ```bash
 # Run a workflow from folder
-light run ./workflows/my-workflow
+light run my-workflow
 
 # Run with input data
 light run my-workflow --input '{"name": "Alice", "count": 5}'
@@ -101,7 +106,7 @@ light run my-workflow --timeout 30000
 ### Serve (API + Dashboard)
 
 ```bash
-light serve ./workflows --port 3000
+light serve --port 3000
 ```
 
 Opens a web dashboard at `http://localhost:3000/` and exposes the A2A API.
@@ -109,7 +114,7 @@ Opens a web dashboard at `http://localhost:3000/` and exposes the A2A API.
 **API key authentication** is opt-in. Set `LP_API_KEY` to enable Bearer auth on POST and `/api/*` routes. If unset, auth is disabled and all routes are public:
 
 ```bash
-LP_API_KEY=my-secret-key light serve ./workflows --port 3000
+LP_API_KEY=my-secret-key light serve --port 3000
 ```
 
 Protected routes (POST and `/api/*`) require a Bearer token in the Authorization header:
@@ -161,25 +166,48 @@ light init --node ./my-node
 light init --node ./my-node --lang python
 ```
 
+## Workflow Formats
+
+Workflows exist in two formats:
+
+- **Folder** (for editing) - a directory with `workflow.json` + one subfolder per node. This is what you edit, git, and push to a server
+- **JSON** (for transport) - a single portable file with everything embedded. Used by the API and for sharing
+
+Convert between them with `pack` and `unpack`:
+
+```bash
+# Folder -> JSON (removes the folder)
+light pack example
+
+# JSON -> Folder (removes the JSON)
+light unpack example
+
+# Keep the source after converting
+light pack example --keep
+
+# List all workflows
+light list
+light list --json
+```
+
 ## Project Structure
 
 ```
 my-project/
-  workflows/
-    order-pipeline/
-      workflow.json             # DAG definition
-      validate/
-        .node.json              # node config
-        index.js                # your code
-        lp.js                   # helper (auto-generated)
-      process/
-        .node.json
-        main.py
-        lp.py
-      notify/
-        .node.json
-        index.js
-        lp.js
+  order-pipeline/
+    workflow.json             # DAG definition
+    validate/
+      .node.json              # node config
+      index.js                # your code
+      lp.js                   # helper (auto-generated)
+    process/
+      .node.json
+      main.py
+      lp.py
+    notify/
+      .node.json
+      index.js
+      lp.js
   main.js                       # SDK entry point (optional)
 ```
 
@@ -328,7 +356,7 @@ wf.addLink({
 ```javascript
 import { loadWorkflowFromFolder, DockerRunner } from 'light-process';
 
-const wf = loadWorkflowFromFolder('./workflows/my-workflow');
+const wf = loadWorkflowFromFolder('./my-workflow');
 const result = await wf.execute({ key: 'value' }, { runner: new DockerRunner() });
 ```
 
@@ -387,10 +415,10 @@ Light Process implements the [A2A protocol](https://google.github.io/A2A/) for a
 
 ```bash
 # Start the server (no auth - public)
-light serve ./workflows --port 3000
+light serve --port 3000
 
 # Enable Bearer auth by setting LP_API_KEY
-LP_API_KEY=my-secret-key light serve ./workflows --port 3000
+LP_API_KEY=my-secret-key light serve --port 3000
 
 # Discover the agent (no auth required)
 curl http://localhost:3000/.well-known/agent-card.json

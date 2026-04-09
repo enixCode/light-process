@@ -31,10 +31,8 @@ Examples:
       return;
     }
     const dir = resolve(getPositional(0) || '.');
-    const workflowsDir = join(dir, 'workflows');
 
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    if (!existsSync(workflowsDir)) mkdirSync(workflowsDir);
 
     const pkgPath = join(dir, 'package.json');
     if (!existsSync(pkgPath)) {
@@ -46,8 +44,8 @@ Examples:
             version: '1.0.0',
             type: 'module',
             scripts: {
-              start: 'light run ./workflows/example',
-              check: 'light check ./workflows/example',
+              start: 'light run example',
+              check: 'light check example',
             },
             dependencies: {
               'light-process': '^0.1.0',
@@ -60,7 +58,7 @@ Examples:
       console.log('+ package.json');
     }
 
-    const exampleDir = join(workflowsDir, 'example');
+    const exampleDir = join(dir, 'example');
     if (!existsSync(exampleDir)) {
       mkdirSync(exampleDir, { recursive: true });
 
@@ -81,7 +79,7 @@ Examples:
           2,
         ),
       );
-      console.log('+ workflows/example/workflow.json');
+      console.log('+ example/workflow.json');
 
       const config = langConfigs.javascript;
       writeFileSync(
@@ -102,14 +100,14 @@ Examples:
           2,
         ),
       );
-      console.log('+ workflows/example/hello/.node.json');
+      console.log('+ example/hello/.node.json');
 
       writeFileSync(join(nodeDir, config.mainFile), config.mainCode);
-      console.log(`+ workflows/example/hello/${config.mainFile}`);
+      console.log(`+ example/hello/${config.mainFile}`);
 
       const helper = getHelper('javascript');
       writeFileSync(join(nodeDir, helper.filename), helper.content);
-      console.log(`+ workflows/example/hello/${helper.filename}`);
+      console.log(`+ example/hello/${helper.filename}`);
     }
 
     const mainPath = join(dir, 'main.js');
@@ -118,7 +116,7 @@ Examples:
         mainPath,
         `import { DockerRunner, loadWorkflowFromFolder } from 'light-process';
 
-const wf = loadWorkflowFromFolder('./workflows/example');
+const wf = loadWorkflowFromFolder('./example');
 if (!wf) {
   console.error('Failed to load workflow. Run "light init" first.');
   process.exit(1);
@@ -135,8 +133,8 @@ console.log(JSON.stringify(result.results, null, 2));
     console.log(`\nProject initialized in ${dir}`);
     console.log('\nNext steps:');
     console.log('  npm install');
-    console.log('  light run ./workflows/example          # run from folders');
-    console.log('  light describe ./workflows/example     # visualize the DAG');
+    console.log('  light run example          # run the example workflow');
+    console.log('  light describe example     # visualize the DAG');
     console.log('  node main.js                           # run with custom SDK logic');
   },
 };

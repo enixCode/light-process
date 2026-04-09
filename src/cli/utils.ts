@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join, resolve } from 'path';
-import { slugify } from '../CodeLoader.js';
+import { loadWorkflowFromFolder, slugify } from '../CodeLoader.js';
 import { Workflow } from '../Workflow.js';
 
 export interface Command {
@@ -118,19 +118,34 @@ export function resolveWorkflow(target: string, dir: string): Workflow {
 }
 
 export function loadWorkflowsFromDir(dir: string, silent = false): Workflow[] {
+  if (!existsSync(dir)) return [];
+
   const workflows: Workflow[] = [];
-  const files = readdirSync(dir);
+  const seen = new Set<string>();
 
-  for (const file of files) {
-    const filePath = join(dir, file);
-    const stat = statSync(filePath);
+  for (const entry of readdirSync(dir)) {
+    const fullPath = join(dir, entry);
+    const stat = statSync(fullPath);
 
-    if (stat.isFile() && file.endsWith('.json')) {
+    if (stat.isDirectory()) {
+      const wf = loadWorkflowFromFolder(fullPath);
+      if (wf && !seen.has(wf.id)) {
+        seen.add(wf.id);
+        workflows.push(wf);
+        if (!silent) console.log(`  + ${entry}/ (folder)`);
+      }
+    } else if (stat.isFile() && entry.endsWith('.json') && !entry.startsWith('.')) {
       try {
-        workflows.push(loadWorkflow(filePath));
-        if (!silent) console.log(`  + ${file}`);
-      } catch (err: unknown) {
-        console.error(`  x ${file}: ${(err as Error).message}`);
+        const raw = JSON.parse(readFileSync(fullPath, 'utf-8'));
+        if (!raw.nodes || !raw.name) continue;
+        const wf = Workflow.fromJSON(raw);
+        if (!seen.has(wf.id)) {
+          seen.add(wf.id);
+          workflows.push(wf);
+          if (!silent) console.log(`  + ${entry}`);
+        }
+      } catch {
+        if (!silent) console.error(`  x ${entry}: invalid workflow`);
       }
     }
   }

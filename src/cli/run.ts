@@ -23,7 +23,7 @@ export const run: Command = {
 Options:
   --input <file|json>   Input data (JSON file path or inline JSON string)
   --input-file <file>   Input data from a JSON file
-  --dir <dir>           Workflow search directory (default: ./workflows)
+  --dir <dir>           Workflow search directory (default: .)
   --json                Output result as JSON
   --json-source         Prefer .json file over folder when both exist
   --timeout <ms>        Global timeout in ms (default: 0 = unlimited)
@@ -31,7 +31,7 @@ Options:
                         If input.json exists, it is used as default input
 
 Examples:
-  light run ./workflows/my-workflow.json
+  light run my-workflow.json
   light run my-workflow --input '{"key": "value"}'
   light run my-workflow --input data.json --json
   light run --node ./my-node`);
@@ -66,7 +66,7 @@ Examples:
       source = 'node';
     } else {
       const forceJson = hasFlag('--json-source');
-      const dir = getFlagValue('--dir', './workflows');
+      const dir = getFlagValue('--dir', '.');
       const resolved = resolve(target!);
 
       const folderPath = resolved.endsWith('.json') ? resolved.slice(0, -5) : resolved;

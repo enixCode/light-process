@@ -334,7 +334,7 @@ async function loadList(){
   workflows=await api('/api/workflows');
   const el=$('#workflow-list');
   if(!workflows.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><p>No workflows loaded.<br>Run <code>light serve ./workflows</code> to get started.</p></div>';
+    el.innerHTML='<div class="empty-state"><div class="empty-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><p>No workflows loaded.<br>Run <code>light serve</code> to get started.</p></div>';
     return;
   }
   el.innerHTML=workflows.map(wf=>

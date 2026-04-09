@@ -632,13 +632,12 @@ Checking environment...
   <pre><code>my-project/
   package.json
   main.js                           <span class="hl-cm"># SDK usage example</span>
-  workflows/
-    example/
-      workflow.json                  <span class="hl-cm"># DAG definition</span>
-      hello/
-        .node.json                   <span class="hl-cm"># node config</span>
-        index.js                     <span class="hl-cm"># code</span>
-        lp.js                        <span class="hl-cm"># helper</span></code></pre>
+  example/
+    workflow.json                    <span class="hl-cm"># DAG definition</span>
+    hello/
+      .node.json                     <span class="hl-cm"># node config</span>
+      index.js                       <span class="hl-cm"># code</span>
+      lp.js                          <span class="hl-cm"># helper</span></code></pre>
 </div>
 
 <h3>Run the example</h3>
@@ -647,7 +646,7 @@ Checking environment...
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light run ./workflows/example
+  <pre><code><span class="hl-prompt">$ </span>light run example
 
 Running: Example (from folder)
 &gt; Hello
@@ -665,7 +664,7 @@ Running: Example (from folder)
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light run ./workflows/example <span class="hl-flag">--input</span> <span class="hl-str">'{"name": "Alice"}'</span>
+  <pre><code><span class="hl-prompt">$ </span>light run example <span class="hl-flag">--input</span> <span class="hl-str">'{"name": "Alice"}'</span>
 
 <span class="hl-arrow">-&gt;</span> {<span class="hl-str">"hello"</span>:<span class="hl-str">"world"</span>,<span class="hl-str">"input"</span>:{<span class="hl-str">"name"</span>:<span class="hl-str">"Alice"</span>}}</code></pre>
 </div>
@@ -676,7 +675,7 @@ Running: Example (from folder)
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light check ./workflows/example
+  <pre><code><span class="hl-prompt">$ </span>light check example
 
 Checking: Example (from folder)
 
@@ -696,7 +695,7 @@ Checking: Example (from folder)
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light describe ./workflows/example</code></pre>
+  <pre><code><span class="hl-prompt">$ </span>light describe example</code></pre>
 </div>
 <p>Outputs a text tree and generates <code>describe.html</code> with an interactive Mermaid diagram.</p>
 
@@ -706,7 +705,7 @@ Checking: Example (from folder)
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">3000</span></code></pre>
+  <pre><code><span class="hl-prompt">$ </span>light serve <span class="hl-flag">--port</span> <span class="hl-num">3000</span></code></pre>
 </div>
 <p>Open <code>http://localhost:3000</code> to see the web dashboard with your workflow DAG.</p>
 
@@ -716,7 +715,7 @@ Checking: Example (from folder)
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span><span class="hl-kw">cd</span> workflows/example
+  <pre><code><span class="hl-prompt">$ </span><span class="hl-kw">cd</span> example
 <span class="hl-prompt">$ </span>light init <span class="hl-flag">--node</span> ./transform</code></pre>
 </div>
 <p>This creates a <code>transform/</code> folder with <code>.node.json</code>, <code>index.js</code>, <code>lp.js</code>, and auto-registers it in <code>workflow.json</code>.</p>
@@ -828,7 +827,7 @@ Checking: Example (from folder)
     <tr><td><code>--input &lt;file|json&gt;</code></td><td>Input data (JSON file or inline)</td><td><code>{}</code></td></tr>
     <tr><td><code>--json</code></td><td>Output full result as JSON</td><td>off</td></tr>
     <tr><td><code>--timeout &lt;ms&gt;</code></td><td>Global timeout</td><td>0 (none)</td></tr>
-    <tr><td><code>--dir &lt;dir&gt;</code></td><td>Workflow search directory</td><td><code>./workflows</code></td></tr>
+    <tr><td><code>--dir &lt;dir&gt;</code></td><td>Workflow search directory</td><td><code>.</code></td></tr>
     <tr><td><code>--json-source</code></td><td>Prefer .json over folder</td><td>off</td></tr>
     <tr><td><code>--node</code></td><td>Run current dir as single node</td><td>off</td></tr>
     <tr><td><code>--verbose</code></td><td>Verbose output</td><td>off</td></tr>
@@ -843,7 +842,7 @@ Checking: Example (from folder)
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
   <pre><code><span class="hl-cm"># Run from folder</span>
-<span class="hl-prompt">$ </span>light run ./workflows/my-workflow
+<span class="hl-prompt">$ </span>light run my-workflow
 
 <span class="hl-cm"># Run with inline JSON input</span>
 <span class="hl-prompt">$ </span>light run my-workflow <span class="hl-flag">--input</span> <span class="hl-str">'{"key": "value"}'</span>
@@ -906,16 +905,16 @@ Checking: Example (from folder)
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
   <pre><code><span class="hl-cm"># Serve all workflows in a directory</span>
-<span class="hl-prompt">$ </span>light serve ./workflows
+<span class="hl-prompt">$ </span>light serve
 
 <span class="hl-cm"># Custom port</span>
-<span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">8080</span>
+<span class="hl-prompt">$ </span>light serve <span class="hl-flag">--port</span> <span class="hl-num">8080</span>
 
 <span class="hl-cm"># Verbose Docker logging</span>
-<span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--verbose</span>
+<span class="hl-prompt">$ </span>light serve <span class="hl-flag">--verbose</span>
 
 <span class="hl-cm"># Set a custom API key</span>
-<span class="hl-prompt">$ </span>LP_API_KEY=my-secret-key light serve ./workflows</code></pre>
+<span class="hl-prompt">$ </span>LP_API_KEY=my-secret-key light serve</code></pre>
 </div>
 
 <h4>Authentication</h4>
@@ -960,7 +959,7 @@ Checking: Example (from folder)
 <p><strong>Project init creates:</strong></p>
 <ul>
   <li><code>package.json</code> with start/check scripts</li>
-  <li><code>workflows/example/</code> with a hello node</li>
+  <li><code>example/</code> with a hello node</li>
   <li><code>main.js</code> with SDK example</li>
 </ul>
 
@@ -1090,7 +1089,7 @@ Checking: Example (from folder)
 <table>
   <thead><tr><th>Flag</th><th>Description</th></tr></thead>
   <tbody>
-    <tr><td><code>--path &lt;dir&gt;</code></td><td>Target directory (default: <code>./workflows/&lt;id&gt;</code>)</td></tr>
+    <tr><td><code>--path &lt;dir&gt;</code></td><td>Target directory (default: <code>./&lt;id&gt;</code>)</td></tr>
     <tr><td><code>--force</code></td><td>Overwrite existing target</td></tr>
     <tr><td><code>--remote &lt;name&gt;</code></td><td>Use a specific remote profile</td></tr>
     <tr><td><code>--all</code></td><td>Pull all workflows from the remote</td></tr>
@@ -1099,7 +1098,7 @@ Checking: Example (from folder)
 </div>
 
 <h3>light push</h3>
-<p>Push local workflow folder(s) to a remote server. With no arguments, pushes all workflows in <code>./workflows/</code>.</p>
+<p>Push local workflow folder(s) to a remote server. With no arguments, pushes all workflows in the current directory.</p>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">bash</span>
@@ -1140,6 +1139,65 @@ Checking: Example (from folder)
     <tr><td><code>--max-iterations &lt;n&gt;</code></td><td>Max iterations for back-links</td></tr>
     <tr><td><code>--list</code></td><td>List existing links</td></tr>
     <tr><td><code>--remove &lt;id&gt;</code></td><td>Remove a link by ID</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>light list</h3>
+<p>List all workflows in a directory. Discovers both folder-based workflows and JSON files.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light list [<span class="hl-flag">--dir</span> &lt;path&gt;] [<span class="hl-flag">--json</span>]</code></pre>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>--dir &lt;path&gt;</code></td><td>Directory to scan (default: <code>.</code>)</td></tr>
+    <tr><td><code>--json</code></td><td>Output as JSON</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>light pack</h3>
+<p>Convert a workflow folder into a single JSON file. The source folder is removed after packing.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light pack [&lt;folder&gt;] [<span class="hl-flag">--to</span> &lt;file&gt;] [<span class="hl-flag">--force</span>] [<span class="hl-flag">--keep</span>]</code></pre>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>--to &lt;file&gt;</code></td><td>Output file path (default: <code>&lt;id&gt;.json</code>)</td></tr>
+    <tr><td><code>--force</code></td><td>Overwrite existing file</td></tr>
+    <tr><td><code>--keep</code></td><td>Keep the source folder after packing</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>light unpack</h3>
+<p>Convert a JSON file into a workflow folder. The source JSON is removed after unpacking.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light unpack &lt;file&gt; [<span class="hl-flag">--to</span> &lt;dir&gt;] [<span class="hl-flag">--force</span>] [<span class="hl-flag">--keep</span>]</code></pre>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>--to &lt;dir&gt;</code></td><td>Target directory (default: <code>./&lt;id&gt;</code>)</td></tr>
+    <tr><td><code>--force</code></td><td>Overwrite existing directory</td></tr>
+    <tr><td><code>--keep</code></td><td>Keep the source JSON after unpacking</td></tr>
   </tbody>
 </table>
 </div>
@@ -1276,7 +1334,7 @@ node.<span class="hl-fn">addFolder</span>(<span class="hl-str">'./my-node'</span
   </div>
   <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">loadWorkflowFromFolder</span>, <span class="hl-fn">DockerRunner</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
 
-<span class="hl-kw">const</span> wf = <span class="hl-fn">loadWorkflowFromFolder</span>(<span class="hl-str">'./workflows/my-workflow'</span>);
+<span class="hl-kw">const</span> wf = <span class="hl-fn">loadWorkflowFromFolder</span>(<span class="hl-str">'./my-workflow'</span>);
 <span class="hl-kw">if</span> (!wf) {
   console.<span class="hl-fn">error</span>(<span class="hl-str">'Invalid workflow folder'</span>);
   process.<span class="hl-fn">exit</span>(<span class="hl-num">1</span>);
@@ -1418,21 +1476,35 @@ node.<span class="hl-fn">addHelper</span>();             <span class="hl-cm">// 
 <h2>Workflows</h2>
 <p>A workflow is a directed acyclic graph (DAG) of nodes connected by links. Each node runs code in a Docker container.</p>
 
+<h3>Two formats</h3>
+<p>Workflows exist in two formats:</p>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Format</th><th>What</th><th>Use for</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Folder</strong></td><td>Directory with <code>workflow.json</code> + node subfolders</td><td>Editing, git, push to server</td></tr>
+    <tr><td><strong>JSON</strong></td><td>Single <code>.json</code> file with everything embedded</td><td>Transport, sharing, API</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Use <code>light pack</code> to convert folder to JSON, <code>light unpack</code> for the reverse. Both remove the source by default (use <code>--keep</code> to preserve it). Use <code>light list</code> to see all workflows in a directory.</p>
+
 <h3>Folder structure</h3>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">structure</span>
   </div>
-  <pre><code>my-workflow/
-  workflow.json          <span class="hl-cm"># DAG definition</span>
+  <pre><code>my-workflow/                     <span class="hl-cm"># folder format (working copy)</span>
+  workflow.json                  <span class="hl-cm"># DAG definition</span>
   node-a/
-    .node.json           <span class="hl-cm"># node config</span>
-    index.js             <span class="hl-cm"># code</span>
-    lp.js                <span class="hl-cm"># helper</span>
+    .node.json                   <span class="hl-cm"># node config</span>
+    index.js                     <span class="hl-cm"># code</span>
+    lp.js                        <span class="hl-cm"># helper</span>
   node-b/
     .node.json
     main.py
-    lp.py</code></pre>
+    lp.py
+my-workflow.json                 <span class="hl-cm"># JSON format (portable)</span></code></pre>
 </div>
 
 <h3>workflow.json</h3>
@@ -1939,10 +2011,10 @@ node.<span class="hl-fn">addHelper</span>();             <span class="hl-cm">// 
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
   <pre><code><span class="hl-cm"># Start the server (no auth - public)</span>
-<span class="hl-prompt">$ </span>light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">3000</span>
+<span class="hl-prompt">$ </span>light serve <span class="hl-flag">--port</span> <span class="hl-num">3000</span>
 
 <span class="hl-cm"># Enable Bearer auth by setting LP_API_KEY</span>
-<span class="hl-prompt">$ </span>LP_API_KEY=my-secret-key light serve ./workflows <span class="hl-flag">--port</span> <span class="hl-num">3000</span></code></pre>
+<span class="hl-prompt">$ </span>LP_API_KEY=my-secret-key light serve <span class="hl-flag">--port</span> <span class="hl-num">3000</span></code></pre>
 </div>
 <p>This starts:</p>
 <ul>
