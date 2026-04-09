@@ -9,8 +9,10 @@ import { describe } from './cli/describe.js';
 import { doctor } from './cli/doctor.js';
 import { init } from './cli/init.js';
 import { link } from './cli/link.js';
+import { pack } from './cli/pack.js';
 import { pull } from './cli/pull.js';
 import { push } from './cli/push.js';
+import { unpack } from './cli/unpack.js';
 import { remote } from './cli/remote.js';
 import { run } from './cli/run.js';
 import { serve } from './cli/serve.js';
@@ -35,6 +37,8 @@ const commands: Record<string, Command> = {
   remote,
   pull,
   push,
+  pack,
+  unpack,
   link,
   help: {
     desc: 'Show help',
