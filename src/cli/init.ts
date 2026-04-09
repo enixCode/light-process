@@ -3,12 +3,29 @@ import { basename, join, resolve } from 'path';
 import { DEFAULT_IMAGES } from '../defaults.js';
 import type { CodeLanguage } from '../helpers.js';
 import { getAllHelpers, getHelper } from '../helpers.js';
-import { type Command, getFlagValue, getPositional, hasFlag } from './utils.js';
+import { type Command, getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
 export const init: Command = {
   desc: 'Initialize a new project or node folder',
   usage: 'light init [dir] [--node [--lang js|python]]',
   run() {
+    if (wantsHelp()) {
+      console.log(`Usage:
+  light init [dir]                     Initialize a new project
+  light init [dir] --node [--lang]     Initialize a single node
+
+Options:
+  --node              Create a single node instead of a full project
+  --lang <js|python>  Language for node template (default: js)
+  --verbose           Show created files
+
+Examples:
+  light init my-project
+  light init --node ./my-node
+  light init --node ./analyze --lang python`);
+      return;
+    }
+
     if (hasFlag('--node')) {
       initNode(resolve(getPositional(0) || '.'));
       return;

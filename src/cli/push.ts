@@ -4,20 +4,7 @@ import { loadWorkflowFromFolder } from '../CodeLoader.js';
 import { resolveWorkflowRemote } from '../config.js';
 import { createWorkflow, getWorkflow, updateWorkflow } from '../remoteClient.js';
 import type { Command } from './utils.js';
-import { getFlagValue, getPositional, hasFlag } from './utils.js';
-
-async function confirm(msg: string): Promise<boolean> {
-  if (hasFlag('--yes') || hasFlag('-y')) return true;
-  process.stdout.write(`${msg} (y/N) `);
-  return new Promise((resolve) => {
-    process.stdin.setEncoding('utf-8');
-    process.stdin.once('data', (data) => {
-      const ans = String(data).trim().toLowerCase();
-      resolve(ans === 'y' || ans === 'yes');
-      process.stdin.pause();
-    });
-  });
-}
+import { confirm, getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
 async function pushOne(dir: string, remoteOverrideName: string | undefined): Promise<void> {
   const wf = loadWorkflowFromFolder(dir);
@@ -72,6 +59,25 @@ export const push: Command = {
   desc: 'Push a local workflow folder to a remote server',
   usage: 'light push [<name>] [--path <dir>] [--remote <name>] [--yes]',
   async run() {
+    if (wantsHelp()) {
+      console.log(`Usage:
+  light push [<name>] [options]
+
+Push local workflow folder(s) to a remote server.
+With no arguments, pushes all workflows in ./workflows/.
+
+Options:
+  --path <dir>      Workflow folder path (instead of name lookup)
+  --remote <name>   Use a specific remote profile
+  --yes, -y         Skip confirmation prompts
+
+Examples:
+  light push my-workflow
+  light push --path ./custom-dir
+  light push --yes`);
+      return;
+    }
+
     const remoteName = getFlagValue('--remote');
     const customPath = getFlagValue('--path') ?? getFlagValue('--dir');
     const name = getPositional(0);

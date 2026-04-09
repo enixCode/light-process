@@ -57,8 +57,7 @@ ${Object.entries(commands)
 
 Options:
   --version, -v   Show version
-  --verbose       Verbose output
-  --json          JSON output
+  --help, -h      Show help for a command
 
 Examples:
   light run ./workflows/example

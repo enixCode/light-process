@@ -16,12 +16,9 @@ const VALUE_FLAGS = new Set([
   '--input-file',
   '--dir',
   '--path',
-  '--output',
   '--port',
   '--temp-dir',
   '--lang',
-  '--status',
-  '--limit',
   '--timeout',
   '--when',
   '--data',
@@ -49,6 +46,23 @@ export function getPositional(n: number): string | undefined {
 
 export function hasFlag(flag: string): boolean {
   return args.includes(flag);
+}
+
+export function wantsHelp(): boolean {
+  return hasFlag('--help') || hasFlag('-h');
+}
+
+export async function confirm(msg: string): Promise<boolean> {
+  if (hasFlag('--yes') || hasFlag('-y')) return true;
+  process.stdout.write(`${msg} (y/N) `);
+  return new Promise((resolve) => {
+    process.stdin.setEncoding('utf-8');
+    process.stdin.once('data', (data) => {
+      const ans = String(data).trim().toLowerCase();
+      resolve(ans === 'y' || ans === 'yes');
+      process.stdin.pause();
+    });
+  });
 }
 
 export function getFlagValue(flag: string): string | undefined;

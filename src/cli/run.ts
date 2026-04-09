@@ -5,7 +5,7 @@ import { DEFAULT_IGNORE } from '../defaults.js';
 import { Node } from '../models/index.js';
 import { DockerRunner } from '../runner/index.js';
 import { Workflow } from '../Workflow.js';
-import { type Command, getFlagValue, getPositional, hasFlag, resolveWorkflow } from './utils.js';
+import { type Command, getFlagValue, getPositional, hasFlag, resolveWorkflow, wantsHelp } from './utils.js';
 
 export const run: Command = {
   desc: 'Run a workflow or single node',
@@ -14,14 +14,15 @@ export const run: Command = {
     const target = getPositional(0);
     const isNode = hasFlag('--node');
 
-    const wantsHelp = hasFlag('--help') || hasFlag('-h') || target === '--help' || target === '-h';
-    if (wantsHelp || (!target && !isNode)) {
+    const showHelp = wantsHelp() || target === '--help' || target === '-h';
+    if (showHelp || (!target && !isNode)) {
       console.log(`Usage:
   light run <file|dir|id|name> [options]
   light run --node [dir] [options]
 
 Options:
   --input <file|json>   Input data (JSON file path or inline JSON string)
+  --input-file <file>   Input data from a JSON file
   --dir <dir>           Workflow search directory (default: ./workflows)
   --json                Output result as JSON
   --json-source         Prefer .json file over folder when both exist
@@ -34,11 +35,16 @@ Examples:
   light run my-workflow --input '{"key": "value"}'
   light run my-workflow --input data.json --json
   light run --node ./my-node`);
-      process.exit(wantsHelp ? 0 : 1);
+      process.exit(showHelp ? 0 : 1);
     }
 
     const jsonOutput = hasFlag('--json');
     const inputFlag = getFlagValue('--input');
+    const inputFileFlag = getFlagValue('--input-file');
+    if (inputFlag && inputFileFlag) {
+      console.error('Cannot use both --input and --input-file');
+      process.exit(1);
+    }
     const timeoutFlag = getFlagValue('--timeout');
     const timeout = timeoutFlag ? parseInt(timeoutFlag, 10) : 0;
 
@@ -91,10 +97,11 @@ Examples:
 
     let inputData: Record<string, unknown> = {};
     const nodeInputJson = isNode ? resolve(target || '.', 'input.json') : null;
-    const inputSource = inputFlag || (nodeInputJson && existsSync(nodeInputJson) ? nodeInputJson : null);
+    const inputSource =
+      inputFlag || inputFileFlag || (nodeInputJson && existsSync(nodeInputJson) ? nodeInputJson : null);
     if (inputSource) {
       try {
-        if (inputSource.startsWith('{')) {
+        if (!inputFileFlag && inputSource.startsWith('{')) {
           inputData = JSON.parse(inputSource);
         } else {
           inputData = JSON.parse(readFileSync(inputSource, 'utf-8'));

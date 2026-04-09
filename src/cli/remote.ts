@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { getRemote, listRemotes, loadConfig, removeRemote, setDefaultRemote, setRemote } from '../config.js';
 import { deleteWorkflow, listWorkflows, ping, sendMessage, type WorkflowSummary } from '../remoteClient.js';
 import type { Command } from './utils.js';
-import { getFlagValue, getPositional, hasFlag } from './utils.js';
+import { confirm, getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
 function resolveRemoteOrFail(nameOverride?: string) {
   const r = getRemote(nameOverride);
@@ -11,19 +11,6 @@ function resolveRemoteOrFail(nameOverride?: string) {
     process.exit(1);
   }
   return r;
-}
-
-async function confirm(msg: string): Promise<boolean> {
-  if (hasFlag('--yes') || hasFlag('-y')) return true;
-  process.stdout.write(`${msg} (y/N) `);
-  return new Promise((resolve) => {
-    process.stdin.setEncoding('utf-8');
-    process.stdin.once('data', (data) => {
-      const ans = String(data).trim().toLowerCase();
-      resolve(ans === 'y' || ans === 'yes');
-      process.stdin.pause();
-    });
-  });
 }
 
 function printRemotes(): void {
@@ -62,8 +49,37 @@ function printWorkflows(list: WorkflowSummary[]): void {
 
 export const remote: Command = {
   desc: 'Manage remote light-process servers',
-  usage: 'light remote <bind|use|forget|ping|ls|run|delete> [...]',
+  usage: 'light remote <bind|use|forget|ping|ls|run|delete|rm> [...]',
   async run() {
+    if (wantsHelp()) {
+      console.log(`Usage:
+  light remote                              List remote profiles
+  light remote bind <url> [options]         Register a remote
+  light remote use <name>                   Set default remote
+  light remote forget <name>                Remove a remote
+  light remote ping                         Ping the current remote
+  light remote ls                           List workflows on remote
+  light remote run <id> [options]           Run a workflow on remote
+  light remote delete|rm <id> [options]     Delete a workflow from remote
+
+Options:
+  --key <key>         API key for bind
+  --name <name>       Remote name for bind (default: "default")
+  --remote <name>     Override which remote to use
+  --input <json>      Inline JSON input for run
+  --input-file <path> Input file for run
+  --json              JSON output for ls/run
+  --soft              Soft delete (remote delete)
+  --yes, -y           Skip confirmation prompts
+
+Examples:
+  light remote bind https://my-server.com --key abc123
+  light remote ls
+  light remote run my-workflow --input '{"key": "value"}'
+  light remote delete old-workflow --yes`);
+      return;
+    }
+
     const action = getPositional(0);
     const nameFlag = getFlagValue('--name');
     const remoteOverride = getFlagValue('--remote');

@@ -1,10 +1,19 @@
 import { spawnSync } from 'child_process';
 import type { Command } from './utils.js';
+import { wantsHelp } from './utils.js';
 
 export const doctor: Command = {
   desc: 'Check environment and dependencies',
   usage: 'light doctor',
   run() {
+    if (wantsHelp()) {
+      console.log(`Usage:
+  light doctor
+
+Checks environment and dependencies (Node.js, Docker, GPU support).`);
+      return;
+    }
+
     console.log('Checking environment...\n');
 
     const checks = [

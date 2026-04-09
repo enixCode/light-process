@@ -1031,15 +1031,126 @@ Checking: Example (from folder)
 </div>
 <p><strong>Checks:</strong> Node.js version (>= 18), Docker installation, Docker daemon status, gVisor (runsc) availability, GPU support (nvidia-smi), Docker GPU plugin.</p>
 
+<h3>light config</h3>
+<p>Manage global configuration stored at <code>~/.light/config.json</code>.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light config &lt;get|set|list|path&gt; [key] [value]</code></pre>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Subcommand</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>list</code>, <code>show</code></td><td>Show full config</td></tr>
+    <tr><td><code>path</code></td><td>Show config file path</td></tr>
+    <tr><td><code>get &lt;key&gt;</code></td><td>Get a value (supports dot notation)</td></tr>
+    <tr><td><code>set &lt;key&gt; &lt;value&gt;</code></td><td>Set a value (JSON or string)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>light remote</h3>
+<p>Manage remote light-process servers. Run with no arguments to list configured remotes.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light remote &lt;bind|use|forget|ping|ls|run|delete|rm&gt; [...]</code></pre>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Subcommand</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>bind &lt;url&gt;</code></td><td>Register a remote (<code>--key</code>, <code>--name</code>)</td></tr>
+    <tr><td><code>use &lt;name&gt;</code></td><td>Set default remote</td></tr>
+    <tr><td><code>forget &lt;name&gt;</code></td><td>Remove a remote</td></tr>
+    <tr><td><code>ping</code></td><td>Ping the current remote</td></tr>
+    <tr><td><code>ls</code></td><td>List workflows on remote (<code>--json</code>)</td></tr>
+    <tr><td><code>run &lt;id&gt;</code></td><td>Run a workflow (<code>--input</code>, <code>--input-file</code>, <code>--json</code>)</td></tr>
+    <tr><td><code>delete|rm &lt;id&gt;</code></td><td>Delete a workflow (<code>--soft</code>, <code>--yes</code>)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>light pull</h3>
+<p>Pull workflow(s) from a remote server into local folders.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light pull &lt;id&gt; [<span class="hl-flag">--path</span> &lt;dir&gt;] [<span class="hl-flag">--force</span>] [<span class="hl-flag">--remote</span> &lt;name&gt;]
+<span class="hl-prompt">$ </span>light pull <span class="hl-flag">--all</span> [<span class="hl-flag">--force</span>]</code></pre>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>--path &lt;dir&gt;</code></td><td>Target directory (default: <code>./workflows/&lt;id&gt;</code>)</td></tr>
+    <tr><td><code>--force</code></td><td>Overwrite existing target</td></tr>
+    <tr><td><code>--remote &lt;name&gt;</code></td><td>Use a specific remote profile</td></tr>
+    <tr><td><code>--all</code></td><td>Pull all workflows from the remote</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>light push</h3>
+<p>Push local workflow folder(s) to a remote server. With no arguments, pushes all workflows in <code>./workflows/</code>.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light push [&lt;name&gt;] [<span class="hl-flag">--path</span> &lt;dir&gt;] [<span class="hl-flag">--remote</span> &lt;name&gt;] [<span class="hl-flag">--yes</span>]</code></pre>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>--path &lt;dir&gt;</code></td><td>Workflow folder path</td></tr>
+    <tr><td><code>--remote &lt;name&gt;</code></td><td>Use a specific remote profile</td></tr>
+    <tr><td><code>--yes</code>, <code>-y</code></td><td>Skip confirmation prompts</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>light link</h3>
+<p>Edit links in a workflow folder. Without flags, opens an interactive editor.</p>
+<div class="code-block">
+  <div class="code-header">
+    <span class="code-lang">bash</span>
+    <button class="code-copy" aria-label="Copy code">Copy</button>
+  </div>
+  <pre><code><span class="hl-prompt">$ </span>light link &lt;workflow-dir&gt; [<span class="hl-flag">--from</span> &lt;id&gt; <span class="hl-flag">--to</span> &lt;id&gt;] [<span class="hl-flag">--when</span> &lt;json&gt;]
+<span class="hl-prompt">$ </span>light link &lt;workflow-dir&gt; <span class="hl-flag">--list</span>
+<span class="hl-prompt">$ </span>light link &lt;workflow-dir&gt; <span class="hl-flag">--remove</span> &lt;link-id&gt;</code></pre>
+</div>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Flag</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>--from &lt;id&gt;</code></td><td>Source node ID</td></tr>
+    <tr><td><code>--to &lt;id&gt;</code></td><td>Target node ID</td></tr>
+    <tr><td><code>--when &lt;json&gt;</code></td><td>Condition (MongoDB-style JSON)</td></tr>
+    <tr><td><code>--data &lt;json&gt;</code></td><td>Data to inject on the link</td></tr>
+    <tr><td><code>--max-iterations &lt;n&gt;</code></td><td>Max iterations for back-links</td></tr>
+    <tr><td><code>--list</code></td><td>List existing links</td></tr>
+    <tr><td><code>--remove &lt;id&gt;</code></td><td>Remove a link by ID</td></tr>
+  </tbody>
+</table>
+</div>
+
 <h3>Global options</h3>
 <div class="table-wrap">
 <table>
   <thead><tr><th>Flag</th><th>Description</th></tr></thead>
   <tbody>
     <tr><td><code>--version</code>, <code>-v</code></td><td>Show version</td></tr>
-    <tr><td><code>--help</code>, <code>-h</code></td><td>Show help</td></tr>
-    <tr><td><code>--verbose</code></td><td>Verbose output</td></tr>
-    <tr><td><code>--json</code></td><td>JSON output</td></tr>
+    <tr><td><code>--help</code>, <code>-h</code></td><td>Show help for a command</td></tr>
   </tbody>
 </table>
 </div>

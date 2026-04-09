@@ -5,7 +5,7 @@ import { getRemote } from '../config.js';
 import { getFullWorkflow, listWorkflows } from '../remoteClient.js';
 import { Workflow } from '../Workflow.js';
 import type { Command } from './utils.js';
-import { getFlagValue, getPositional, hasFlag } from './utils.js';
+import { getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
 async function pullOne(remoteName: string | undefined, id: string, targetDir: string, force: boolean): Promise<void> {
   const r = getRemote(remoteName);
@@ -30,6 +30,26 @@ export const pull: Command = {
   desc: 'Pull a workflow from a remote server into a local folder',
   usage: 'light pull <id> [--path <dir>] [--force] [--remote <name>] | light pull --all',
   async run() {
+    if (wantsHelp()) {
+      console.log(`Usage:
+  light pull <id> [options]
+  light pull --all [options]
+
+Pull workflow(s) from a remote server into local folders.
+
+Options:
+  --path <dir>      Target directory (default: ./workflows/<id>)
+  --force           Overwrite existing target directory
+  --remote <name>   Use a specific remote profile
+  --all             Pull all workflows from the remote
+
+Examples:
+  light pull my-workflow
+  light pull my-workflow --path ./custom-dir
+  light pull --all --force`);
+      return;
+    }
+
     const remoteName = getFlagValue('--remote');
     const customPath = getFlagValue('--path') ?? getFlagValue('--dir');
     const force = hasFlag('--force');
@@ -41,8 +61,9 @@ export const pull: Command = {
         process.exit(1);
       }
       const list = await listWorkflows(r.remote);
+      const base = customPath ?? './workflows';
       for (const wf of list) {
-        const target = pathResolve(customPath ?? join('./workflows', wf.id));
+        const target = pathResolve(join(base, wf.id));
         await pullOne(remoteName, wf.id, target, force);
       }
       return;

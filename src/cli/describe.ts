@@ -2,7 +2,7 @@ import { existsSync, statSync, writeFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
 import { loadWorkflowFromFolder } from '../CodeLoader.js';
 import type { Workflow } from '../Workflow.js';
-import { type Command, getFlagValue, getPositional, hasFlag, resolveWorkflow } from './utils.js';
+import { type Command, getFlagValue, getPositional, hasFlag, resolveWorkflow, wantsHelp } from './utils.js';
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -37,7 +37,7 @@ export const describe: Command = {
   desc: 'Show workflow structure',
   usage: 'light describe <file|dir|id|name> [--no-html]',
   run() {
-    if (hasFlag('--help') || hasFlag('-h')) {
+    if (wantsHelp()) {
       console.log(`Usage:
   light describe <file|dir|id|name> [--no-html]
 

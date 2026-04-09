@@ -124,8 +124,8 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - Global config at `~/.light/config.json`. Per-workflow override via `.light-remote` file inside the workflow folder
 - `light remote bind <url> --key <key> [--name <name>]` - register a remote (first one becomes default)
 - `light remote list|use|forget|ping`
-- `light remote ls-workflows`, `light remote run <id> --input '...'|--input-file f.json`
-- `light remote delete <id> [--soft] [--yes]`
+- `light remote ls`, `light remote run <id> --input '...'|--input-file f.json`
+- `light remote delete|rm <id> [--soft] [--yes]`
 - `light pull <id> [--path <dir>] [--force]` - default target `./workflows/<id>/`. `--force` wipes target first
 - `light push [<name>] [--path <dir>]` - no-arg pushes all in `./workflows/`. Auto POST/PUT (PUT prompts confirm unless `--yes`)
 - `light link <dir>` - interactive link editor (or `--from/--to/--when` inline, `--list`, `--remove <id>`)

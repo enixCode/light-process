@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { createInterface } from 'node:readline';
 import { safeJsonParse } from '../CodeLoader.js';
 import type { Command } from './utils.js';
-import { getFlagValue, getPositional, hasFlag } from './utils.js';
+import { getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
 interface LinkJson {
   id?: string;
@@ -106,6 +106,29 @@ export const link: Command = {
   desc: 'Edit links in a workflow folder (interactive or inline)',
   usage: 'light link <workflow-dir> [--from <id> --to <id> [--when <json>]] | --list | --remove <link-id>',
   async run() {
+    if (wantsHelp()) {
+      console.log(`Usage:
+  light link <workflow-dir>                          Interactive link editor
+  light link <workflow-dir> --from <id> --to <id>    Add a link inline
+  light link <workflow-dir> --list                   List existing links
+  light link <workflow-dir> --remove <link-id>       Remove a link
+
+Options:
+  --from <id>             Source node ID
+  --to <id>               Target node ID
+  --when <json>           Condition (MongoDB-style JSON)
+  --data <json>           Data to inject on the link
+  --max-iterations <n>    Max iterations for back-links
+
+Examples:
+  light link ./workflows/example
+  light link ./workflows/example --from nodeA --to nodeB
+  light link ./workflows/example --from a --to b --when '{"status": "ok"}'
+  light link ./workflows/example --list
+  light link ./workflows/example --remove a-b-1`);
+      return;
+    }
+
     const dir = getPositional(0);
     if (!dir) {
       console.error('Usage: light link <workflow-dir> [...]');
@@ -137,6 +160,8 @@ export const link: Command = {
       const link: LinkJson = { from, to };
       const whenStr = getFlagValue('--when');
       if (whenStr) link.when = JSON.parse(whenStr);
+      const dataStr = getFlagValue('--data');
+      if (dataStr) link.data = JSON.parse(dataStr);
       const maxIter = getFlagValue('--max-iterations');
       if (maxIter) link.maxIterations = parseInt(maxIter, 10);
       link.id = `${from}-${to}-${meta.links.length + 1}`;

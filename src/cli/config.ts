@@ -1,6 +1,6 @@
 import { getConfigPath, loadConfig, saveConfig } from '../config.js';
 import type { Command } from './utils.js';
-import { getPositional } from './utils.js';
+import { getPositional, wantsHelp } from './utils.js';
 
 function getByPath(obj: unknown, path: string): unknown {
   const parts = path.split('.');
@@ -30,6 +30,25 @@ export const config: Command = {
   desc: 'Manage global config (~/.light/config.json)',
   usage: 'light config <get|set|list|path> [key] [value]',
   run() {
+    if (wantsHelp()) {
+      console.log(`Usage:
+  light config <get|set|list|path> [key] [value]
+
+Manage global config (~/.light/config.json).
+
+Subcommands:
+  list, show   Show full config
+  path         Show config file path
+  get <key>    Get a config value (dot notation)
+  set <key> <value>  Set a config value (JSON or string)
+
+Examples:
+  light config list
+  light config get defaultRemote
+  light config set defaultRemote my-server`);
+      return;
+    }
+
     const action = getPositional(0);
     if (!action || action === 'list' || action === 'show') {
       const cfg = loadConfig();

@@ -2,7 +2,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { loadWorkflowFromFolder } from '../CodeLoader.js';
 import { Workflow } from '../Workflow.js';
-import { type Command, getPositional, hasFlag } from './utils.js';
+import { type Command, getPositional, hasFlag, wantsHelp } from './utils.js';
 
 interface CheckResult {
   name: string;
@@ -124,6 +124,21 @@ export const check: Command = {
   desc: 'Validate a workflow without running it',
   usage: 'light check [dir|file] [--fix]',
   run() {
+    if (wantsHelp()) {
+      console.log(`Usage:
+  light check [dir|file] [--fix]
+
+Validates a workflow structure without running it.
+
+Options:
+  --fix   Auto-fix issues (e.g., remove dead node references)
+
+Examples:
+  light check ./workflows/example
+  light check ./workflows/example --fix`);
+      return;
+    }
+
     const target = getPositional(0) || '.';
     const resolved = resolve(target);
     const fix = hasFlag('--fix');

@@ -5,7 +5,7 @@ import { loadWorkflowFromFolder } from '../CodeLoader.js';
 import { DockerRunner } from '../runner/index.js';
 import { Workflow } from '../Workflow.js';
 import type { Command } from './utils.js';
-import { getFlagValue, getPositional, hasFlag } from './utils.js';
+import { getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
 function loadWorkflowsFromDir(dir: string): Workflow[] {
   const workflows: Workflow[] = [];
@@ -37,6 +37,24 @@ export const serve: Command = {
   desc: 'Start the A2A API server',
   usage: 'light serve [dir] [--port 3000]',
   async run() {
+    if (wantsHelp()) {
+      console.log(`Usage:
+  light serve [dir] [options]
+
+Options:
+  --port <number>   Port to listen on (default: 3000)
+  --verbose         Verbose output
+
+Environment:
+  LP_API_KEY        Enable API key authentication
+
+Examples:
+  light serve ./workflows
+  light serve ./workflows --port 8080
+  LP_API_KEY=secret light serve ./workflows`);
+      return;
+    }
+
     const dir = getPositional(0) || '.';
     const port = parseInt(getFlagValue('--port', '3000'), 10);
     const apiKey = process.env.LP_API_KEY;
