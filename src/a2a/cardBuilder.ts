@@ -1,5 +1,4 @@
 import type { AgentCard } from '@a2a-js/sdk';
-import type { Node } from '../models/index.js';
 import type { IOSchema } from '../schema.js';
 import type { Workflow } from '../Workflow.js';
 
@@ -28,24 +27,6 @@ function describeSchema(schema: IOSchema): string {
     return `  ${key}: ${type}${required}${desc}`;
   });
   return fields.join('\n');
-}
-
-function describeCondition(when: Record<string, unknown>): string {
-  return Object.entries(when)
-    .map(([key, val]) => {
-      if (key === 'or' && Array.isArray(val)) {
-        const subs = val.map((c) => describeCondition(c as Record<string, unknown>));
-        return `(${subs.join(' OR ')})`;
-      }
-      if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
-        const ops = val as Record<string, unknown>;
-        return Object.entries(ops)
-          .map(([op, v]) => `${key} ${op} ${JSON.stringify(v)}`)
-          .join(', ');
-      }
-      return `${key} == ${JSON.stringify(val)}`;
-    })
-    .join(', ');
 }
 
 function buildSkillDescription(wf: Workflow): string {

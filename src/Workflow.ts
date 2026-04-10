@@ -10,7 +10,6 @@ import {
   type NodeJSON,
   validateWhen,
 } from './models/index.js';
-import type { NodeExecutionResult } from './runner/index.js';
 import { DockerRunner } from './runner/index.js';
 import { validateInput, validateOutput } from './schema.js';
 
