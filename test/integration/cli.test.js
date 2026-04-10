@@ -86,16 +86,16 @@ describe('CLI: init (workflow project)', () => {
     rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('creates expected files: package.json, workflows/, main.js', async () => {
+  it('creates expected files: package.json, example/, main.js', async () => {
     const initDir = join(tmpDir, 'my-project');
     await run('init', initDir);
 
     assert.ok(existsSync(join(initDir, 'package.json')), 'package.json should exist');
-    assert.ok(existsSync(join(initDir, 'workflows')), 'workflows/ should exist');
+    assert.ok(existsSync(join(initDir, 'example')), 'example/ should exist');
     assert.ok(existsSync(join(initDir, 'main.js')), 'main.js should exist');
-    assert.ok(existsSync(join(initDir, 'workflows', 'example', 'workflow.json')), 'workflow.json should exist');
-    assert.ok(existsSync(join(initDir, 'workflows', 'example', 'hello', '.node.json')), '.node.json should exist');
-    assert.ok(existsSync(join(initDir, 'workflows', 'example', 'hello', 'index.js')), 'index.js should exist');
+    assert.ok(existsSync(join(initDir, 'example', 'workflow.json')), 'workflow.json should exist');
+    assert.ok(existsSync(join(initDir, 'example', 'hello', '.node.json')), '.node.json should exist');
+    assert.ok(existsSync(join(initDir, 'example', 'hello', 'index.js')), 'index.js should exist');
 
     // Validate package.json content
     const pkg = JSON.parse(readFileSync(join(initDir, 'package.json'), 'utf-8'));
@@ -180,7 +180,7 @@ describe('CLI: check', () => {
   });
 
   it('exits 0 with all checks passing on init workflow', async () => {
-    const workflowDir = join(tmpDir, 'check-project', 'workflows', 'example');
+    const workflowDir = join(tmpDir, 'check-project', 'example');
     const { stdout } = await run('check', workflowDir);
     assert.ok(stdout.includes('[ok]'), 'Should have passing checks');
     assert.ok(stdout.includes('checks passed'), 'Should report checks passed');
@@ -204,7 +204,7 @@ describe('CLI: describe', () => {
   });
 
   it('outputs node info', async () => {
-    const workflowDir = join(tmpDir, 'describe-project', 'workflows', 'example');
+    const workflowDir = join(tmpDir, 'describe-project', 'example');
     const { stdout } = await run('describe', workflowDir, '--no-html');
     assert.ok(stdout.includes('Example'), 'Should contain workflow name');
     assert.ok(stdout.includes('Hello'), 'Should contain node name');
@@ -242,7 +242,7 @@ describe('CLI: run', () => {
     skip: !dockerAvailable ? 'Docker not available' : false,
     timeout: 60_000,
   }, async () => {
-    const workflowDir = join(tmpDir, 'run-project', 'workflows', 'example');
+    const workflowDir = join(tmpDir, 'run-project', 'example');
     const { stdout } = await exec(CLI, [CLI_PATH, 'run', workflowDir], { timeout: 60_000 });
     assert.ok(stdout.includes('Running:'), 'Should show running message');
     assert.ok(stdout.includes('[ok]'), 'Should show success');
@@ -252,7 +252,7 @@ describe('CLI: run', () => {
     skip: !dockerAvailable ? 'Docker not available' : false,
     timeout: 60_000,
   }, async () => {
-    const workflowDir = join(tmpDir, 'run-project', 'workflows', 'example');
+    const workflowDir = join(tmpDir, 'run-project', 'example');
     const { stdout } = await exec(CLI, [CLI_PATH, 'run', workflowDir, '--json'], { timeout: 60_000 });
     const result = JSON.parse(stdout);
     assert.equal(typeof result.success, 'boolean');
@@ -265,7 +265,7 @@ describe('CLI: run', () => {
     skip: !dockerAvailable ? 'Docker not available' : false,
     timeout: 60_000,
   }, async () => {
-    const workflowDir = join(tmpDir, 'run-project', 'workflows', 'example');
+    const workflowDir = join(tmpDir, 'run-project', 'example');
     const { stdout } = await exec(CLI, [CLI_PATH, 'run', workflowDir, '--json', '--input', '{"name":"test"}'], {
       timeout: 60_000,
     });
@@ -278,7 +278,7 @@ describe('CLI: run', () => {
     skip: !dockerAvailable ? 'Docker not available' : false,
     timeout: 60_000,
   }, async () => {
-    const nodeDir = join(tmpDir, 'run-project', 'workflows', 'example', 'hello');
+    const nodeDir = join(tmpDir, 'run-project', 'example', 'hello');
     const { stdout } = await exec(CLI, [CLI_PATH, 'run', '--node', nodeDir, '--json'], { timeout: 60_000 });
     const result = JSON.parse(stdout);
     assert.equal(typeof result.success, 'boolean');
