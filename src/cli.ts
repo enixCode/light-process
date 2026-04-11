@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { check } from './cli/check.js';
 import { config } from './cli/config.js';
 import { describe } from './cli/describe.js';
@@ -10,6 +10,7 @@ import { doctor } from './cli/doctor.js';
 import { init } from './cli/init.js';
 import { link } from './cli/link.js';
 import { list } from './cli/list.js';
+import { node } from './cli/node.js';
 import { pack } from './cli/pack.js';
 import { pull } from './cli/pull.js';
 import { push } from './cli/push.js';
@@ -42,6 +43,7 @@ const commands: Record<string, Command> = {
   unpack,
   list,
   link,
+  node,
   help: {
     desc: 'Show help',
     usage: 'light help [command]',
