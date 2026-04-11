@@ -47,13 +47,12 @@ This creates:
 my-project/
   package.json
   main.js                           # SDK usage example
-  workflows/
-    example/
-      workflow.json                  # DAG definition
-      hello/
-        .node.json                   # node config
-        index.js                     # code
-        lp.js                        # helper
+  example/
+    workflow.json                    # DAG definition
+    hello/
+      .node.json                     # node config
+      index.js                       # code
+      lp.js                          # helper
 ```
 
 ## Run the example
@@ -121,7 +120,7 @@ Open `http://localhost:3000` to see the web dashboard with your workflow DAG.
 ## Add a new node
 
 ```bash
-cd workflows/example
+cd example
 light init --node ./transform
 ```
 

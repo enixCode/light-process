@@ -112,7 +112,7 @@ light init --node [dir] [--lang]    # single node
 
 **Project init creates:**
 - `package.json` with start/check scripts
-- `workflows/example/` with a hello node
+- `example/` folder with a hello node
 - `main.js` with SDK example
 
 **Node init creates:**
