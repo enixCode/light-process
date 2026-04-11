@@ -87,10 +87,16 @@ Running: Example (from folder)
 | `light serve [dir]` | Start A2A server + web dashboard |
 | `light init [dir]` | Scaffold a new project or node |
 | `light check <target>` | Validate workflow structure |
-| `light describe <target>` | Visualize the DAG |
+| `light describe <target>` | Visualize the DAG (text + Mermaid) |
 | `light list` | List workflows in a directory |
 | `light pack <target>` | Convert workflow folder to JSON |
 | `light unpack <target>` | Convert JSON to workflow folder |
+| `light link <dir>` | Edit links and conditions in a workflow |
+| `light node schema <dir>` | Edit a node's input/output JSON Schema |
+| `light config <get\|set\|list>` | Read or write global config |
+| `light remote <subcommand>` | Manage remote profiles (bind, set-key, ls, run, ...) |
+| `light pull <id>` | Pull a workflow from a remote server |
+| `light push [name]` | Push local workflow(s) to a remote server |
 | `light doctor` | Check environment |
 
 All commands search the current directory by default.

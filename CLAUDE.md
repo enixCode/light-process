@@ -51,10 +51,11 @@ src/
     unpack.ts         Convert JSON file to workflow folder
     list.ts           List workflows in a directory
     link.ts           Edit links/conditions in a workflow folder
+    node.ts           Interactive node schema editor (inputs/outputs)
     utils.ts          Arg parsing, workflow resolution
 
   config.ts           Global config manager (remotes, defaults, override resolution)
-  remoteClient.ts     HTTP client for the A2A server (list/get/create/update/delete/ping/run)
+  remoteClient.ts     HTTP client for the A2A server (list/get/getFull/create/update/delete/ping/sendMessage)
 
   a2a/
     server.ts         HTTP server with JSON-RPC + SSE
@@ -88,6 +89,7 @@ my-workflow.json                 # JSON format - single portable file
 - `light pack <name>` converts folder to JSON (removes the folder)
 - `light unpack <name>` converts JSON to folder (removes the JSON)
 - `light list` shows all workflows in the current directory
+- `light node schema <dir>` edits a node's input/output JSON Schema interactively
 - Use `--keep` on pack/unpack to preserve the source
 - All commands search the current directory by default
 
@@ -136,6 +138,7 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 
 - Global config at `~/.light/config.json`. Per-workflow override via `.light-remote` file inside the workflow folder
 - `light remote bind <url> --key <key> [--name <name>]` - register a remote (first one becomes default)
+- `light remote set-key <key> [--name <name>]` - update API key on an existing remote (keeps url)
 - `light remote list|use|forget|ping`
 - `light remote ls`, `light remote run <id> --input '...'|--input-file f.json`
 - `light remote delete|rm <id> [--soft] [--yes]`

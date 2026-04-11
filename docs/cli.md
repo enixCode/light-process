@@ -19,6 +19,7 @@ light run --node [dir] [options]
 | Flag | Description | Default |
 |---|---|---|
 | `--input <file\|json>` | Input data (JSON file or inline) | `{}` |
+| `--input-file <file>` | Read input from a JSON file (alias, cannot combine with `--input`) | - |
 | `--json` | Output full result as JSON | off |
 | `--timeout <ms>` | Global timeout | 0 (none) |
 | `--dir <dir>` | Workflow search directory | `.` |
@@ -67,6 +68,19 @@ Start the A2A API server with web dashboard.
 light serve [dir] [--port 3000] [--verbose]
 ```
 
+**Options:**
+
+| Flag | Description | Default |
+|---|---|---|
+| `--port <number>` | Port to listen on | `3000` |
+| `--verbose` | Verbose Docker logging | off |
+
+**Environment:**
+
+| Variable | Description |
+|---|---|
+| `LP_API_KEY` | Enable Bearer token authentication on protected routes. If unset, all routes are public. |
+
 **Endpoints:**
 
 | Method | Path | Description |
@@ -75,7 +89,10 @@ light serve [dir] [--port 3000] [--verbose]
 | GET | `/health` | Health check |
 | GET | `/.well-known/agent-card.json` | A2A agent card |
 | GET | `/api/workflows` | List workflows |
-| GET | `/api/workflows/:id` | Workflow detail |
+| GET | `/api/workflows/:id` | Workflow detail (add `?full=true` for full JSON) |
+| POST | `/api/workflows` | Add workflow at runtime (add `?persist=true` to save) |
+| PUT | `/api/workflows/:id` | Replace a workflow (add `?persist=true` to save) |
+| DELETE | `/api/workflows/:id` | Remove workflow (add `?persist=true` to delete file) |
 | POST | `/` or `/a2a` | A2A JSON-RPC 2.0 |
 
 **Examples:**
@@ -89,6 +106,9 @@ light serve --port 8080
 
 # Serve a specific directory
 light serve ./my-workflows --verbose
+
+# Enable Bearer token authentication
+LP_API_KEY=my-secret-key light serve
 ```
 
 ---
@@ -185,6 +205,203 @@ light doctor
 - gVisor (runsc) availability
 - GPU support (nvidia-smi)
 - Docker GPU plugin
+
+---
+
+## light config
+
+Read, write, or list values in the global config (`~/.light/config.json`).
+
+```bash
+light config <get|set|list|path> [key] [value]
+```
+
+**Subcommands:**
+
+| Subcommand | Description |
+|---|---|
+| `list`, `show` | Print the full config |
+| `get <key>` | Read a nested key (dot notation supported) |
+| `set <key> <value>` | Write a nested key (JSON parsed when possible) |
+| `path` | Print the config file path |
+
+**Examples:**
+
+```bash
+light config list
+light config get defaultRemote
+light config set defaultRemote prod
+```
+
+---
+
+## light remote
+
+Manage remote A2A server profiles and run workflows remotely.
+
+```bash
+light remote <bind|set-key|list|use|forget|ping|ls|run|delete|rm> [...]
+```
+
+**Subcommands:**
+
+| Subcommand | Description |
+|---|---|
+| `bind <url> --key <key> [--name <name>]` | Register a remote (first becomes default) |
+| `set-key <key> [--name <name>]` | Rotate the API key for an existing remote |
+| `list` | Show all registered remotes |
+| `use <name>` | Set the default remote |
+| `forget <name>` | Remove a remote |
+| `ping [--remote <name>]` | Check a remote's `/health` |
+| `ls [--remote <name>] [--json]` | List workflows on a remote |
+| `run <id> [--input <json>\|--input-file <path>] [--json]` | Execute a workflow remotely |
+| `delete <id> [--soft] [--yes]` (alias `rm`) | Delete a workflow on a remote |
+
+Per-workflow remote override: create a `.light-remote` file inside the workflow folder containing the remote name.
+
+**Examples:**
+
+```bash
+light remote bind https://my-server.com --key abc123
+light remote set-key newkey --name test
+light remote ls
+light remote run my-workflow --input '{"key": "value"}'
+light remote delete old-workflow --yes
+```
+
+---
+
+## light pull
+
+Pull a workflow (or all workflows) from a remote server into a local folder.
+
+```bash
+light pull <id> [--path <dir>] [--force] [--remote <name>]
+light pull --all [--force] [--remote <name>]
+```
+
+**Options:**
+
+| Flag | Description | Default |
+|---|---|---|
+| `--path <dir>` | Target directory | `./<id>` |
+| `--force` | Wipe target directory if it already exists | off |
+| `--remote <name>` | Use a specific remote | default remote |
+| `--all` | Pull every workflow registered on the remote | off |
+
+---
+
+## light push
+
+Push a local workflow folder to a remote server. Omitting `<name>` pushes every workflow folder in the current directory. When a workflow already exists, push confirms before replacing it (use `--yes` to skip the prompt).
+
+```bash
+light push [<name>] [--path <dir>] [--remote <name>] [--yes]
+```
+
+**Options:**
+
+| Flag | Description | Default |
+|---|---|---|
+| `--path <dir>` | Folder containing workflow folders | `.` |
+| `--remote <name>` | Use a specific remote | default remote |
+| `--yes` | Skip the replace confirmation | off |
+
+---
+
+## light link
+
+Edit links between nodes in a workflow folder, interactively or via flags.
+
+```bash
+light link <workflow-dir> [--from <id> --to <id>] [--when <json>]
+light link <workflow-dir> --list
+light link <workflow-dir> --remove <link-id>
+```
+
+**Options:**
+
+| Flag | Description |
+|---|---|
+| `--from <id>` | Source node id |
+| `--to <id>` | Target node id |
+| `--when <json>` | Inline MongoDB-style condition |
+| `--list` | Print existing links and exit |
+| `--remove <link-id>` | Remove a link by id |
+
+Without flags, launches an interactive editor.
+
+---
+
+## light list
+
+List workflows found in a directory. Discovers both folders and JSON files.
+
+```bash
+light list [--dir <path>] [--json]
+```
+
+**Options:**
+
+| Flag | Description | Default |
+|---|---|---|
+| `--dir <path>` | Directory to scan | `.` |
+| `--json` | Machine-readable output | off |
+
+---
+
+## light pack
+
+Convert a workflow folder into a single portable JSON file. The source folder is removed after packing unless `--keep` is passed.
+
+```bash
+light pack [<folder>] [--to <file>] [--force] [--keep]
+```
+
+**Options:**
+
+| Flag | Description | Default |
+|---|---|---|
+| `--to <file>` | Output file path | `<id>.json` |
+| `--force` | Overwrite an existing file | off |
+| `--keep` | Keep the source folder after packing | off |
+
+---
+
+## light unpack
+
+Convert a workflow JSON file into a folder structure. The source JSON is removed after unpacking unless `--keep` is passed.
+
+```bash
+light unpack <file.json> [--to <dir>] [--force] [--keep]
+```
+
+**Options:**
+
+| Flag | Description | Default |
+|---|---|---|
+| `--to <dir>` | Target directory | `./<id>` |
+| `--force` | Overwrite existing directory | off |
+| `--keep` | Keep the source JSON file after unpacking | off |
+
+---
+
+## light node
+
+Manage node metadata. Currently only the interactive schema editor is available.
+
+```bash
+light node schema <dir>
+```
+
+Opens an interactive editor that reads `.node.json` in `<dir>` and lets you add, edit, or remove input/output schema fields. Changes are written back to `.node.json` on save.
+
+**Examples:**
+
+```bash
+light node schema ./my-node
+light node schema ./example/hello
+```
 
 ---
 
