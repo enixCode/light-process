@@ -74,6 +74,14 @@ export function setRemote(name: string, remote: RemoteConfig): void {
   saveConfig(config);
 }
 
+/** Update only the apiKey on an existing remote, preserving url and createdAt. */
+export function setRemoteKey(name: string, apiKey: string): void {
+  const config = loadConfig();
+  if (!config.remotes[name]) throw new Error(`Unknown remote: ${name}`);
+  config.remotes[name] = { ...config.remotes[name], apiKey };
+  saveConfig(config);
+}
+
 export function setDefaultRemote(name: string): void {
   const config = loadConfig();
   if (!config.remotes[name]) throw new Error(`Unknown remote: ${name}`);
