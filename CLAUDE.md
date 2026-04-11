@@ -149,8 +149,8 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 
 - Published on npm as `light-process` (bins: `light`, `light-process`). Install: `npm i -g light-process`
 - `.github/workflows/ci.yml` - lint/build/test
-- `.github/workflows/release.yml` - on push to `main`/`dev` touching `package.json`, if version changed: lint + build + test + `npm publish` via OIDC trusted publishing + git tag + GitHub Release. npm dist-tag auto-detected from version suffix (`alpha`/`beta`/`rc`/`latest`)
-- `.github/workflows/deploy.yml` - on push to `main`, SSH deploy runs `light-process` on the server
+- `.github/workflows/release.yml` - triggered by push to `dev` (move mobile git tag `alpha`) or push of tag `v*` (lint/build/test + `npm publish --tag latest --provenance` via OIDC + move mobile git tag `latest` + GitHub Release). Tag-based releases: pushing a version tag triggers publish, merging `dev` into `main` does not
+- `.github/workflows/deploy.yml` - on push to `main` or `dev`, SSH deploy runs `light-process` (main/prod) or `light-process-test` (dev) on the server
 - No Docker image is published for light-process itself - it runs on the host and uses Docker only to execute node containers
 
 ## Documentation

@@ -1058,13 +1058,14 @@ Checking: Example (from folder)
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light remote &lt;bind|use|forget|ping|ls|run|delete|rm&gt; [...]</code></pre>
+  <pre><code><span class="hl-prompt">$ </span>light remote &lt;bind|set-key|use|forget|ping|ls|run|delete|rm&gt; [...]</code></pre>
 </div>
 <div class="table-wrap">
 <table>
   <thead><tr><th>Subcommand</th><th>Description</th></tr></thead>
   <tbody>
     <tr><td><code>bind &lt;url&gt;</code></td><td>Register a remote (<code>--key</code>, <code>--name</code>)</td></tr>
+    <tr><td><code>set-key &lt;key&gt;</code></td><td>Update the API key on an existing remote (<code>--name</code>)</td></tr>
     <tr><td><code>use &lt;name&gt;</code></td><td>Set default remote</td></tr>
     <tr><td><code>forget &lt;name&gt;</code></td><td>Remove a remote</td></tr>
     <tr><td><code>ping</code></td><td>Ping the current remote</td></tr>
