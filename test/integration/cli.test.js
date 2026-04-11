@@ -17,7 +17,7 @@ function run(...args) {
   return exec(CLI, [CLI_PATH, ...args], { timeout: 15_000 });
 }
 
-function runIn(cwd, ...args) {
+function _runIn(cwd, ...args) {
   return exec(CLI, [CLI_PATH, ...args], { cwd, timeout: 15_000 });
 }
 

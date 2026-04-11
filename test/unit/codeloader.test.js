@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
-import { randomUUID } from 'crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
-import { join, sep } from 'path';
 import {
   exportWorkflowToFolder,
   isPathSafe,
