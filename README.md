@@ -30,10 +30,24 @@
 
 **Microservice orchestration** - Chain API calls with per-step timeouts and network isolation. Validate request schemas at entry, run independent calls in parallel, merge results, and route errors to notification handlers.
 
+## Install
+
+```bash
+# Stable release from npm (recommended)
+npm install -g light-process
+
+# Latest dev snapshot from GitHub (for testing unreleased features)
+npm install -g github:enixCode/light-process#alpha
+```
+
+The `#alpha` variant installs the most recent commit on the `dev` branch
+(via a mobile git tag). It always reflects the latest code, unlike npm
+packages which only update on tagged releases. There is no `@alpha` tag
+on npm - dev builds are only available via the GitHub URL.
+
 ## Quick Start
 
 ```bash
-npm install -g light-process
 light doctor                    # check Node + Docker
 light init my-project           # scaffold a project
 cd my-project
