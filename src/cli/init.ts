@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { basename, join, resolve } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { basename, join, resolve } from 'node:path';
 import { DEFAULT_IMAGES } from '../defaults.js';
 import type { CodeLanguage } from '../helpers.js';
 import { getAllHelpers, getHelper } from '../helpers.js';
@@ -34,6 +34,9 @@ Examples:
 
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 
+    let fileCount = 0;
+    const verbose = hasFlag('--verbose');
+
     const pkgPath = join(dir, 'package.json');
     if (!existsSync(pkgPath)) {
       writeFileSync(
@@ -55,7 +58,8 @@ Examples:
           2,
         ),
       );
-      console.log('+ package.json');
+      fileCount++;
+      if (verbose) console.log('+ package.json');
     }
 
     const exampleDir = join(dir, 'example');
@@ -79,7 +83,8 @@ Examples:
           2,
         ),
       );
-      console.log('+ example/workflow.json');
+      fileCount++;
+      if (verbose) console.log('+ example/workflow.json');
 
       const config = langConfigs.javascript;
       writeFileSync(
@@ -100,14 +105,17 @@ Examples:
           2,
         ),
       );
-      console.log('+ example/hello/.node.json');
+      fileCount++;
+      if (verbose) console.log('+ example/hello/.node.json');
 
       writeFileSync(join(nodeDir, config.mainFile), config.mainCode);
-      console.log(`+ example/hello/${config.mainFile}`);
+      fileCount++;
+      if (verbose) console.log(`+ example/hello/${config.mainFile}`);
 
       const helper = getHelper('javascript');
       writeFileSync(join(nodeDir, helper.filename), helper.content);
-      console.log(`+ example/hello/${helper.filename}`);
+      fileCount++;
+      if (verbose) console.log(`+ example/hello/${helper.filename}`);
     }
 
     const mainPath = join(dir, 'main.js');
@@ -127,15 +135,17 @@ console.log(result.success ? 'Success' : 'Failed');
 console.log(JSON.stringify(result.results, null, 2));
 `,
       );
-      console.log('+ main.js');
+      fileCount++;
+      if (verbose) console.log('+ main.js');
     }
 
-    console.log(`\nProject initialized in ${dir}`);
+    const name = basename(dir) || dir;
+    console.log(`+ ${name}/ (${fileCount} files)`);
     console.log('\nNext steps:');
     console.log('  npm install');
     console.log('  light run example          # run the example workflow');
     console.log('  light describe example     # visualize the DAG');
-    console.log('  node main.js                           # run with custom SDK logic');
+    console.log('  node main.js               # run with custom SDK logic');
   },
 };
 
