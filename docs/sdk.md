@@ -104,7 +104,7 @@ node.addFolder('./my-node', 'node index.js');
 ```javascript
 import { loadWorkflowFromFolder, DockerRunner } from 'light-process';
 
-const wf = loadWorkflowFromFolder('./workflows/my-workflow');
+const wf = loadWorkflowFromFolder('./my-workflow');
 if (!wf) {
   console.error('Invalid workflow folder');
   process.exit(1);

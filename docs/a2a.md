@@ -10,7 +10,7 @@ Light Process implements the [A2A protocol](https://google.github.io/A2A/) (Agen
 ## Start the server
 
 ```bash
-light serve ./workflows --port 3000
+light serve --port 3000
 ```
 
 This starts:

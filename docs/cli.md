@@ -21,7 +21,7 @@ light run --node [dir] [options]
 | `--input <file\|json>` | Input data (JSON file or inline) | `{}` |
 | `--json` | Output full result as JSON | off |
 | `--timeout <ms>` | Global timeout | 0 (none) |
-| `--dir <dir>` | Workflow search directory | `./workflows` |
+| `--dir <dir>` | Workflow search directory | `.` |
 | `--json-source` | Prefer .json over folder | off |
 | `--node` | Run current dir as single node | off |
 | `--verbose` | Verbose output | off |
@@ -30,7 +30,7 @@ light run --node [dir] [options]
 
 ```bash
 # Run from folder
-light run ./workflows/my-workflow
+light run my-workflow
 
 # Run with inline JSON input
 light run my-workflow --input '{"key": "value"}'
@@ -81,14 +81,14 @@ light serve [dir] [--port 3000] [--verbose]
 **Examples:**
 
 ```bash
-# Serve all workflows in a directory
-light serve ./workflows
+# Serve all workflows in current directory
+light serve
 
 # Custom port
-light serve ./workflows --port 8080
+light serve --port 8080
 
-# Verbose Docker logging
-light serve ./workflows --verbose
+# Serve a specific directory
+light serve ./my-workflows --verbose
 ```
 
 ---

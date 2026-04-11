@@ -59,7 +59,7 @@ my-project/
 ## Run the example
 
 ```bash
-light run ./workflows/example
+light run example
 ```
 
 ```
@@ -76,7 +76,7 @@ Running: Example (from folder)
 ## Run with input
 
 ```bash
-light run ./workflows/example --input '{"name": "Alice"}'
+light run example --input '{"name": "Alice"}'
 ```
 
 ```
@@ -86,7 +86,7 @@ light run ./workflows/example --input '{"name": "Alice"}'
 ## Validate a workflow
 
 ```bash
-light check ./workflows/example
+light check example
 ```
 
 ```
@@ -105,7 +105,7 @@ Checking: Example (from folder)
 ## Visualize the DAG
 
 ```bash
-light describe ./workflows/example
+light describe example
 ```
 
 Outputs a text tree and generates `describe.html` with an interactive Mermaid diagram.
@@ -113,7 +113,7 @@ Outputs a text tree and generates `describe.html` with an interactive Mermaid di
 ## Start the dashboard
 
 ```bash
-light serve ./workflows --port 3000
+light serve --port 3000
 ```
 
 Open `http://localhost:3000` to see the web dashboard with your workflow DAG.

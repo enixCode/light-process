@@ -45,7 +45,7 @@ Expose workflows as A2A agents that other AI systems can discover and invoke.
 
 ```bash
 # Start the server
-light serve ./workflows --port 3000
+light serve --port 3000
 
 # Another AI agent discovers skills
 curl http://localhost:3000/.well-known/agent-card.json
