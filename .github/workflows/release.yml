@@ -1,12 +1,16 @@
 name: Release
 
-# main:  npm publish @latest + fixed tag v<ver> + mobile tag 'latest' + GitHub Release
-# dev:   no npm publish, no fixed tag, no GitHub Release, just mobile tag 'alpha'
-#        (users can install dev via `npm i github:enixCode/light-process#alpha`)
+# Triggered by:
+# - push to dev:   move mobile 'alpha' git tag, no npm publish
+# - push tag v*:   publish to npm @latest, move 'latest' mobile tag, GitHub Release
+#
+# Releases are explicit: you have to create and push a tag v<version> to
+# publish. Merging dev -> main does NOT publish anything.
 
 on:
   push:
-    branches: [main, dev]
+    branches: [dev]
+    tags: ['v*']
 
 jobs:
   release:
@@ -30,26 +34,6 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
-      - name: Compute version
-        id: v
-        run: |
-          BASE=$(node -p "require('./package.json').version.split('-')[0]")
-          if [ "${{ github.ref_name }}" = "main" ]; then
-            VERSION="$BASE"
-          else
-            COUNT=$(git rev-list --count HEAD)
-            VERSION="${BASE}-alpha.${COUNT}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
-
-      - name: Guard - main must be stable version
-        if: github.ref_name == 'main' && contains(steps.v.outputs.version, '-')
-        run: |
-          echo "main branch must publish a stable version (no pre-release suffix)"
-          exit 1
-
       - name: Install, lint, build, test
         run: |
           npm ci
@@ -57,13 +41,37 @@ jobs:
           npm run build
           npm test
 
+      # --- dev branch push: move mobile 'alpha' git tag, done ---
+
+      - name: Move mobile 'alpha' git tag (dev)
+        if: github.ref_type == 'branch' && github.ref_name == 'dev'
+        run: |
+          git tag -f alpha
+          git push origin alpha --force
+
+      # --- tag push (v*): publish to npm, mobile 'latest', GitHub Release ---
+
+      - name: Compute version from tag
+        if: github.ref_type == 'tag'
+        id: v
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+
+      - name: Guard - tag must be stable version
+        if: github.ref_type == 'tag' && contains(steps.v.outputs.version, '-')
+        run: |
+          echo "Tag ${{ github.ref_name }} is a pre-release (contains '-')"
+          echo "Only stable tags (e.g. v0.1.0) are published to @latest"
+          exit 1
+
       - name: Set version in-memory
+        if: github.ref_type == 'tag'
         run: npm version ${{ steps.v.outputs.version }} --no-git-tag-version --allow-same-version
 
-      # --- main branch: publish to npm + fixed tag + mobile 'latest' + GitHub Release ---
-
       - name: Check if version already on npm
-        if: github.ref_name == 'main'
+        if: github.ref_type == 'tag'
         id: npm_check
         run: |
           if npm view light-process@${{ steps.v.outputs.version }} version >/dev/null 2>&1; then
@@ -74,31 +82,17 @@ jobs:
           fi
 
       - name: Publish to npm
-        if: github.ref_name == 'main' && steps.npm_check.outputs.exists == 'false'
+        if: github.ref_type == 'tag' && steps.npm_check.outputs.exists == 'false'
         run: npm publish --tag latest --provenance --access public
 
-      - name: Create fixed git tag (main)
-        if: github.ref_name == 'main' && steps.npm_check.outputs.exists == 'false'
-        run: |
-          git tag ${{ steps.v.outputs.tag }}
-          git push origin ${{ steps.v.outputs.tag }}
-
-      - name: Move mobile 'latest' git tag (main)
-        if: github.ref_name == 'main' && steps.npm_check.outputs.exists == 'false'
+      - name: Move mobile 'latest' git tag
+        if: github.ref_type == 'tag' && steps.npm_check.outputs.exists == 'false'
         run: |
           git tag -f latest
           git push origin latest --force
 
-      - name: Create GitHub Release (main)
-        if: github.ref_name == 'main' && steps.npm_check.outputs.exists == 'false'
-        run: gh release create ${{ steps.v.outputs.tag }} --generate-notes
+      - name: Create GitHub Release
+        if: github.ref_type == 'tag' && steps.npm_check.outputs.exists == 'false'
+        run: gh release create ${{ github.ref_name }} --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
-
-      # --- dev branch: just move mobile 'alpha' git tag ---
-
-      - name: Move mobile 'alpha' git tag (dev)
-        if: github.ref_name == 'dev'
-        run: |
-          git tag -f alpha
-          git push origin alpha --force

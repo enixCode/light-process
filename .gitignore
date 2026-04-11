@@ -8,3 +8,4 @@ _archive/
 .vscode/
 .claude/settings.local.json
 TODO.md
+RELEASE.md

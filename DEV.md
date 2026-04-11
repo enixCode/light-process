@@ -4,12 +4,15 @@ Internal guide for contributors. User-facing docs live in [README.md](README.md)
 
 ## Branching model
 
-| Branch | Purpose | Published |
+| Branch/Ref | Purpose | Published |
 |---|---|---|
-| `dev` | Daily work, alphas, testing | Mobile git tag `alpha` only. No npm publish. Auto-deployed to VPS for testing. |
-| `main` | Stable releases | npm `@latest`, fixed tag `v<ver>`, mobile tag `latest`, GitHub Release. |
+| `dev` | Daily work, alphas, testing | Mobile git tag `alpha`. No npm publish. Auto-deployed to VPS test. |
+| `main` | Stable integration branch | Auto-deployed to VPS prod. **No npm publish.** |
+| tag `v*` | Release trigger | npm `@latest` + mobile tag `latest` + GitHub Release. |
 
-Rule of thumb: code on `dev`, merge to `main` when ready to ship a stable release.
+**Releases are tag-driven, not branch-driven.** Merging dev into main
+deploys the code but does not publish to npm. Publishing happens only
+when you explicitly push a version tag (`git tag v0.1.0 && git push origin v0.1.0`).
 
 ## Quick commands
 
@@ -33,27 +36,26 @@ Three GitHub Actions workflows:
 - Integration tests on Node 22
 - Nothing is published
 
-### release.yml - runs on push to main or dev
+### release.yml - triggered by dev push OR tag push (v*)
 
-**Version computation (no commit to package.json):**
-- `BASE` = `require('./package.json').version.split('-')[0]` (e.g. `0.1.0`)
-- On main: `VERSION = BASE` (e.g. `0.1.0`)
-- On dev: `VERSION = ${BASE}-alpha.${git rev-list --count HEAD}` (e.g. `0.1.0-alpha.42`)
-- `npm version $VERSION --no-git-tag-version` injects the version in the runner, never commited
-
-**On dev:**
+**On dev push:**
 - Lint + build + test
 - Force-push mobile git tag `alpha` to the current commit
-- No npm publish, no fixed tag, no GitHub Release, no pollution
+- No npm publish, no fixed tag, no GitHub Release
 
-**On main:**
+**On tag push (`v*`):**
 - Lint + build + test
-- Guard: refuse to publish if version contains `-` (no pre-release suffix on main)
-- Skip if that version already exists on npm (idempotent)
+- Read version from tag name: `VERSION="${GITHUB_REF_NAME#v}"` (e.g. `v0.1.0` -> `0.1.0`)
+- Guard: refuse to publish if version contains `-` (pre-release tags like `v0.1.0-rc.1` are rejected)
+- `npm version $VERSION --no-git-tag-version` injects version for publish
+- Skip if version already exists on npm (idempotent)
 - `npm publish --tag latest --provenance --access public` (OIDC trusted publishing)
-- Create fixed git tag `v0.2.0`
-- Force-push mobile git tag `latest` to the current commit
-- Create GitHub Release with auto-generated notes
+- Force-push mobile git tag `latest` to the tagged commit
+- `gh release create v0.1.0 --generate-notes`
+
+**Pushing to `main` does NOT trigger release.yml.** It only triggers
+`ci.yml` (tests) and `deploy.yml` (VPS prod deploy). Releases are
+intentional - you have to create and push a version tag to publish.
 
 ### deploy.yml - runs on push to dev (temporary, was main)
 - SSH to VPS via `appleboy/ssh-action`
@@ -68,32 +70,42 @@ Three GitHub Actions workflows:
 ```bash
 git commit -am "..."
 git push origin dev
-# -> CI runs, 'alpha' tag moves to your commit, VPS redeploys.
-# Users can install via: npm i github:enixCode/light-process#alpha
+# -> CI runs, 'alpha' git tag moves to your commit, VPS test redeploys.
+# Users install dev via: npm i github:enixCode/light-process#alpha
 ```
 
 ### Release a new stable version
 
+Tag-based. Three steps:
+
 ```bash
-# Bump package.json on dev (pick one)
-npm run version:patch    # 0.1.0 -> 0.1.1
-npm run version:minor    # 0.1.0 -> 0.2.0
-npm run version:major    # 0.1.0 -> 1.0.0
-
-git add package.json
-git commit -m "bump 0.2.0"
-git push origin dev
-
-# Merge to main
+# 1. Merge dev into main (optional, just updates VPS prod)
 git checkout main
+git pull
 git merge dev
 git push origin main
-# -> release.yml publishes 0.2.0 on npm @latest
-#    + creates v0.2.0 fixed tag
-#    + moves 'latest' mobile tag
-#    + creates GitHub Release
-#    + (currently) deploy.yml does NOT fire on main push
+
+# 2. Create and push the version tag - this triggers npm publish
+git tag v0.1.0
+git push origin v0.1.0
+
+# 3. Watch the release workflow
+gh run watch
 ```
+
+What happens on the tag push:
+- release.yml runs on the tagged commit
+- Lint + build + test
+- `npm publish 0.1.0 --tag latest --provenance --access public`
+- mobile tag `latest` moves to this commit
+- GitHub Release `v0.1.0` created with auto notes
+
+No package.json bumping required - the workflow reads the version from
+the tag name. You can align package.json with the released tag if you
+want (for consistency in the repo), but the published package always
+matches the tag.
+
+See [RELEASE.md](RELEASE.md) for the full visual guide.
 
 ### Trouble
 
