@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
-import { join, relative, resolve, sep } from 'path';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { join, relative, resolve, sep } from 'node:path';
 import { DEFAULT_IGNORE, DEFAULT_WORKDIR } from './defaults.js';
 import { Workflow } from './Workflow.js';
 

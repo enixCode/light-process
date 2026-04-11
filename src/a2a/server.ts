@@ -1,10 +1,10 @@
+import { timingSafeEqual } from 'node:crypto';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { createServer as httpCreateServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { AgentCard } from '@a2a-js/sdk';
 import { DefaultRequestHandler, InMemoryTaskStore, JsonRpcTransportHandler } from '@a2a-js/sdk/server';
-import { timingSafeEqual } from 'crypto';
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
-import { createServer as httpCreateServer, type IncomingMessage, type ServerResponse } from 'http';
-import { dirname, join, resolve } from 'path';
-import { fileURLToPath } from 'url';
 import { DockerRunner } from '../runner/index.js';
 import { Workflow } from '../Workflow.js';
 import { buildAgentCard, type CardOptions } from './cardBuilder.js';
@@ -99,7 +99,7 @@ export function createA2AServer(options: A2AServerOptions = {}) {
 
     // API key auth check
     if (apiKey && isProtectedRoute(method, pathname)) {
-      const auth = req.headers['authorization'] || '';
+      const auth = req.headers.authorization || '';
       const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
       if (!token || !safeEqual(token, apiKey)) {
         json(res, 401, { error: 'Unauthorized' });
@@ -112,7 +112,7 @@ export function createA2AServer(options: A2AServerOptions = {}) {
       if (method === 'GET' && pathname === '/') {
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         const commit = process.env.COMMIT_SHA || '';
-        let html = UI_HTML.replace('__VERSION__', 'v' + VERSION);
+        let html = UI_HTML.replace('__VERSION__', `v${VERSION}`);
         if (commit) html = html.replace('__COMMIT__', commit).replace('display:none', '');
         res.end(html);
         return;

@@ -1,5 +1,5 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
-import { join, resolve } from 'path';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { loadWorkflowFromFolder, slugify } from '../CodeLoader.js';
 import { Workflow } from '../Workflow.js';
 

@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, statSync, writeFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { loadWorkflowFromFolder } from '../CodeLoader.js';
 import { Workflow } from '../Workflow.js';
 import { type Command, getPositional, hasFlag, wantsHelp } from './utils.js';

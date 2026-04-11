@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process';
+import { spawnSync } from 'node:child_process';
 import type { Command } from './utils.js';
 import { wantsHelp } from './utils.js';
 

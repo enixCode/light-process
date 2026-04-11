@@ -1,7 +1,7 @@
-import { execSync, spawn, spawnSync } from 'child_process';
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'fs/promises';
-import { tmpdir } from 'os';
-import { dirname, join, resolve } from 'path';
+import { execSync, spawn, spawnSync } from 'node:child_process';
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { isPathSafe, safeJsonParse } from '../CodeLoader.js';
 import { OUTPUT_FILE } from '../helpers.js';
 import type { Node } from '../models/index.js';
@@ -18,7 +18,7 @@ const DANGEROUS_CAPS = ['NET_RAW', 'MKNOD', 'SYS_CHROOT', 'SETPCAP', 'SETFCAP', 
 
 function toDockerPath(p: string): string {
   if (process.platform !== 'win32') return p;
-  return p.replace(/^([A-Za-z]):/, (_, drive: string) => '/' + drive.toLowerCase()).replace(/\\/g, '/');
+  return p.replace(/^([A-Za-z]):/, (_, drive: string) => `/${drive.toLowerCase()}`).replace(/\\/g, '/');
 }
 
 export interface DockerRunnerOptions {
@@ -325,7 +325,7 @@ export class DockerRunner {
         for (const line of text.split('\n')) {
           const trimmed = line.trim();
           if (trimmed) {
-            stderr += line + '\n';
+            stderr += `${line}\n`;
             onLog?.(line);
           }
         }

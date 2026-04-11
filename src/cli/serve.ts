@@ -1,4 +1,4 @@
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 import { createA2AServer } from '../a2a/server.js';
 import { DockerRunner } from '../runner/index.js';
 import type { Command } from './utils.js';

@@ -1,5 +1,5 @@
-import { existsSync, statSync, writeFileSync } from 'fs';
-import { dirname, join, resolve } from 'path';
+import { existsSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { loadWorkflowFromFolder } from '../CodeLoader.js';
 import type { Workflow } from '../Workflow.js';
 import { type Command, getFlagValue, getPositional, hasFlag, resolveWorkflow, wantsHelp } from './utils.js';
@@ -133,7 +133,7 @@ Examples:
       let label = '';
       if (lnk.when) label = formatCondition(lnk.when).replace(/"/g, "'");
       if (lnk.maxIterations) {
-        label += (label ? ' ' : '') + `loop max:${lnk.maxIterations}`;
+        label += `${label ? ' ' : ''}loop max:${lnk.maxIterations}`;
       }
       if (label) {
         mermaidLines.push(`  ${from} -->|"${label}"| ${to}`);

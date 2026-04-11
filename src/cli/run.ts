@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, statSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { loadDirectory, loadWorkflowFromFolder } from '../CodeLoader.js';
 import { DEFAULT_IGNORE } from '../defaults.js';
 import { Node } from '../models/index.js';
@@ -70,7 +70,7 @@ Examples:
       const resolved = resolve(target!);
 
       const folderPath = resolved.endsWith('.json') ? resolved.slice(0, -5) : resolved;
-      const jsonPath = resolved.endsWith('.json') ? resolved : resolved + '.json';
+      const jsonPath = resolved.endsWith('.json') ? resolved : `${resolved}.json`;
       const folderExists =
         existsSync(folderPath) && statSync(folderPath).isDirectory() && loadWorkflowFromFolder(folderPath) !== null;
       const jsonExists = existsSync(jsonPath) && statSync(jsonPath).isFile();
@@ -150,13 +150,13 @@ Examples:
       const result = await workflow.execute(inputData, {
         runner,
         timeout,
-        onNodeStart: (id, name) => {
+        onNodeStart: (_id, name) => {
           if (!jsonOutput) {
             flushLog();
             console.log(`> ${name}`);
           }
         },
-        onLog: (id, name, log) => {
+        onLog: (_id, name, log) => {
           if (!jsonOutput) {
             if (log === lastLog && name === lastLogName) {
               lastLogCount++;
@@ -170,7 +170,7 @@ Examples:
             }
           }
         },
-        onNodeComplete: (id, name, success, duration) => {
+        onNodeComplete: (_id, name, success, duration) => {
           if (!jsonOutput) {
             flushLog();
             console.log(`  ${success ? '[ok]' : '[fail]'} ${name} ${duration}ms`);

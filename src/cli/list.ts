@@ -1,5 +1,5 @@
-import { existsSync, statSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { type Command, getFlagValue, hasFlag, loadWorkflowsFromDir, wantsHelp } from './utils.js';
 
 export const list: Command = {

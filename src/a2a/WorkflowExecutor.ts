@@ -1,4 +1,4 @@
-import type { DataPart, Message, Part, TaskArtifactUpdateEvent, TaskStatusUpdateEvent } from '@a2a-js/sdk';
+import type { DataPart, Part, TaskArtifactUpdateEvent, TaskStatusUpdateEvent } from '@a2a-js/sdk';
 import type { AgentExecutor, ExecutionEventBus, RequestContext } from '@a2a-js/sdk/server';
 import type { DockerRunner } from '../runner/index.js';
 import type { Workflow } from '../Workflow.js';
@@ -111,7 +111,7 @@ export class WorkflowExecutor implements AgentExecutor {
     try {
       const result = await workflow.execute(input, {
         runner: this.runner,
-        onNodeStart: (nodeId, nodeName) => {
+        onNodeStart: (_nodeId, nodeName) => {
           eventBus.publish({
             kind: 'status-update',
             taskId,
