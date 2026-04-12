@@ -19,7 +19,7 @@ Options:
 
 Examples:
   light list
-  light list --dir ./my-workflows
+  light list --dir my-workflows
   light list --json`);
       return;
     }

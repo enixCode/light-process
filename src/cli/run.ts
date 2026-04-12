@@ -34,7 +34,7 @@ Examples:
   light run my-workflow.json
   light run my-workflow --input '{"key": "value"}'
   light run my-workflow --input data.json --json
-  light run --node ./my-node`);
+  light run --node my-node`);
       process.exit(showHelp ? 0 : 1);
     }
 

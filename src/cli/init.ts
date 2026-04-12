@@ -21,8 +21,8 @@ Options:
 
 Examples:
   light init my-project
-  light init --node ./my-node
-  light init --node ./analyze --lang python`);
+  light init --node my-node
+  light init --node analyze --lang python`);
       return;
     }
 
@@ -255,4 +255,8 @@ function initNode(dir: string): void {
   const parts = [`${nodeName}/`, `(${lang}, ${fileCount} files)`];
   if (registered) parts.push('- registered in workflow.json');
   console.log(`+ ${parts.join(' ')}`);
+  if (!registered) {
+    console.log(`  (standalone - no workflow.json in parent dir, node is not linked to any workflow)`);
+    console.log(`  Tip: cd into a workflow folder first, or use "light init --node <workflow>/<node>"`);
+  }
 }

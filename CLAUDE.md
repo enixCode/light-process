@@ -125,7 +125,7 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 ## Rules
 
 - ESM-only (`"type": "module"` in package.json)
-- Node 18+ required
+- Node 20+ required
 - Target: ES2022, module: Node16
 - All imports use `.js` extension (TypeScript convention for ESM)
 - No default exports - use named exports

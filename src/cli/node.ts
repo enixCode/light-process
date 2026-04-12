@@ -234,8 +234,8 @@ Options:
   --no-prompt                   Skip interactive mode (for CI)
 
 Examples:
-  light node schema ./my-node
-  light node schema ./example/hello`);
+  light node schema my-node
+  light node schema example/hello`);
       return;
     }
 
