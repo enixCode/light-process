@@ -1120,7 +1120,7 @@ Checking: Example (from folder)
 </div>
 
 <h3>light link</h3>
-<p>Edit links in a workflow folder. Without flags, opens an interactive editor.</p>
+<p>Manage links in a workflow folder. Without flags, opens <code>workflow.json</code> in <code>$EDITOR</code>.</p>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">bash</span>
@@ -1216,6 +1216,7 @@ Checking: Example (from folder)
   </div>
   <pre><code><span class="hl-prompt">$ </span>light node info &lt;dir&gt; [--json]
 <span class="hl-prompt">$ </span>light node schema &lt;dir&gt;
+<span class="hl-prompt">$ </span>light node register &lt;dir&gt;
 <span class="hl-prompt">$ </span>light node helpers &lt;dir&gt;</code></pre>
 </div>
 
@@ -1224,6 +1225,9 @@ Checking: Example (from folder)
 
 <h4>light node schema</h4>
 <p>Reads <code>.node.json</code> in <code>&lt;dir&gt;</code> and lets you add, edit, or remove fields on the input and output schemas. Changes are written back to <code>.node.json</code> on save. Also regenerates <code>lp.d.ts</code> for editor autocomplete.</p>
+
+<h4>light node register</h4>
+<p>Register a node folder in the parent <code>workflow.json</code>. Adds the node to the <code>nodes</code> array if not already present.</p>
 
 <h4>light node helpers</h4>
 <p>Regenerate <code>lp.d.ts</code> from the node's schema. Useful after manually editing <code>.node.json</code>. The <code>lp.d.ts</code> file gives your editor autocomplete on <code>input</code> fields and <code>send()</code> parameters.</p>
@@ -1726,6 +1730,7 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
     <tr><td><code>ne</code></td><td><code>{ status: { ne: "error" } }</code></td><td>Not equal</td></tr>
     <tr><td><code>in</code></td><td><code>{ role: { in: ["admin", "mod"] } }</code></td><td>Value in array</td></tr>
     <tr><td><code>exists</code></td><td><code>{ token: { exists: true } }</code></td><td>Field exists</td></tr>
+    <tr><td><code>regex</code></td><td><code>{ token: { regex: "^ok" } }</code></td><td>Regex match</td></tr>
     <tr><td><code>or</code></td><td><code>{ or: [{...}, {...}] }</code></td><td>Logical OR</td></tr>
   </tbody>
 </table>

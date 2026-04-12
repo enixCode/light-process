@@ -463,6 +463,7 @@ Links support MongoDB-style `when` conditions on the source node's output:
 | `ne` | `{ status: { ne: "error" } }` | Not equal |
 | `in` | `{ role: { in: ["admin", "mod"] } }` | Membership |
 | `exists` | `{ token: { exists: true } }` | Field presence |
+| `regex` | `{ token: { regex: "^ok" } }` | Regex match |
 | `or` | `{ or: [{...}, {...}] }` | Logical OR |
 
 All top-level fields use AND logic by default.
