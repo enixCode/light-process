@@ -51,7 +51,7 @@ src/
     unpack.ts         Convert JSON file to workflow folder
     list.ts           List workflows in a directory
     link.ts           Edit links/conditions in a workflow folder
-    node.ts           Interactive node schema editor (inputs/outputs)
+    node.ts           Node management (info, schema editor, register)
     utils.ts          Arg parsing, workflow resolution
 
   config.ts           Global config manager (remotes, defaults, override resolution)

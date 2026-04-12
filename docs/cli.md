@@ -388,19 +388,64 @@ light unpack <file.json> [--to <dir>] [--force] [--keep]
 
 ## light node
 
-Manage node metadata. Currently only the interactive schema editor is available.
+Manage node metadata - inspect node info or edit schemas interactively.
+
+### light node info
+
+Show node metadata, input/output schema, and what it receives from upstream nodes.
+
+```bash
+light node info <dir> [--json]
+```
+
+Reads `.node.json` from the target directory. If a parent `workflow.json` exists, also shows incoming links with source node output schemas, conditions, and injected data.
+
+**Example output:**
+
+```
+Node: transform (transform-1)
+Image: node:20-alpine
+Entrypoint: node index.js
+
+Inputs:
+  1. name (string, required) - The user name
+  2. age (integer)
+
+Outputs:
+  1. result (string, required)
+
+Receives from:
+  validate -> status (string, required), message (string)
+    when: {"status":"ok"}
+    data: {"role":"admin"}
+```
+
+### light node schema
+
+Opens an interactive editor that reads `.node.json` in `<dir>` and lets you add, edit, or remove input/output schema fields. Changes are written back to `.node.json` on save.
 
 ```bash
 light node schema <dir>
 ```
 
-Opens an interactive editor that reads `.node.json` in `<dir>` and lets you add, edit, or remove input/output schema fields. Changes are written back to `.node.json` on save.
+### light node register
+
+Register an existing node folder in the parent `workflow.json`. Reads the `.node.json` to get the node's id and name, then adds it to the nodes array. Skips if already registered.
+
+```bash
+light node register <dir>
+```
+
+Use this when you initialized a node outside a workflow folder and moved it in afterwards.
 
 **Examples:**
 
 ```bash
+light node info ./my-node
+light node info ./my-node --json
 light node schema ./my-node
 light node schema ./example/hello
+light node register ./my-workflow/my-node
 ```
 
 ---

@@ -1205,14 +1205,20 @@ Checking: Example (from folder)
 </div>
 
 <h3>light node</h3>
-<p>Manage node metadata. Currently provides an interactive editor for a node's input/output JSON Schema.</p>
+<p>Manage node metadata - inspect node info or edit schemas interactively.</p>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light node schema &lt;dir&gt;</code></pre>
+  <pre><code><span class="hl-prompt">$ </span>light node info &lt;dir&gt; [--json]
+<span class="hl-prompt">$ </span>light node schema &lt;dir&gt;</code></pre>
 </div>
+
+<h4>light node info</h4>
+<p>Show node metadata, input/output schema, and what it receives from upstream nodes. If a parent <code>workflow.json</code> exists, also displays incoming links with source node output schemas, conditions, and injected data.</p>
+
+<h4>light node schema</h4>
 <p>Reads <code>.node.json</code> in <code>&lt;dir&gt;</code> and lets you add, edit, or remove fields on the input and output schemas. Changes are written back to <code>.node.json</code> on save.</p>
 
 <h4>Examples</h4>
@@ -1221,7 +1227,11 @@ Checking: Example (from folder)
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-cm"># Edit the schema of an existing node folder</span>
+  <pre><code><span class="hl-cm"># Show node info and what it receives</span>
+<span class="hl-prompt">$ </span>light node info ./my-node
+<span class="hl-prompt">$ </span>light node info ./my-node --json
+
+<span class="hl-cm"># Edit the schema of an existing node folder</span>
 <span class="hl-prompt">$ </span>light node schema ./my-node
 
 <span class="hl-cm"># Edit the hello example</span>
