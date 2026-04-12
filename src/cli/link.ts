@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { safeJsonParse } from '../CodeLoader.js';
+import type { IOSchema } from '../schema.js';
 import type { Command } from './utils.js';
 import { getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
@@ -60,6 +61,26 @@ function resolveNode(nodes: NodeRef[], input: string): number {
   return byName;
 }
 
+/** Load a node's output schema from its .node.json */
+function loadNodeOutputs(workflowDir: string, nodeRef: NodeRef): IOSchema | null {
+  const nodeJsonPath = join(resolve(workflowDir), nodeRef.dir || nodeRef.id, '.node.json');
+  if (!existsSync(nodeJsonPath)) return null;
+  try {
+    const nodeJson = JSON.parse(readFileSync(nodeJsonPath, 'utf-8'));
+    return nodeJson.outputs ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Format output fields as a short summary */
+function formatOutputFields(schema: IOSchema): string {
+  const props = schema.properties || {};
+  const keys = Object.keys(props);
+  if (keys.length === 0) return '(no fields)';
+  return keys.map((k) => `${k} (${props[k].type || 'any'})`).join(', ');
+}
+
 /** Parse a value string - tries JSON first, then keeps as plain string */
 function parseValue(str: string): unknown {
   const trimmed = str.trim();
@@ -76,7 +97,10 @@ async function interactive(dir: string): Promise<void> {
   console.log(`\nWorkflow: ${meta.name} (${meta.id})`);
   console.log(`Nodes:`);
   for (let i = 0; i < meta.nodes.length; i++) {
-    console.log(`  [${i + 1}] ${meta.nodes[i].id} - ${meta.nodes[i].name}`);
+    const n = meta.nodes[i];
+    const out = loadNodeOutputs(dir, n);
+    const outStr = out ? ` -> ${formatOutputFields(out)}` : '';
+    console.log(`  [${i + 1}] ${n.id} - ${n.name}${outStr}`);
   }
   console.log(`Existing links: ${meta.links.length}`);
 
@@ -98,12 +122,19 @@ async function interactive(dir: string): Promise<void> {
       continue;
     }
 
-    const link: LinkJson = { from: meta.nodes[fromIdx].id, to: meta.nodes[toIdx].id };
+    const fromNode = meta.nodes[fromIdx];
+    const toNode = meta.nodes[toIdx];
+    const link: LinkJson = { from: fromNode.id, to: toNode.id };
+
+    const outputs = loadNodeOutputs(dir, fromNode);
+    if (outputs) {
+      console.log(`  ${fromNode.name} outputs: ${formatOutputFields(outputs)}`);
+    }
 
     const wantCond = (await prompt(rl, 'Add condition? (y/n) ')).trim().toLowerCase();
     if (wantCond === 'y' || wantCond === 'yes') {
       const field = (await prompt(rl, 'Field name: ')).trim();
-      const op = (await prompt(rl, 'Operator (eq/gt/gte/lt/lte/ne/in/exists): ')).trim();
+      const op = (await prompt(rl, 'Operator (eq/gt/gte/lt/lte/ne/in/exists/regex): ')).trim();
       const valStr = (await prompt(rl, 'Value: ')).trim();
       const value = parseValue(valStr);
       link.when = op === 'eq' ? { [field]: value } : { [field]: { [op]: value } };

@@ -11,6 +11,7 @@ describe('validateWhen', () => {
     assert.doesNotThrow(() => validateWhen({ count: { ne: 5 } }));
     assert.doesNotThrow(() => validateWhen({ status: { in: ['a', 'b'] } }));
     assert.doesNotThrow(() => validateWhen({ name: { exists: true } }));
+    assert.doesNotThrow(() => validateWhen({ name: { regex: 'enzo' } }));
   });
 
   it('accepts direct equality and or clauses', () => {
@@ -66,6 +67,16 @@ describe('checkCondition', () => {
     assert.equal(checkCondition({ name: { exists: true } }, {}), false);
     assert.equal(checkCondition({ name: { exists: false } }, {}), true);
     assert.equal(checkCondition({ name: { exists: false } }, { name: 'John' }), false);
+  });
+
+  it('evaluates regex operator', () => {
+    assert.equal(checkCondition({ name: { regex: 'enzo' } }, { name: 'lorenzo' }), true);
+    assert.equal(checkCondition({ name: { regex: '^enzo' } }, { name: 'enzo123' }), true);
+    assert.equal(checkCondition({ name: { regex: '^enzo' } }, { name: 'lorenzo' }), false);
+    assert.equal(checkCondition({ name: { regex: 'test$' } }, { name: 'mytest' }), true);
+    assert.equal(checkCondition({ name: { regex: 'test$' } }, { name: 'testing' }), false);
+    assert.equal(checkCondition({ name: { regex: 'enzo' } }, { name: 123 }), false, 'non-string fails');
+    assert.equal(checkCondition({ name: { regex: 'enzo' } }, {}), false, 'missing field fails');
   });
 
   it('evaluates OR and AND combinations', () => {

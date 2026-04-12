@@ -14,6 +14,18 @@ function mermaidId(id: string): string {
   return `"${id.replace(/"/g, '')}"`;
 }
 
+const OP_SYMBOLS: Record<string, string> = {
+  eq: '==',
+  ne: '!=',
+  gt: '>',
+  gte: '>=',
+  lt: '<',
+  lte: '<=',
+  in: 'in',
+  exists: 'exists',
+  regex: '~',
+};
+
 /** Format condition for display - short readable format instead of raw JSON */
 function formatCondition(when: Record<string, unknown>): string {
   const parts: string[] = [];
@@ -24,10 +36,10 @@ function formatCondition(when: Record<string, unknown>): string {
     } else if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
       const ops = Object.entries(val as Record<string, unknown>);
       for (const [op, v] of ops) {
-        parts.push(`${key} ${op} ${JSON.stringify(v)}`);
+        parts.push(`${key} ${OP_SYMBOLS[op] || op} ${JSON.stringify(v)}`);
       }
     } else {
-      parts.push(`${key}=${JSON.stringify(val)}`);
+      parts.push(`${key}==${JSON.stringify(val)}`);
     }
   }
   return parts.join(', ');
