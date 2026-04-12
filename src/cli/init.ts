@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { DEFAULT_IMAGES } from '../defaults.js';
 import type { CodeLanguage } from '../helpers.js';
-import { getAllHelpers, getHelper } from '../helpers.js';
+import { generateDts, getAllHelpers, getHelper } from '../helpers.js';
 import { type Command, getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
 export const init: Command = {
@@ -229,6 +229,12 @@ function initNode(dir: string): void {
       fileCount++;
       if (verbose) console.log(`+ ${helper.filename}`);
     }
+  }
+
+  if (lang === 'javascript') {
+    const dtsPath = join(dir, 'lp.d.ts');
+    writeFileSync(dtsPath, generateDts(null, null));
+    if (verbose) console.log('+ lp.d.ts');
   }
 
   const inputPath = join(dir, 'input.json');

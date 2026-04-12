@@ -2,6 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { safeJsonParse } from '../CodeLoader.js';
+import { generateDts } from '../helpers.js';
 import type { IOSchema, JSONSchema } from '../schema.js';
 import type { Command } from './utils.js';
 import { getPositional, hasFlag, wantsHelp } from './utils.js';
@@ -384,15 +385,33 @@ async function schemaCommand(dir: string): Promise<void> {
 
   if (save === 'y' || save === 'yes') {
     writeFileSync(nodeJsonPath, JSON.stringify(nodeJson, null, 2));
+    writeDtsIfJs(dir, nodeJson);
     console.log(`Updated ${nodeJsonPath}`);
   } else {
     console.log('Discarded.');
   }
 }
 
+function writeDtsIfJs(dir: string, nodeJson: NodeJson): void {
+  if (existsSync(join(dir, 'lp.js'))) {
+    writeFileSync(join(dir, 'lp.d.ts'), generateDts(nodeJson.inputs, nodeJson.outputs));
+  }
+}
+
+function helpersCommand(dir: string): void {
+  const nodeJsonPath = join(dir, '.node.json');
+  if (!existsSync(nodeJsonPath)) {
+    console.error(`No .node.json found in ${dir}`);
+    process.exit(1);
+  }
+  const nodeJson: NodeJson = JSON.parse(readFileSync(nodeJsonPath, 'utf-8'));
+  writeDtsIfJs(dir, nodeJson);
+  console.log('Updated lp.d.ts');
+}
+
 export const node: Command = {
-  desc: 'Manage nodes (info, schema, register)',
-  usage: 'light node <info|schema|register> <dir>',
+  desc: 'Manage nodes (info, schema, register, helpers)',
+  usage: 'light node <info|schema|register|helpers> <dir>',
   async run() {
     if (wantsHelp()) {
       console.log(`Usage:
@@ -400,13 +419,15 @@ export const node: Command = {
   light node info <dir> --json  Output as JSON
   light node schema <dir>       Edit input/output schema interactively
   light node register <dir>     Register a node folder in the parent workflow.json
+  light node helpers <dir>      Regenerate lp.d.ts from schema (for autocomplete)
 
 Examples:
   light node info my-node
   light node info my-node --json
   light node schema my-node
   light node schema example/hello
-  light node register my-workflow/my-node`);
+  light node register my-workflow/my-node
+  light node helpers my-node`);
       return;
     }
 
@@ -434,8 +455,14 @@ Examples:
       return;
     }
 
+    if (action === 'helpers') {
+      const dir = resolve(getPositional(1) || '.');
+      helpersCommand(dir);
+      return;
+    }
+
     if (!action) {
-      console.error('Usage: light node <info|schema|register> <dir>');
+      console.error('Usage: light node <info|schema|register|helpers> <dir>');
       process.exit(1);
     }
 

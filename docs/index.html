@@ -1215,14 +1215,18 @@ Checking: Example (from folder)
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
   <pre><code><span class="hl-prompt">$ </span>light node info &lt;dir&gt; [--json]
-<span class="hl-prompt">$ </span>light node schema &lt;dir&gt;</code></pre>
+<span class="hl-prompt">$ </span>light node schema &lt;dir&gt;
+<span class="hl-prompt">$ </span>light node helpers &lt;dir&gt;</code></pre>
 </div>
 
 <h4>light node info</h4>
 <p>Show node metadata, input/output schema, and what it receives from upstream nodes. If a parent <code>workflow.json</code> exists, also displays incoming links with source node output schemas, conditions, and injected data.</p>
 
 <h4>light node schema</h4>
-<p>Reads <code>.node.json</code> in <code>&lt;dir&gt;</code> and lets you add, edit, or remove fields on the input and output schemas. Changes are written back to <code>.node.json</code> on save.</p>
+<p>Reads <code>.node.json</code> in <code>&lt;dir&gt;</code> and lets you add, edit, or remove fields on the input and output schemas. Changes are written back to <code>.node.json</code> on save. Also regenerates <code>lp.d.ts</code> for editor autocomplete.</p>
+
+<h4>light node helpers</h4>
+<p>Regenerate <code>lp.d.ts</code> from the node's schema. Useful after manually editing <code>.node.json</code>. The <code>lp.d.ts</code> file gives your editor autocomplete on <code>input</code> fields and <code>send()</code> parameters.</p>
 
 <h4>Examples</h4>
 <div class="code-block">
@@ -1238,7 +1242,10 @@ Checking: Example (from folder)
 <span class="hl-prompt">$ </span>light node schema ./my-node
 
 <span class="hl-cm"># Edit the hello example</span>
-<span class="hl-prompt">$ </span>light node schema ./example/hello</code></pre>
+<span class="hl-prompt">$ </span>light node schema ./example/hello
+
+<span class="hl-cm"># Regenerate lp.d.ts after editing .node.json by hand</span>
+<span class="hl-prompt">$ </span>light node helpers ./my-node</code></pre>
 </div>
 
 <h3>Global options</h3>

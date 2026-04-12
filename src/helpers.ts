@@ -1,3 +1,5 @@
+import type { IOSchema, JSONSchema } from './schema.js';
+
 export type CodeLanguage = 'javascript' | 'python';
 
 export interface HelperFile {
@@ -32,4 +34,41 @@ export function getHelper(language: CodeLanguage): HelperFile {
 
 export function getAllHelpers(): HelperFile[] {
   return Object.values(helpers);
+}
+
+function jsonSchemaToTs(schema: JSONSchema): string {
+  const type = Array.isArray(schema.type) ? schema.type[0] : schema.type;
+  switch (type) {
+    case 'string':
+      return 'string';
+    case 'number':
+    case 'integer':
+      return 'number';
+    case 'boolean':
+      return 'boolean';
+    case 'array':
+      return schema.items ? `${jsonSchemaToTs(schema.items)}[]` : 'unknown[]';
+    case 'object':
+      if (schema.properties) return schemaToInterface(schema as IOSchema);
+      return 'Record<string, unknown>';
+    default:
+      return 'unknown';
+  }
+}
+
+function schemaToInterface(schema: IOSchema): string {
+  const props = schema.properties;
+  const required = schema.required ?? [];
+  const lines = Object.entries(props).map(([key, prop]) => {
+    const opt = required.includes(key) ? '' : '?';
+    return `  ${key}${opt}: ${jsonSchemaToTs(prop)};`;
+  });
+  return `{\n${lines.join('\n')}\n}`;
+}
+
+/** Generate a lp.d.ts file content from input/output schemas */
+export function generateDts(inputs: IOSchema | null, outputs: IOSchema | null): string {
+  const inputType = inputs?.properties ? schemaToInterface(inputs) : 'Record<string, unknown>';
+  const outputType = outputs?.properties ? schemaToInterface(outputs) : 'Record<string, unknown>';
+  return `export declare const input: ${inputType};\nexport declare function send(output: ${outputType}): void;\n`;
 }
