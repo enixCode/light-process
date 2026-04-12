@@ -23,7 +23,7 @@ src/
   Workflow.ts         Core DAG - nodes, links, batch execution
   CodeLoader.ts       Load/export workflows from folder structure
   schema.ts           JSON Schema validation via AJV
-  helpers.ts          Language helpers (lp.js, lp.py)
+  helpers.ts          Language helpers (lp.js, lp.py) + lp.d.ts generator
   defaults.ts         Constants (workdir, images, ignore patterns)
   errors.ts           Custom error types
 
@@ -41,7 +41,7 @@ src/
     serve.ts          Start A2A API server
     init.ts           Scaffold project or node
     check.ts          Validate workflow structure
-    describe.ts       DAG visualization (text + Mermaid HTML)
+    describe.ts       DAG visualization with I/O schemas (text + Mermaid HTML)
     doctor.ts         Environment health check
     config.ts         Read/write global config (~/.light/config.json)
     remote.ts         Manage remote profiles, ping, ls, run, delete
@@ -50,8 +50,8 @@ src/
     pack.ts           Convert workflow folder to single JSON file
     unpack.ts         Convert JSON file to workflow folder
     list.ts           List workflows in a directory
-    link.ts           Edit links/conditions in a workflow folder
-    node.ts           Node management (info, schema editor, register)
+    link.ts           Manage links (inline flags or $EDITOR, no REPL)
+    node.ts           Node management (info, schema editor, register, helpers)
     utils.ts          Arg parsing, workflow resolution
 
   config.ts           Global config manager (remotes, defaults, override resolution)
@@ -82,6 +82,7 @@ my-workflow/                     # folder format - the working copy
     .node.json                   # id, name, image, entrypoint, setup, I/O schema
     index.js                     # code
     lp.js                        # helper
+    lp.d.ts                      # auto-generated types for editor autocomplete
 
 my-workflow.json                 # JSON format - single portable file
 ```
@@ -89,7 +90,8 @@ my-workflow.json                 # JSON format - single portable file
 - `light pack <name>` converts folder to JSON (removes the folder)
 - `light unpack <name>` converts JSON to folder (removes the JSON)
 - `light list` shows all workflows in the current directory
-- `light node schema <dir>` edits a node's input/output JSON Schema interactively
+- `light node schema <dir>` edits a node's input/output JSON Schema interactively (also regenerates `lp.d.ts`)
+- `light node helpers <dir>` regenerates `lp.d.ts` from schema (for manual `.node.json` edits)
 - Use `--keep` on pack/unpack to preserve the source
 - All commands search the current directory by default
 
@@ -144,7 +146,7 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - `light remote delete|rm <id> [--soft] [--yes]`
 - `light pull <id> [--path <dir>] [--force]` - default target `./<id>/`. `--force` wipes target first
 - `light push [<name>] [--path <dir>]` - no-arg pushes all in current directory. Auto POST/PUT (PUT prompts confirm unless `--yes`)
-- `light link <dir>` - interactive link editor (or `--from/--to/--when` inline, `--list`, `--remove <id>`)
+- `light link <dir>` - manage links inline (`--from/--to`, `--edit <id>`, `--list`, `--remove <id>`) or open in `$EDITOR`
 - Server: `GET /api/workflows/:id?full=true` returns the full workflow JSON for pull
 - Server: `PUT /api/workflows/:id?persist=true` atomic update used by push
 

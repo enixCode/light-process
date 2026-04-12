@@ -56,13 +56,21 @@ function jsonSchemaToTs(schema: JSONSchema): string {
   }
 }
 
+function safeKey(key: string): string {
+  if (/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)) return key;
+  return JSON.stringify(key);
+}
+
 function schemaToInterface(schema: IOSchema): string {
   const props = schema.properties;
   const required = schema.required ?? [];
-  const lines = Object.entries(props).map(([key, prop]) => {
-    const opt = required.includes(key) ? '' : '?';
-    return `  ${key}${opt}: ${jsonSchemaToTs(prop)};`;
-  });
+  const lines = Object.entries(props)
+    .filter(([key]) => key !== '')
+    .map(([key, prop]) => {
+      const opt = required.includes(key) ? '' : '?';
+      return `  ${safeKey(key)}${opt}: ${jsonSchemaToTs(prop)};`;
+    });
+  if (lines.length === 0) return 'Record<string, unknown>';
   return `{\n${lines.join('\n')}\n}`;
 }
 
