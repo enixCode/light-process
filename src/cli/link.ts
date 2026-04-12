@@ -1,8 +1,7 @@
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { createInterface } from 'node:readline';
+import { join } from 'node:path';
 import { safeJsonParse } from '../CodeLoader.js';
-import type { IOSchema } from '../schema.js';
 import type { Command } from './utils.js';
 import { getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
@@ -16,17 +15,11 @@ interface LinkJson {
   maxIterations?: number;
 }
 
-interface NodeRef {
-  id: string;
-  name: string;
-  dir: string;
-}
-
 interface WorkflowMeta {
   id: string;
   name: string;
   network?: string | null;
-  nodes: NodeRef[];
+  nodes: { id: string; name: string; dir: string }[];
   links: LinkJson[];
 }
 
@@ -45,143 +38,66 @@ function saveMeta(path: string, meta: WorkflowMeta): void {
   writeFileSync(path, JSON.stringify(meta, null, 2));
 }
 
-function prompt(rl: ReturnType<typeof createInterface>, q: string): Promise<string> {
-  return new Promise((resolve) => rl.question(q, (a) => resolve(a)));
-}
-
-/** Resolve user input to a node index - accepts a number (#), id, or name */
-function resolveNode(nodes: NodeRef[], input: string): number {
-  const trimmed = input.trim();
-  const idx = parseInt(trimmed, 10) - 1;
-  if (!Number.isNaN(idx) && nodes[idx]) return idx;
-  const byId = nodes.findIndex((n) => n.id === trimmed);
-  if (byId !== -1) return byId;
-  const lower = trimmed.toLowerCase();
-  const byName = nodes.findIndex((n) => n.name.toLowerCase() === lower);
-  return byName;
-}
-
-/** Load a node's output schema from its .node.json */
-function loadNodeOutputs(workflowDir: string, nodeRef: NodeRef): IOSchema | null {
-  const nodeJsonPath = join(resolve(workflowDir), nodeRef.dir || nodeRef.id, '.node.json');
-  if (!existsSync(nodeJsonPath)) return null;
-  try {
-    const nodeJson = JSON.parse(readFileSync(nodeJsonPath, 'utf-8'));
-    return nodeJson.outputs ?? null;
-  } catch {
-    return null;
+function openInEditor(filePath: string): void {
+  const editor = process.env.EDITOR || process.env.VISUAL || (process.platform === 'win32' ? 'notepad' : 'vi');
+  const result = spawnSync(editor, [filePath], { stdio: 'inherit' });
+  if (result.error) {
+    console.error(`Failed to open editor (${editor}): ${result.error.message}`);
+    process.exit(1);
   }
 }
 
-/** Format output fields as a short summary */
-function formatOutputFields(schema: IOSchema): string {
-  const props = schema.properties || {};
-  const keys = Object.keys(props);
-  if (keys.length === 0) return '(no fields)';
-  return keys.map((k) => `${k} (${props[k].type || 'any'})`).join(', ');
-}
+const HELP = `Usage:
+  light link <dir>                                    Open workflow.json in $EDITOR
+  light link <dir> --list                             List links
+  light link <dir> --from <id> --to <id> [options]    Add a link
+  light link <dir> --edit <link-id> [options]          Edit a link (only given fields change)
+  light link <dir> --remove <link-id>                 Remove a link
+  light link <dir> --open                             Open workflow.json in $EDITOR
 
-/** Parse a value string - tries JSON first, then keeps as plain string */
-function parseValue(str: string): unknown {
-  const trimmed = str.trim();
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return trimmed;
-  }
-}
+Options (for --from/--to and --edit):
+  --when <json>           Condition - when to follow the link
+  --data <json>           Static data to inject
+  --max-iterations <n>    Limit for back-links (cycles)
 
-async function interactive(dir: string): Promise<void> {
-  const { path, meta } = loadMeta(dir);
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  console.log(`\nWorkflow: ${meta.name} (${meta.id})`);
-  console.log(`Nodes:`);
-  for (let i = 0; i < meta.nodes.length; i++) {
-    const n = meta.nodes[i];
-    const out = loadNodeOutputs(dir, n);
-    const outStr = out ? ` -> ${formatOutputFields(out)}` : '';
-    console.log(`  [${i + 1}] ${n.id} - ${n.name}${outStr}`);
-  }
-  console.log(`Existing links: ${meta.links.length}`);
-
-  while (true) {
-    const ans = (await prompt(rl, '\nAdd a link? (y/n) ')).trim().toLowerCase();
-    if (ans !== 'y' && ans !== 'yes') break;
-
-    const fromInput = (await prompt(rl, 'From (# or name): ')).trim();
-    const fromIdx = resolveNode(meta.nodes, fromInput);
-    if (fromIdx === -1) {
-      console.log(`Unknown node: "${fromInput}". Use a number, id, or name.`);
-      continue;
+Link structure in workflow.json:
+  "links": [
+    {
+      "id": "a-b-1",          // unique id
+      "from": "node-a",       // source node id
+      "to": "node-b",         // target node id
+      "when": { ... },        // optional condition (see below)
+      "data": { ... },        // optional static data
+      "maxIterations": 5      // required for back-links (cycles)
     }
+  ]
 
-    const toInput = (await prompt(rl, 'To (# or name): ')).trim();
-    const toIdx = resolveNode(meta.nodes, toInput);
-    if (toIdx === -1) {
-      console.log(`Unknown node: "${toInput}". Use a number, id, or name.`);
-      continue;
-    }
-
-    const fromNode = meta.nodes[fromIdx];
-    const toNode = meta.nodes[toIdx];
-    const link: LinkJson = { from: fromNode.id, to: toNode.id };
-
-    const outputs = loadNodeOutputs(dir, fromNode);
-    if (outputs) {
-      console.log(`  ${fromNode.name} outputs: ${formatOutputFields(outputs)}`);
-    }
-
-    const wantCond = (await prompt(rl, 'Add condition? (y/n) ')).trim().toLowerCase();
-    if (wantCond === 'y' || wantCond === 'yes') {
-      const field = (await prompt(rl, 'Field name: ')).trim();
-      const op = (await prompt(rl, 'Operator (eq/gt/gte/lt/lte/ne/in/exists/regex): ')).trim();
-      const valStr = (await prompt(rl, 'Value: ')).trim();
-      const value = parseValue(valStr);
-      link.when = op === 'eq' ? { [field]: value } : { [field]: { [op]: value } };
-    }
-
-    const maxIter = (await prompt(rl, 'maxIterations (enter to skip): ')).trim();
-    if (maxIter) link.maxIterations = parseInt(maxIter, 10);
-
-    link.id = `${link.from}-${link.to}-${meta.links.length + 1}`;
-    meta.links.push(link);
-    console.log(`Added: ${link.from} -> ${link.to}${link.when ? ` when ${JSON.stringify(link.when)}` : ''}`);
-  }
-
-  const save = (await prompt(rl, '\nSave? (y/n) ')).trim().toLowerCase();
-  rl.close();
-  if (save === 'y' || save === 'yes') {
-    saveMeta(path, meta);
-    console.log(`Saved to ${path}`);
-  } else {
-    console.log('Discarded.');
-  }
-}
-
-export const link: Command = {
-  desc: 'Edit links in a workflow folder (interactive or inline)',
-  usage: 'light link <workflow-dir> [--from <id> --to <id> [--when <json>]] | --list | --remove <link-id>',
-  async run() {
-    if (wantsHelp()) {
-      console.log(`Usage:
-  light link <workflow-dir>                          Interactive link editor
-  light link <workflow-dir> --from <id> --to <id>    Add a link inline
-  light link <workflow-dir> --list                   List existing links
-  light link <workflow-dir> --remove <link-id>       Remove a link
-
-Options:
-  --from <id>             Source node ID
-  --to <id>               Target node ID
-  --when <json>           Condition (MongoDB-style JSON)
-  --data <json>           Data to inject on the link
-  --max-iterations <n>    Max iterations for back-links
+Condition operators (--when):
+  Equality:     {"field": "value"}          or  {"field": {"eq": "value"}}
+  Comparison:   {"field": {"gt": 5}}        gt, gte, lt, lte
+  Not equal:    {"field": {"ne": "bad"}}
+  In list:      {"field": {"in": [1, 2]}}
+  Exists:       {"field": {"exists": true}}
+  Regex:        {"field": {"regex": "^ok"}}
+  AND:          {"a": "x", "b": "y"}        (all top-level fields must match)
+  OR:           {"or": [{"a": "x"}, {"b": "y"}]}
 
 Examples:
-  light link example
-  light link example --from nodeA --to nodeB
-  light link example --from a --to b --when '{"status": "ok"}'
-  light link example --list
-  light link example --remove a-b-1`);
+  light link my-workflow --list
+  light link my-workflow --from node-a --to node-b
+  light link my-workflow --from a --to b --when '{"status": "ok"}'
+  light link my-workflow --from a --to b --when '{"count": {"gt": 5}}' --max-iterations 10
+  light link my-workflow --edit a-b-1 --when '{"status": {"ne": "error"}}'
+  light link my-workflow --edit a-b-1 --data '{"retry": true}'
+  light link my-workflow --remove a-b-1
+  light link my-workflow                     # opens in $EDITOR`;
+
+export const link: Command = {
+  desc: 'Manage links in a workflow folder',
+  usage: 'light link <dir> [--list | --from/--to | --edit <id> | --remove <id> | --open]',
+  async run() {
+    if (wantsHelp()) {
+      console.log(HELP);
       return;
     }
 
@@ -189,8 +105,15 @@ Examples:
 
     if (hasFlag('--list')) {
       const { meta } = loadMeta(dir);
+      if (meta.links.length === 0) {
+        console.log('No links.');
+        return;
+      }
       for (const l of meta.links) {
-        console.log(`${l.id ?? '?'}  ${l.from} -> ${l.to}${l.when ? ` when ${JSON.stringify(l.when)}` : ''}`);
+        const cond = l.when ? ` when ${JSON.stringify(l.when)}` : '';
+        const data = l.data ? ` data ${JSON.stringify(l.data)}` : '';
+        const iter = l.maxIterations ? ` max ${l.maxIterations}` : '';
+        console.log(`${l.id ?? '?'}  ${l.from} -> ${l.to}${cond}${data}${iter}`);
       }
       return;
     }
@@ -200,8 +123,35 @@ Examples:
       const { path, meta } = loadMeta(dir);
       const before = meta.links.length;
       meta.links = meta.links.filter((l) => l.id !== removeId);
+      if (meta.links.length === before) {
+        console.error(`Link not found: ${removeId}`);
+        process.exit(1);
+      }
       saveMeta(path, meta);
-      console.log(`Removed ${before - meta.links.length} link(s)`);
+      console.log(`Removed ${removeId}`);
+      return;
+    }
+
+    const editId = getFlagValue('--edit');
+    if (editId) {
+      const { path, meta } = loadMeta(dir);
+      const link = meta.links.find((l) => l.id === editId);
+      if (!link) {
+        console.error(`Link not found: ${editId}`);
+        process.exit(1);
+      }
+      const from = getFlagValue('--from');
+      if (from) link.from = from;
+      const to = getFlagValue('--to');
+      if (to) link.to = to;
+      const whenStr = getFlagValue('--when');
+      if (whenStr) link.when = JSON.parse(whenStr);
+      const dataStr = getFlagValue('--data');
+      if (dataStr) link.data = JSON.parse(dataStr);
+      const maxIter = getFlagValue('--max-iterations');
+      if (maxIter) link.maxIterations = parseInt(maxIter, 10);
+      saveMeta(path, meta);
+      console.log(`Updated ${editId}`);
       return;
     }
 
@@ -219,10 +169,12 @@ Examples:
       link.id = `${from}-${to}-${meta.links.length + 1}`;
       meta.links.push(link);
       saveMeta(path, meta);
-      console.log(`Added link ${link.id}`);
+      console.log(`Added ${link.id}`);
       return;
     }
 
-    await interactive(dir);
+    // Default: open in editor
+    const { path } = loadMeta(dir);
+    openInEditor(path);
   },
 };

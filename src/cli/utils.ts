@@ -29,6 +29,7 @@ const VALUE_FLAGS = new Set([
   '--from',
   '--to',
   '--remove',
+  '--edit',
 ]);
 
 export function getPositional(n: number): string | undefined {

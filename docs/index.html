@@ -1127,6 +1127,7 @@ Checking: Example (from folder)
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
   <pre><code><span class="hl-prompt">$ </span>light link &lt;workflow-dir&gt; [<span class="hl-flag">--from</span> &lt;id&gt; <span class="hl-flag">--to</span> &lt;id&gt;] [<span class="hl-flag">--when</span> &lt;json&gt;]
+<span class="hl-prompt">$ </span>light link &lt;workflow-dir&gt; <span class="hl-flag">--edit</span> &lt;link-id&gt; [<span class="hl-flag">--when</span> &lt;json&gt;] [<span class="hl-flag">--data</span> &lt;json&gt;]
 <span class="hl-prompt">$ </span>light link &lt;workflow-dir&gt; <span class="hl-flag">--list</span>
 <span class="hl-prompt">$ </span>light link &lt;workflow-dir&gt; <span class="hl-flag">--remove</span> &lt;link-id&gt;</code></pre>
 </div>
@@ -1139,8 +1140,10 @@ Checking: Example (from folder)
     <tr><td><code>--when &lt;json&gt;</code></td><td>Condition (MongoDB-style JSON)</td></tr>
     <tr><td><code>--data &lt;json&gt;</code></td><td>Data to inject on the link</td></tr>
     <tr><td><code>--max-iterations &lt;n&gt;</code></td><td>Max iterations for back-links</td></tr>
+    <tr><td><code>--edit &lt;id&gt;</code></td><td>Edit an existing link (combine with --when, --data, etc.)</td></tr>
     <tr><td><code>--list</code></td><td>List existing links</td></tr>
     <tr><td><code>--remove &lt;id&gt;</code></td><td>Remove a link by ID</td></tr>
+    <tr><td><code>--open</code></td><td>Open workflow.json in $EDITOR</td></tr>
   </tbody>
 </table>
 </div>
