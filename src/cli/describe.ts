@@ -51,11 +51,7 @@ Examples:
       return;
     }
 
-    const target = getPositional(0);
-    if (!target) {
-      console.error('Usage: light describe <file|dir|id|name>');
-      process.exit(1);
-    }
+    const target = getPositional(0) || '.';
 
     const dir = getFlagValue('--dir', '.');
     const resolved = resolve(target);

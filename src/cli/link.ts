@@ -48,6 +48,28 @@ function prompt(rl: ReturnType<typeof createInterface>, q: string): Promise<stri
   return new Promise((resolve) => rl.question(q, (a) => resolve(a)));
 }
 
+/** Resolve user input to a node index - accepts a number (#), id, or name */
+function resolveNode(nodes: NodeRef[], input: string): number {
+  const trimmed = input.trim();
+  const idx = parseInt(trimmed, 10) - 1;
+  if (!Number.isNaN(idx) && nodes[idx]) return idx;
+  const byId = nodes.findIndex((n) => n.id === trimmed);
+  if (byId !== -1) return byId;
+  const lower = trimmed.toLowerCase();
+  const byName = nodes.findIndex((n) => n.name.toLowerCase() === lower);
+  return byName;
+}
+
+/** Parse a value string - tries JSON first, then keeps as plain string */
+function parseValue(str: string): unknown {
+  const trimmed = str.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
 async function interactive(dir: string): Promise<void> {
   const { path, meta } = loadMeta(dir);
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -62,29 +84,32 @@ async function interactive(dir: string): Promise<void> {
     const ans = (await prompt(rl, '\nAdd a link? (y/n) ')).trim().toLowerCase();
     if (ans !== 'y' && ans !== 'yes') break;
 
-    const fromIdx = parseInt(await prompt(rl, 'From node #: '), 10) - 1;
-    const toIdx = parseInt(await prompt(rl, 'To node #: '), 10) - 1;
-    if (!meta.nodes[fromIdx] || !meta.nodes[toIdx]) {
-      console.log('Invalid index, skipped.');
+    const fromInput = (await prompt(rl, 'From (# or name): ')).trim();
+    const fromIdx = resolveNode(meta.nodes, fromInput);
+    if (fromIdx === -1) {
+      console.log(`Unknown node: "${fromInput}". Use a number, id, or name.`);
       continue;
     }
+
+    const toInput = (await prompt(rl, 'To (# or name): ')).trim();
+    const toIdx = resolveNode(meta.nodes, toInput);
+    if (toIdx === -1) {
+      console.log(`Unknown node: "${toInput}". Use a number, id, or name.`);
+      continue;
+    }
+
     const link: LinkJson = { from: meta.nodes[fromIdx].id, to: meta.nodes[toIdx].id };
 
     const wantCond = (await prompt(rl, 'Add condition? (y/n) ')).trim().toLowerCase();
     if (wantCond === 'y' || wantCond === 'yes') {
       const field = (await prompt(rl, 'Field name: ')).trim();
       const op = (await prompt(rl, 'Operator (eq/gt/gte/lt/lte/ne/in/exists): ')).trim();
-      const valStr = (await prompt(rl, 'Value (JSON): ')).trim();
-      let value: unknown = valStr;
-      try {
-        value = JSON.parse(valStr);
-      } catch {
-        // keep as string
-      }
+      const valStr = (await prompt(rl, 'Value: ')).trim();
+      const value = parseValue(valStr);
       link.when = op === 'eq' ? { [field]: value } : { [field]: { [op]: value } };
     }
 
-    const maxIter = (await prompt(rl, 'maxIterations (empty for none): ')).trim();
+    const maxIter = (await prompt(rl, 'maxIterations (enter to skip): ')).trim();
     if (maxIter) link.maxIterations = parseInt(maxIter, 10);
 
     link.id = `${link.from}-${link.to}-${meta.links.length + 1}`;
@@ -129,11 +154,7 @@ Examples:
       return;
     }
 
-    const dir = getPositional(0);
-    if (!dir) {
-      console.error('Usage: light link <workflow-dir> [...]');
-      process.exit(1);
-    }
+    const dir = getPositional(0) || '.';
 
     if (hasFlag('--list')) {
       const { meta } = loadMeta(dir);
