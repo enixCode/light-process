@@ -97,7 +97,7 @@ my-workflow.json                 # JSON format - single portable file
 
 ## Conditions system (link.when)
 
-MongoDB-style operators: `gt`, `gte`, `lt`, `lte`, `ne`, `in`, `exists`, `or`.
+MongoDB-style operators: `gt`, `gte`, `lt`, `lte`, `ne`, `in`, `exists`, `regex`, `or`.
 
 ```json
 { "count": { "gt": 5 }, "status": "ok" }

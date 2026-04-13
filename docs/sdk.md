@@ -186,6 +186,8 @@ node.addHelper('python');     // adds lp.py
 node.addHelper();             // adds all helpers
 ```
 
+When using folder-based workflows, `light node schema` and `light node helpers` regenerate `lp.d.ts` - a TypeScript declaration file that gives editors autocomplete for `input` fields and `send()` arguments based on the node's schema.
+
 ## Workflow serialization
 
 ```javascript

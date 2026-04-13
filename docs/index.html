@@ -1014,8 +1014,11 @@ Checking: Example (from folder)
   <span class="hl-num">3</span> nodes, <span class="hl-num">2</span> links
 
   Validate (node:20-alpine)
-    <span class="hl-arrow">-&gt;</span> Process (<span class="hl-kw">when</span>: valid == true)
+    in: name (string), age (integer)
+    out: valid (boolean), score (number)
+    <span class="hl-arrow">-&gt;</span> Process [valid = true]
   Process (python:3.12-alpine)
+    out: result (string)
     <span class="hl-arrow">-&gt;</span> Notify
   Notify (node:20-alpine)</code></pre>
 </div>

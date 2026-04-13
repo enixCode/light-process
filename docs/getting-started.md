@@ -53,6 +53,7 @@ my-project/
       .node.json                     # node config
       index.js                       # code
       lp.js                          # helper
+      lp.d.ts                        # types (autocomplete)
 ```
 
 ## Run the example

@@ -182,11 +182,16 @@ Outputs a text tree and generates `describe.html` with an interactive Mermaid di
   3 nodes, 2 links
 
   Validate (node:20-alpine)
-    -> Process (when: valid == true)
+    in: name (string), age (integer)
+    out: valid (boolean), score (number)
+    -> Process [valid = true]
   Process (python:3.12-alpine)
+    out: result (string)
     -> Notify
   Notify (node:20-alpine)
 ```
+
+Node input/output schemas are shown when defined.
 
 ---
 
@@ -311,25 +316,43 @@ light push [<name>] [--path <dir>] [--remote <name>] [--yes]
 
 ## light link
 
-Edit links between nodes in a workflow folder, interactively or via flags.
+Manage links between nodes in a workflow folder.
 
 ```bash
-light link <workflow-dir> [--from <id> --to <id>] [--when <json>]
-light link <workflow-dir> --list
-light link <workflow-dir> --remove <link-id>
+light link <dir>                                    # Open workflow.json in $EDITOR
+light link <dir> --from <id> --to <id> [options]    # Add a link
+light link <dir> --edit <link-id> [options]          # Edit a link
+light link <dir> --list                             # List links
+light link <dir> --remove <link-id>                 # Remove a link
+light link <dir> --open                             # Open in $EDITOR
 ```
 
-**Options:**
+**Options (for --from/--to and --edit):**
 
 | Flag | Description |
 |---|---|
 | `--from <id>` | Source node id |
 | `--to <id>` | Target node id |
-| `--when <json>` | Inline MongoDB-style condition |
+| `--when <json>` | Condition - when to follow the link |
+| `--data <json>` | Static data to inject |
+| `--max-iterations <n>` | Limit for back-links (cycles) |
+| `--edit <link-id>` | Edit an existing link (only given fields change) |
 | `--list` | Print existing links and exit |
 | `--remove <link-id>` | Remove a link by id |
+| `--open` | Open workflow.json in $EDITOR |
 
-Without flags, launches an interactive editor.
+Without flags, opens `workflow.json` in `$EDITOR`.
+
+**Examples:**
+
+```bash
+light link my-workflow --list
+light link my-workflow --from a --to b
+light link my-workflow --from a --to b --when '{"status": "ok"}'
+light link my-workflow --from a --to b --when '{"count": {"gt": 5}}' --max-iterations 10
+light link my-workflow --edit a-b-1 --when '{"status": {"ne": "error"}}'
+light link my-workflow --remove a-b-1
+```
 
 ---
 
@@ -438,6 +461,16 @@ light node register <dir>
 
 Use this when you initialized a node outside a workflow folder and moved it in afterwards.
 
+### light node helpers
+
+Regenerate `lp.d.ts` from the node's input/output schema. Provides TypeScript type definitions for `lp.js` so editors show autocomplete for `input` fields and `send()` arguments.
+
+```bash
+light node helpers <dir>
+```
+
+This is also run automatically by `light node schema` after saving.
+
 **Examples:**
 
 ```bash
@@ -446,6 +479,7 @@ light node info ./my-node --json
 light node schema ./my-node
 light node schema ./example/hello
 light node register ./my-workflow/my-node
+light node helpers ./my-node
 ```
 
 ---
