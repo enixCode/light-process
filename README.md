@@ -40,10 +40,10 @@ npm install -g light-process
 npm install -g github:enixCode/light-process#alpha
 ```
 
-The `#alpha` variant installs the most recent commit on the `dev` branch
+The `#alpha` variant installs the most recent commit on the `main` branch
 (via a mobile git tag). It always reflects the latest code, unlike npm
 packages which only update on tagged releases. There is no `@alpha` tag
-on npm - dev builds are only available via the GitHub URL.
+on npm - alpha builds are only available via the GitHub URL.
 
 ## Quick Start
 

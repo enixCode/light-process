@@ -150,12 +150,23 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - Server: `GET /api/workflows/:id?full=true` returns the full workflow JSON for pull
 - Server: `PUT /api/workflows/:id?persist=true` atomic update used by push
 
+## Branching and releases
+
+GitHub Flow - single long-lived branch.
+
+- `main` - the only long-lived branch. All work merges here via PRs (squash merged).
+- Feature branches (`feature/*`, `fix/*`, `docs/*`) - short-lived, deleted after merge.
+- Tag `v*` - release trigger (npm publish + GitHub Release).
+- Mobile tag `alpha` - auto-moves to main HEAD on every push.
+- Contributors fork, branch from `main`, PR to `main`. See CONTRIBUTING.md.
+- Release: tag main with `v{VERSION}` and push. See the release skill.
+
 ## CI/CD
 
 - Published on npm as `light-process` (bins: `light`, `light-process`). Install: `npm i -g light-process`
 - `.github/workflows/ci.yml` - lint/build/test
-- `.github/workflows/release.yml` - triggered by push to `dev` (move mobile git tag `alpha`) or push of tag `v*` (lint/build/test + `npm publish --tag latest --provenance` via OIDC + move mobile git tag `latest` + GitHub Release). Tag-based releases: pushing a version tag triggers publish, merging `dev` into `main` does not
-- `.github/workflows/deploy.yml` - on push to `main` or `dev`, SSH deploy runs `light-process` (main/prod) or `light-process-test` (dev) on the server
+- `.github/workflows/release.yml` - triggered by push to `main` (move mobile git tag `alpha`) or push of tag `v*` (lint/build/test + `npm publish --tag latest --provenance` via OIDC + move mobile git tag `latest` + GitHub Release). Tag-based releases: pushing a version tag triggers publish.
+- `.github/workflows/deploy.yml` - on push to `main` or `staging`, SSH deploy runs `light-process` (main/prod) or `light-process-test` (staging) on the server. For test deploys: `git push origin main:staging`
 - No Docker image is published for light-process itself - it runs on the host and uses Docker only to execute node containers
 
 ## Documentation

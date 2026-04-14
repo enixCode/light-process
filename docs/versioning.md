@@ -36,10 +36,10 @@ on the `main` branch triggers the npm publish workflow.
 1.0.0   First major - stable API commitment
 ```
 
-Between releases, the `dev` branch carries work-in-progress code. Every
-push to `dev` moves a mobile git tag named `alpha` to the latest commit.
+Between releases, the `main` branch carries work-in-progress code. Every
+push to `main` moves a mobile git tag named `alpha` to the latest commit.
 
-## Installing dev builds
+## Installing alpha builds
 
 ```bash
 # Install latest stable from npm (recommended)
@@ -48,13 +48,13 @@ npm install light-process
 # Install a specific release
 npm install light-process@0.1.0
 
-# Install latest dev snapshot (from GitHub, not npm)
+# Install latest alpha snapshot (from GitHub, not npm)
 npm install github:enixCode/light-process#alpha
 ```
 
 The `#alpha` variant installs whatever commit the mobile git tag `alpha`
-currently points to - always the latest push on the `dev` branch. There
-is no `@alpha` tag on npm; dev builds are only distributed via GitHub.
+currently points to - always the latest push on the `main` branch. There
+is no `@alpha` tag on npm; alpha builds are only distributed via GitHub.
 
 ## Current version
 

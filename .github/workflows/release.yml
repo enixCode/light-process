@@ -1,15 +1,15 @@
 name: Release
 
 # Triggered by:
-# - push to dev:   move mobile 'alpha' git tag, no npm publish
+# - push to main:  move mobile 'alpha' git tag, no npm publish
 # - push tag v*:   publish to npm @latest, move 'latest' mobile tag, GitHub Release
 #
 # Releases are explicit: you have to create and push a tag v<version> to
-# publish. Merging dev -> main does NOT publish anything.
+# publish. Pushing to main only moves the 'alpha' mobile tag.
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
     tags: ['v*']
 
 jobs:
@@ -41,10 +41,10 @@ jobs:
           npm run build
           npm test
 
-      # --- dev branch push: move mobile 'alpha' git tag, done ---
+      # --- main branch push: move mobile 'alpha' git tag, done ---
 
-      - name: Move mobile 'alpha' git tag (dev)
-        if: github.ref_type == 'branch' && github.ref_name == 'dev'
+      - name: Move mobile 'alpha' git tag (main)
+        if: github.ref_type == 'branch' && github.ref_name == 'main'
         run: |
           git tag -f alpha
           git push origin alpha --force

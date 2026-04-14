@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main, staging]
 
 jobs:
   deploy:
@@ -15,3 +15,6 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_DEPLOY_KEY }}
           script: ${{ github.ref_name == 'main' && 'light-process' || 'light-process-test' }}
+          # main -> prod (light-process)
+          # staging -> test (light-process-test). Push main to staging to test:
+          #   git push origin main:staging
