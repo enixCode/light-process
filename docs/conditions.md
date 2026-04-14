@@ -19,6 +19,7 @@ Links support MongoDB-style `when` conditions to control routing based on node o
 | `ne` | `{ status: { ne: "error" } }` | Not equal |
 | `in` | `{ role: { in: ["admin", "mod"] } }` | Value in array |
 | `exists` | `{ token: { exists: true } }` | Field exists |
+| `regex` | `{ token: { regex: "^ok" } }` | Regex match |
 | `or` | `{ or: [{...}, {...}] }` | Logical OR |
 
 ## Logic
@@ -79,6 +80,14 @@ Matches if the output does NOT have an `error` field.
 ```
 
 Matches if role is one of the listed values.
+
+### Regex match
+
+```json
+{ "email": { "regex": "@company\\.com$" } }
+```
+
+Matches if email ends with `@company.com`. Uses JavaScript `RegExp`.
 
 ### Numeric range
 

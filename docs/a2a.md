@@ -18,6 +18,26 @@ This starts:
 - **A2A agent** at `http://localhost:3000/`
 - **Agent card** at `http://localhost:3000/.well-known/agent-card.json`
 
+## Authentication
+
+API key authentication is opt-in. Set the `LP_API_KEY` environment variable to enable Bearer auth - when unset, auth is disabled and all routes are public.
+
+```bash
+LP_API_KEY=my-secret-key light serve
+```
+
+Protected routes (all `POST` methods and `/api/*`) require a Bearer token in the `Authorization` header. Public routes always work: `GET /health`, `GET /.well-known/agent-card.json`, and the web dashboard assets.
+
+```bash
+# Public - no auth needed
+curl http://localhost:3000/health
+
+# Protected - requires Bearer token
+curl -H "Authorization: Bearer my-secret-key" http://localhost:3000/api/workflows
+```
+
+When auth is enabled, the AgentCard advertises its security scheme so A2A clients can discover that a Bearer token is required.
+
 ## Agent discovery
 
 ```bash
@@ -86,7 +106,7 @@ The executor selects a workflow using these rules:
 
 ## REST API
 
-The server also provides REST endpoints for the dashboard:
+The server also provides REST endpoints for the dashboard and runtime workflow management:
 
 ```bash
 # List all workflows
@@ -95,9 +115,32 @@ curl http://localhost:3000/api/workflows
 # Get workflow detail (nodes + links, without file contents)
 curl http://localhost:3000/api/workflows/my-workflow-id
 
+# Get the full workflow JSON (includes file contents - used by `light pull`)
+curl http://localhost:3000/api/workflows/my-workflow-id?full=true
+
+# Add a workflow at runtime (in-memory only)
+curl -X POST http://localhost:3000/api/workflows \
+  -H "Content-Type: application/json" \
+  -d @my-workflow.json
+
+# Add a workflow and persist it to disk (survives restart)
+curl -X POST "http://localhost:3000/api/workflows?persist=true" \
+  -H "Content-Type: application/json" \
+  -d @my-workflow.json
+
+# Replace an existing workflow (used by `light push`)
+curl -X PUT "http://localhost:3000/api/workflows/my-workflow-id?persist=true" \
+  -H "Content-Type: application/json" \
+  -d @my-workflow.json
+
+# Remove a workflow at runtime (add ?persist=true to delete the file too)
+curl -X DELETE http://localhost:3000/api/workflows/my-workflow-id
+
 # Health check
 curl http://localhost:3000/health
 ```
+
+Add `Authorization: Bearer <key>` to every request above when `LP_API_KEY` is set - the REST endpoints are all protected.
 
 ## SDK usage
 
@@ -121,9 +164,11 @@ await app.close();
 
 ```javascript
 createA2AServer({
-  port: 3000,              // listen port (default: 3000)
-  host: '0.0.0.0',         // bind host (default: '0.0.0.0')
+  port: 3000,               // listen port (default: 3000)
+  host: '0.0.0.0',          // bind host (default: '0.0.0.0')
   runner: new DockerRunner(), // shared runner instance
+  apiKey: 'my-secret-key',  // enable Bearer auth (optional - no auth when omitted)
+  persistDir: './workflows',// directory for runtime-persisted workflows (?persist=true)
   card: {
     name: 'My Agent',       // agent name
     description: 'Custom',  // agent description
@@ -145,5 +190,5 @@ When a task is received via `message/send`:
 
 The server allows cross-origin requests:
 - `Access-Control-Allow-Origin: *`
-- `Access-Control-Allow-Methods: GET, POST, OPTIONS`
-- `Access-Control-Allow-Headers: Content-Type`
+- `Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS`
+- `Access-Control-Allow-Headers: Content-Type, Authorization`

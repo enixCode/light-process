@@ -1,6 +1,7 @@
 import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { loadWorkflowFromFolder } from '../CodeLoader.js';
+import type { IOSchema } from '../schema.js';
 import type { Workflow } from '../Workflow.js';
 import { type Command, getFlagValue, getPositional, hasFlag, resolveWorkflow, wantsHelp } from './utils.js';
 
@@ -14,6 +15,26 @@ function mermaidId(id: string): string {
   return `"${id.replace(/"/g, '')}"`;
 }
 
+const OP_SYMBOLS: Record<string, string> = {
+  eq: '==',
+  ne: '!=',
+  gt: '>',
+  gte: '>=',
+  lt: '<',
+  lte: '<=',
+  in: 'in',
+  exists: 'exists',
+  regex: '~',
+};
+
+/** Format schema fields as a short summary */
+function formatFields(schema: IOSchema | null): string | null {
+  if (!schema?.properties) return null;
+  const keys = Object.keys(schema.properties);
+  if (keys.length === 0) return null;
+  return keys.map((k) => `${k} (${schema.properties[k].type || 'any'})`).join(', ');
+}
+
 /** Format condition for display - short readable format instead of raw JSON */
 function formatCondition(when: Record<string, unknown>): string {
   const parts: string[] = [];
@@ -24,10 +45,10 @@ function formatCondition(when: Record<string, unknown>): string {
     } else if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
       const ops = Object.entries(val as Record<string, unknown>);
       for (const [op, v] of ops) {
-        parts.push(`${key} ${op} ${JSON.stringify(v)}`);
+        parts.push(`${key} ${OP_SYMBOLS[op] || op} ${JSON.stringify(v)}`);
       }
     } else {
-      parts.push(`${key}=${JSON.stringify(val)}`);
+      parts.push(`${key}==${JSON.stringify(val)}`);
     }
   }
   return parts.join(', ');
@@ -51,11 +72,7 @@ Examples:
       return;
     }
 
-    const target = getPositional(0);
-    if (!target) {
-      console.error('Usage: light describe <file|dir|id|name>');
-      process.exit(1);
-    }
+    const target = getPositional(0) || '.';
 
     const dir = getFlagValue('--dir', '.');
     const resolved = resolve(target);
@@ -96,6 +113,11 @@ Examples:
       if (revisit) return;
       printed.add(nodeId);
 
+      const inFields = formatFields(node.inputs);
+      const outFields = formatFields(node.outputs);
+      if (inFields) console.log(`${pad}  in: ${inFields}`);
+      if (outFields) console.log(`${pad}  out: ${outFields}`);
+
       const outgoing = workflow.getOutgoingLinks(nodeId);
       for (const lnk of outgoing) {
         const condStr = lnk.when ? formatCondition(lnk.when) : undefined;
@@ -124,7 +146,11 @@ Examples:
 
     for (const node of nodes) {
       const label = node.name.replace(/"/g, "'");
-      mermaidLines.push(`  ${mermaidId(node.id)}["${label}"]`);
+      const inF = formatFields(node.inputs);
+      const outF = formatFields(node.outputs);
+      const schema = [inF ? `in: ${inF}` : '', outF ? `out: ${outF}` : ''].filter(Boolean).join('<br/>');
+      const full = schema ? `${label}<br/><small>${schema}</small>` : label;
+      mermaidLines.push(`  ${mermaidId(node.id)}["${full}"]`);
     }
 
     for (const lnk of links) {

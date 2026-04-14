@@ -32,7 +32,7 @@ npm run test:e2e     # adversarial HTTP + CLI tests against a running server
 Three GitHub Actions workflows:
 
 ### ci.yml - always runs on push/PR
-- Lint (biome) + build (tsc) + unit tests on Node 18 and 22
+- Lint (biome) + build (tsc) + unit tests on Node 20 and 22
 - Integration tests on Node 22
 - Nothing is published
 

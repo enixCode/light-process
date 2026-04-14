@@ -66,6 +66,18 @@ jobs:
           echo "Only stable tags (e.g. v0.1.0) are published to @latest"
           exit 1
 
+      - name: Guard - tag must be an ancestor of main
+        if: github.ref_type == 'tag'
+        run: |
+          git fetch origin main --quiet
+          if ! git merge-base --is-ancestor $GITHUB_SHA origin/main; then
+            echo "Tag ${{ github.ref_name }} is not on the main branch."
+            echo "Only commits already merged to main can be released."
+            echo "Merge your changes to main first, then create the tag from main."
+            exit 1
+          fi
+          echo "Tag commit is an ancestor of main, release approved."
+
       - name: Set version in-memory
         if: github.ref_type == 'tag'
         run: npm version ${{ steps.v.outputs.version }} --no-git-tag-version --allow-same-version

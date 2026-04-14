@@ -11,11 +11,11 @@ export const run: Command = {
   desc: 'Run a workflow or single node',
   usage: 'light run <file|id|name> [--node] [--input <file|json>] [--json] [--timeout <ms>]',
   async run() {
-    const target = getPositional(0);
+    const target = getPositional(0) || '.';
     const isNode = hasFlag('--node');
 
     const showHelp = wantsHelp() || target === '--help' || target === '-h';
-    if (showHelp || (!target && !isNode)) {
+    if (showHelp) {
       console.log(`Usage:
   light run <file|dir|id|name> [options]
   light run --node [dir] [options]
@@ -34,7 +34,7 @@ Examples:
   light run my-workflow.json
   light run my-workflow --input '{"key": "value"}'
   light run my-workflow --input data.json --json
-  light run --node ./my-node`);
+  light run --node my-node`);
       process.exit(showHelp ? 0 : 1);
     }
 

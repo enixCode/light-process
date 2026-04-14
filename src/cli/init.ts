@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { DEFAULT_IMAGES } from '../defaults.js';
 import type { CodeLanguage } from '../helpers.js';
-import { getAllHelpers, getHelper } from '../helpers.js';
+import { generateDts, getAllHelpers, getHelper } from '../helpers.js';
 import { type Command, getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
 export const init: Command = {
@@ -21,8 +21,8 @@ Options:
 
 Examples:
   light init my-project
-  light init --node ./my-node
-  light init --node ./analyze --lang python`);
+  light init --node my-node
+  light init --node analyze --lang python`);
       return;
     }
 
@@ -231,6 +231,12 @@ function initNode(dir: string): void {
     }
   }
 
+  if (lang === 'javascript') {
+    const dtsPath = join(dir, 'lp.d.ts');
+    writeFileSync(dtsPath, generateDts(null, null));
+    if (verbose) console.log('+ lp.d.ts');
+  }
+
   const inputPath = join(dir, 'input.json');
   if (!existsSync(inputPath)) {
     writeFileSync(inputPath, '{}');
@@ -255,4 +261,8 @@ function initNode(dir: string): void {
   const parts = [`${nodeName}/`, `(${lang}, ${fileCount} files)`];
   if (registered) parts.push('- registered in workflow.json');
   console.log(`+ ${parts.join(' ')}`);
+  if (!registered) {
+    console.log(`  (standalone - no workflow.json in parent dir, node is not linked to any workflow)`);
+    console.log(`  Tip: cd into a workflow folder first, or use "light init --node <workflow>/<node>"`);
+  }
 }

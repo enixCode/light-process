@@ -23,7 +23,7 @@ src/
   Workflow.ts         Core DAG - nodes, links, batch execution
   CodeLoader.ts       Load/export workflows from folder structure
   schema.ts           JSON Schema validation via AJV
-  helpers.ts          Language helpers (lp.js, lp.py)
+  helpers.ts          Language helpers (lp.js, lp.py) + lp.d.ts generator
   defaults.ts         Constants (workdir, images, ignore patterns)
   errors.ts           Custom error types
 
@@ -41,7 +41,7 @@ src/
     serve.ts          Start A2A API server
     init.ts           Scaffold project or node
     check.ts          Validate workflow structure
-    describe.ts       DAG visualization (text + Mermaid HTML)
+    describe.ts       DAG visualization with I/O schemas (text + Mermaid HTML)
     doctor.ts         Environment health check
     config.ts         Read/write global config (~/.light/config.json)
     remote.ts         Manage remote profiles, ping, ls, run, delete
@@ -50,11 +50,12 @@ src/
     pack.ts           Convert workflow folder to single JSON file
     unpack.ts         Convert JSON file to workflow folder
     list.ts           List workflows in a directory
-    link.ts           Edit links/conditions in a workflow folder
+    link.ts           Manage links (inline flags or $EDITOR, no REPL)
+    node.ts           Node management (info, schema editor, register, helpers)
     utils.ts          Arg parsing, workflow resolution
 
   config.ts           Global config manager (remotes, defaults, override resolution)
-  remoteClient.ts     HTTP client for the A2A server (list/get/create/update/delete/ping/run)
+  remoteClient.ts     HTTP client for the A2A server (list/get/getFull/create/update/delete/ping/sendMessage)
 
   a2a/
     server.ts         HTTP server with JSON-RPC + SSE
@@ -81,6 +82,7 @@ my-workflow/                     # folder format - the working copy
     .node.json                   # id, name, image, entrypoint, setup, I/O schema
     index.js                     # code
     lp.js                        # helper
+    lp.d.ts                      # auto-generated types for editor autocomplete
 
 my-workflow.json                 # JSON format - single portable file
 ```
@@ -88,12 +90,14 @@ my-workflow.json                 # JSON format - single portable file
 - `light pack <name>` converts folder to JSON (removes the folder)
 - `light unpack <name>` converts JSON to folder (removes the JSON)
 - `light list` shows all workflows in the current directory
+- `light node schema <dir>` edits a node's input/output JSON Schema interactively (also regenerates `lp.d.ts`)
+- `light node helpers <dir>` regenerates `lp.d.ts` from schema (for manual `.node.json` edits)
 - Use `--keep` on pack/unpack to preserve the source
 - All commands search the current directory by default
 
 ## Conditions system (link.when)
 
-MongoDB-style operators: `gt`, `gte`, `lt`, `lte`, `ne`, `in`, `exists`, `or`.
+MongoDB-style operators: `gt`, `gte`, `lt`, `lte`, `ne`, `in`, `exists`, `regex`, `or`.
 
 ```json
 { "count": { "gt": 5 }, "status": "ok" }
@@ -123,7 +127,7 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 ## Rules
 
 - ESM-only (`"type": "module"` in package.json)
-- Node 18+ required
+- Node 20+ required
 - Target: ES2022, module: Node16
 - All imports use `.js` extension (TypeScript convention for ESM)
 - No default exports - use named exports
@@ -136,12 +140,13 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 
 - Global config at `~/.light/config.json`. Per-workflow override via `.light-remote` file inside the workflow folder
 - `light remote bind <url> --key <key> [--name <name>]` - register a remote (first one becomes default)
+- `light remote set-key <key> [--name <name>]` - update API key on an existing remote (keeps url)
 - `light remote list|use|forget|ping`
 - `light remote ls`, `light remote run <id> --input '...'|--input-file f.json`
 - `light remote delete|rm <id> [--soft] [--yes]`
 - `light pull <id> [--path <dir>] [--force]` - default target `./<id>/`. `--force` wipes target first
 - `light push [<name>] [--path <dir>]` - no-arg pushes all in current directory. Auto POST/PUT (PUT prompts confirm unless `--yes`)
-- `light link <dir>` - interactive link editor (or `--from/--to/--when` inline, `--list`, `--remove <id>`)
+- `light link <dir>` - manage links inline (`--from/--to`, `--edit <id>`, `--list`, `--remove <id>`) or open in `$EDITOR`
 - Server: `GET /api/workflows/:id?full=true` returns the full workflow JSON for pull
 - Server: `PUT /api/workflows/:id?persist=true` atomic update used by push
 
@@ -149,8 +154,8 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 
 - Published on npm as `light-process` (bins: `light`, `light-process`). Install: `npm i -g light-process`
 - `.github/workflows/ci.yml` - lint/build/test
-- `.github/workflows/release.yml` - on push to `main`/`dev` touching `package.json`, if version changed: lint + build + test + `npm publish` via OIDC trusted publishing + git tag + GitHub Release. npm dist-tag auto-detected from version suffix (`alpha`/`beta`/`rc`/`latest`)
-- `.github/workflows/deploy.yml` - on push to `main`, SSH deploy runs `light-process` on the server
+- `.github/workflows/release.yml` - triggered by push to `dev` (move mobile git tag `alpha`) or push of tag `v*` (lint/build/test + `npm publish --tag latest --provenance` via OIDC + move mobile git tag `latest` + GitHub Release). Tag-based releases: pushing a version tag triggers publish, merging `dev` into `main` does not
+- `.github/workflows/deploy.yml` - on push to `main` or `dev`, SSH deploy runs `light-process` (main/prod) or `light-process-test` (dev) on the server
 - No Docker image is published for light-process itself - it runs on the host and uses Docker only to execute node containers
 
 ## Documentation

@@ -186,6 +186,8 @@ node.addHelper('python');     // adds lp.py
 node.addHelper();             // adds all helpers
 ```
 
+When using folder-based workflows, `light node schema` and `light node helpers` regenerate `lp.d.ts` - a TypeScript declaration file that gives editors autocomplete for `input` fields and `send()` arguments based on the node's schema.
+
 ## Workflow serialization
 
 ```javascript
@@ -196,6 +198,40 @@ const str = JSON.stringify(json, null, 2);
 // From JSON
 const restored = Workflow.fromJSON(json);
 ```
+
+## A2A server
+
+Expose workflows as an A2A agent programmatically. See [A2A Protocol](a2a.html) for the full protocol surface.
+
+```javascript
+import { createA2AServer, DockerRunner } from 'light-process';
+
+const runner = new DockerRunner();
+const app = createA2AServer({
+  port: 3000,                 // listen port (default: 3000)
+  host: '0.0.0.0',            // bind host (default: '0.0.0.0')
+  runner,                     // shared DockerRunner instance
+  apiKey: process.env.LP_API_KEY, // enable Bearer auth when set
+  persistDir: './workflows',  // directory for workflows added with ?persist=true
+  card: {
+    name: 'My Agent',
+    description: 'Custom agent',
+    url: 'https://my.host',
+  },
+});
+
+// Register workflows up front
+app.registerWorkflow(myWorkflow);
+
+// Or add/remove at runtime
+app.unregisterWorkflow('old-workflow');
+
+await app.listen();
+// ...later
+await app.close();
+```
+
+When `apiKey` is provided, every `POST` and `/api/*` route requires `Authorization: Bearer <key>`. Leave it undefined to run without auth.
 
 ## Error types
 

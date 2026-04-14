@@ -1,4 +1,4 @@
-const VALID_OPERATORS = ['gt', 'gte', 'lt', 'lte', 'ne', 'in', 'exists', 'or'] as const;
+const VALID_OPERATORS = ['gt', 'gte', 'lt', 'lte', 'ne', 'in', 'exists', 'regex', 'or'] as const;
 
 /** @throws Error if an unknown operator is found */
 export function validateWhen(when: Record<string, unknown>): void {
@@ -80,6 +80,10 @@ export function checkCondition(when: Record<string, unknown>, output: Record<str
             break;
           case 'exists':
             if (expected !== (outputValue !== undefined)) return false;
+            break;
+          case 'regex':
+            if (typeof outputValue !== 'string' || typeof expected !== 'string') return false;
+            if (!new RegExp(expected).test(outputValue)) return false;
             break;
           default:
             throw new Error(`Unknown operator: "${op}"`);

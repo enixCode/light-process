@@ -26,38 +26,35 @@ While the major version is `0`, the API is not considered stable. Minor version 
 
 ## Release lifecycle
 
-```
-0.1.0-alpha.0   First alpha - core features, may have bugs
-0.1.0-alpha.2   Second alpha - bug fixes from alpha.1
-0.1.0-beta.1    Feature-complete, testing phase
-0.1.0-beta.2    Bug fixes from beta.1
-0.1.0-rc.1      Release candidate - final testing
-0.1.0            Stable release
-0.1.1            Patch - bug fix
-0.2.0            Minor - new features
-1.0.0            First major - stable API commitment
-```
-
-## Pre-release ordering
-
-npm and semver sort pre-releases correctly:
+Light Process uses tag-based releases. Creating a git tag `v<version>`
+on the `main` branch triggers the npm publish workflow.
 
 ```
-0.1.0-alpha.0 < 0.1.0-alpha.2 < 0.1.0-beta.1 < 0.1.0-rc.1 < 0.1.0
+0.1.0   First stable release
+0.1.1   Patch - bug fixes
+0.2.0   Minor - new features (may break pre-1.0 APIs)
+1.0.0   First major - stable API commitment
 ```
 
-## Installing pre-releases
+Between releases, the `dev` branch carries work-in-progress code. Every
+push to `dev` moves a mobile git tag named `alpha` to the latest commit.
+
+## Installing dev builds
 
 ```bash
-# Install latest stable (skips pre-releases)
+# Install latest stable from npm (recommended)
 npm install light-process
 
-# Install specific pre-release
-npm install light-process@0.1.0-alpha.0
+# Install a specific release
+npm install light-process@0.1.0
 
-# Install latest including pre-releases
-npm install light-process@next
+# Install latest dev snapshot (from GitHub, not npm)
+npm install github:enixCode/light-process#alpha
 ```
+
+The `#alpha` variant installs whatever commit the mobile git tag `alpha`
+currently points to - always the latest push on the `dev` branch. There
+is no `@alpha` tag on npm; dev builds are only distributed via GitHub.
 
 ## Current version
 

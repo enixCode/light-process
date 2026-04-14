@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { DEFAULT_IGNORE, DEFAULT_WORKDIR } from './defaults.js';
+import { generateDts } from './helpers.js';
 import { Workflow } from './Workflow.js';
 
 export function slugify(name: string): string {
@@ -145,6 +146,10 @@ export function exportWorkflowToFolder(workflow: Workflow, dir: string): void {
         2,
       ),
     );
+
+    if (node.files['lp.js']) {
+      writeFileSync(join(nodeDir, 'lp.d.ts'), generateDts(node.inputs, node.outputs));
+    }
   }
 
   writeFileSync(

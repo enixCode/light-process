@@ -17,7 +17,7 @@ export {
 } from './errors.js';
 export type { CodeLanguage, HelperFile } from './helpers.js';
 // Helpers
-export { getAllHelpers, getHelper, OUTPUT_FILE } from './helpers.js';
+export { generateDts, getAllHelpers, getHelper, OUTPUT_FILE } from './helpers.js';
 export type {
   CodeFiles,
   LinkConfig,

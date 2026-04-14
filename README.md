@@ -12,7 +12,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node 18+" />
+  <img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" alt="Node 20+" />
   <img src="https://img.shields.io/badge/docker-required-blue" alt="Docker" />
   <img src="https://img.shields.io/badge/license-AGPL--3.0-purple" alt="AGPL-3.0" />
   <img src="https://img.shields.io/badge/A2A-protocol-orange" alt="A2A Protocol" />
@@ -22,18 +22,32 @@
 
 ## Use Cases
 
-**AI/ML pipelines** - Preprocess a dataset in Python, train a model with GPU pass-through, evaluate metrics, and conditionally deploy or retrain with `maxIterations: 3`. Each step runs in a specialized Docker image with schema-validated I/O.
+**AI agent pipelines** - Call an LLM, validate its JSON output against a schema, retry up to 3 times on bad output, then route by the result. Every step sandboxed in its own container.
 
-**Data processing** - Extract JSON from an API with `node:alpine`, clean with pandas in `python:alpine`, validate output schema, then route valid records to a loader and invalid ones to an error log using `when` conditions.
+**Run untrusted code** - Execute user-submitted scripts safely. Dropped capabilities, PID limits, optional network isolation. Perfect for coding playgrounds, graders, or plugin systems.
 
-**Multi-agent AI** - Run `light serve` to expose workflows as A2A agents. Other AI systems discover your workflows via `/.well-known/agent-card.json` and invoke them with structured JSON-RPC requests. Each workflow becomes a callable skill.
+**Polyglot scripts** - Node scraper, Python parser, shell uploader - all in one pipeline. No virtualenvs, no global installs. Each step gets only the deps it needs, reproducible on any machine.
 
-**Microservice orchestration** - Chain API calls with per-step timeouts and network isolation. Validate request schemas at entry, run independent calls in parallel, merge results, and route errors to notification handlers.
+**Workflows as APIs** - `light serve` turns every workflow into an HTTP endpoint and an A2A agent skill. Ship your automation as a callable service without writing a server.
+
+## Install
+
+```bash
+# Stable release from npm (recommended)
+npm install -g light-process
+
+# Latest dev snapshot from GitHub (for testing unreleased features)
+npm install -g github:enixCode/light-process#alpha
+```
+
+The `#alpha` variant installs the most recent commit on the `dev` branch
+(via a mobile git tag). It always reflects the latest code, unlike npm
+packages which only update on tagged releases. There is no `@alpha` tag
+on npm - dev builds are only available via the GitHub URL.
 
 ## Quick Start
 
 ```bash
-npm install -g light-process
 light doctor                    # check Node + Docker
 light init my-project           # scaffold a project
 cd my-project
@@ -52,6 +66,64 @@ Running: Example (from folder)
 
 [ok] 2108ms
 ```
+
+## Your First Workflow
+
+After `light init my-project`, you get this:
+
+```
+my-project/
+  example/
+    workflow.json        # the DAG: which nodes exist, how they link
+    hello/
+      .node.json         # node config (Docker image, entrypoint, I/O)
+      index.js           # your code
+      lp.js              # helper - provides input and send()
+      lp.d.ts            # auto-generated types for editor autocomplete
+```
+
+A **node** is just a folder with code that runs in a Docker container. A **workflow** is a `workflow.json` that wires nodes together. That's it.
+
+Open `example/hello/index.js`:
+
+```javascript
+const { input, send } = require('./lp');
+console.error('Input:', JSON.stringify(input));
+send({ hello: 'world', input });
+```
+
+- `input` - the JSON data passed in (from `--input` or a previous node)
+- `send(obj)` - your node's output, passed to the next node
+- `console.error(...)` - logs (stdout is reserved for the helper)
+
+Try editing it:
+
+```javascript
+const { input, send } = require('./lp');
+send({ greeting: `Hello, ${input.name || 'stranger'}!` });
+```
+
+Then run it with input:
+
+```bash
+light run example --input '{"name": "Alice"}'
+# -> {"greeting":"Hello, Alice!"}
+```
+
+To add a second node that uses the first node's output, `cd` into the workflow folder first so the new node is auto-registered in `workflow.json`:
+
+```bash
+cd example
+light init --node shout          # creates example/shout/ and registers it
+cd ..
+light link example --from hello --to shout   # wire hello -> shout
+```
+
+Now you have a two-node pipeline. Run `light describe example` to visualize it.
+
+> Note: `light init --node` only auto-registers the node if its parent directory contains a `workflow.json`. Outside a workflow folder, the node is created standalone and you'll see a hint in the output.
+
+**Stuck?** Run `light doctor` to check your environment (Node + Docker).
 
 ## Features
 
@@ -73,10 +145,17 @@ Running: Example (from folder)
 | `light serve [dir]` | Start A2A server + web dashboard |
 | `light init [dir]` | Scaffold a new project or node |
 | `light check <target>` | Validate workflow structure |
-| `light describe <target>` | Visualize the DAG |
+| `light describe <target>` | Visualize the DAG with schemas (text + Mermaid) |
 | `light list` | List workflows in a directory |
 | `light pack <target>` | Convert workflow folder to JSON |
 | `light unpack <target>` | Convert JSON to workflow folder |
+| `light link <dir>` | Manage links (inline flags or open in $EDITOR) |
+| `light node schema <dir>` | Edit a node's input/output JSON Schema |
+| `light node helpers <dir>` | Regenerate lp.d.ts from schema |
+| `light config <get\|set\|list>` | Read or write global config |
+| `light remote <subcommand>` | Manage remote profiles (bind, set-key, ls, run, ...) |
+| `light pull <id>` | Pull a workflow from a remote server |
+| `light push [name]` | Push local workflow(s) to a remote server |
 | `light doctor` | Check environment |
 
 All commands search the current directory by default.
@@ -97,7 +176,7 @@ light run my-workflow --input data.json
 light run my-workflow --json
 
 # Run a single node (reads .node.json in current dir)
-light run --node ./my-node
+light run --node my-node
 
 # Set a timeout (30 seconds)
 light run my-workflow --timeout 30000
@@ -160,10 +239,10 @@ curl -X DELETE -H "Authorization: Bearer <your-api-key>" \
 light init my-project
 
 # Scaffold a single JavaScript node
-light init --node ./my-node
+light init --node my-node
 
 # Scaffold a Python node
-light init --node ./my-node --lang python
+light init --node my-node --lang python
 ```
 
 ## Workflow Formats
@@ -200,6 +279,7 @@ my-project/
       .node.json              # node config
       index.js                # your code
       lp.js                   # helper (auto-generated)
+      lp.d.ts                 # types for autocomplete (auto-generated)
     process/
       .node.json
       main.py
@@ -383,6 +463,7 @@ Links support MongoDB-style `when` conditions on the source node's output:
 | `ne` | `{ status: { ne: "error" } }` | Not equal |
 | `in` | `{ role: { in: ["admin", "mod"] } }` | Membership |
 | `exists` | `{ token: { exists: true } }` | Field presence |
+| `regex` | `{ token: { regex: "^ok" } }` | Regex match |
 | `or` | `{ or: [{...}, {...}] }` | Logical OR |
 
 All top-level fields use AND logic by default.

@@ -1,5 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { getRemote, listRemotes, loadConfig, removeRemote, setDefaultRemote, setRemote } from '../config.js';
+import {
+  getRemote,
+  listRemotes,
+  loadConfig,
+  removeRemote,
+  setDefaultRemote,
+  setRemote,
+  setRemoteKey,
+} from '../config.js';
 import { deleteWorkflow, listWorkflows, ping, sendMessage, type WorkflowSummary } from '../remoteClient.js';
 import type { Command } from './utils.js';
 import { confirm, getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
@@ -49,31 +57,65 @@ function printWorkflows(list: WorkflowSummary[]): void {
 
 export const remote: Command = {
   desc: 'Manage remote light-process servers',
-  usage: 'light remote <bind|use|forget|ping|ls|run|delete|rm> [...]',
+  usage: 'light remote <bind|set-key|use|forget|ping|ls|run|delete|rm> [...]',
   async run() {
     if (wantsHelp()) {
-      console.log(`Usage:
-  light remote                              List remote profiles
-  light remote bind <url> [options]         Register a remote
-  light remote use <name>                   Set default remote
-  light remote forget <name>                Remove a remote
-  light remote ping                         Ping the current remote
-  light remote ls                           List workflows on remote
-  light remote run <id> [options]           Run a workflow on remote
-  light remote delete|rm <id> [options]     Delete a workflow from remote
+      console.log(`Manage remote light-process servers.
 
-Options:
-  --key <key>         API key for bind
-  --name <name>       Remote name for bind (default: "default")
-  --remote <name>     Override which remote to use
-  --input <json>      Inline JSON input for run
-  --input-file <path> Input file for run
-  --json              JSON output for ls/run
-  --soft              Soft delete (remote delete)
-  --yes, -y           Skip confirmation prompts
+Usage:
+  light remote                              List configured remote profiles
+  light remote bind <url> [options]         Register a new remote, or overwrite an existing one
+  light remote set-key <key> [options]      Update the API key on an existing remote (keeps url)
+  light remote use <name>                   Change the default remote
+  light remote forget <name>                Delete a remote from local config
+  light remote ping [options]               Ping the current remote (health check)
+  light remote ls [options]                 List workflows on the remote
+  light remote run <id> [options]           Run a workflow on the remote
+  light remote delete <id> [options]        Delete a workflow from the remote (alias: rm)
+
+Options by subcommand:
+
+  bind <url>
+    --key <key>           API key for this remote (skip if the remote has no auth)
+    --name <name>         Profile name to create or overwrite (default: "default")
+
+  set-key <key>
+    <key>                 The new API key (first positional argument)
+    --name <name>         Which profile to update (default: the current default remote)
+
+  ping | ls | run | delete
+    --remote <name>       Target a specific remote instead of the default
+
+  ls | run
+    --json                Output raw JSON instead of the pretty-printed format
+
+  run <id>
+    --input <json>        Inline JSON input, e.g. '{"x": 1}'
+    --input-file <path>   Read input from a file
+
+  delete <id>
+    --soft                Soft delete (keeps the file on disk, marks as deleted)
+    --yes, -y             Skip the confirmation prompt
+
+Common questions:
+
+  How do I add or change the API key on a remote I already bound?
+    light remote set-key <newkey>                  # updates the default remote
+    light remote set-key <newkey> --name test      # updates the 'test' remote
+    # Alternative: 'bind' overwrites by name (requires re-typing the url)
+    light remote bind <url> --key <newkey> --name default
+
+  How do I check if my key is correct?
+    light remote ls         # 401 if the key is wrong, list of workflows if ok
+
+  Where is my config stored?
+    ~/.light/config.json    # JSON file, safe to edit by hand
 
 Examples:
   light remote bind https://my-server.com --key abc123
+  light remote set-key newkey123
+  light remote set-key newkey123 --name test
+  light remote use test
   light remote ls
   light remote run my-workflow --input '{"key": "value"}'
   light remote delete old-workflow --yes`);
@@ -102,6 +144,27 @@ Examples:
       console.log(`Bound remote "${name}" -> ${url}`);
       const cfg = loadConfig();
       if (cfg.defaultRemote === name) console.log(`Set as default remote.`);
+      return;
+    }
+
+    if (action === 'set-key') {
+      const key = getPositional(1);
+      if (!key) {
+        console.error('Usage: light remote set-key <key> [--name <name>]');
+        process.exit(1);
+      }
+      const name = nameFlag ?? loadConfig().defaultRemote;
+      if (!name) {
+        console.error('No remote configured. Run: light remote bind <url> --key <key>');
+        process.exit(1);
+      }
+      try {
+        setRemoteKey(name, key);
+        console.log(`Updated key on remote "${name}"`);
+      } catch (err) {
+        console.error((err as Error).message);
+        process.exit(1);
+      }
       return;
     }
 
