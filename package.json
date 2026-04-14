@@ -1,6 +1,6 @@
 {
   "name": "light-process",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Lightweight workflow engine with Docker container isolation and A2A protocol support.",
   "main": "dist/index.js",
   "exports": {
