@@ -34,6 +34,11 @@ Examples:
     }
     const runner = new DockerRunner({ verbose: hasFlag('--verbose') });
 
+    if (DockerRunner.isAvailable()) {
+      const cleaned = DockerRunner.cleanupOrphanVolumes();
+      if (cleaned > 0) console.log(`  Cleaned ${cleaned} orphan volume(s)`);
+    }
+
     const app = createA2AServer({ port, runner, apiKey, persistDir: resolve(dir) });
 
     const workflows = loadWorkflowsFromDir(dir);

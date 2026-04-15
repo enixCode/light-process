@@ -1429,7 +1429,6 @@ node.<span class="hl-fn">addFolder</span>(<span class="hl-str">'./my-node'</span
   runtime: <span class="hl-str">'runsc'</span>,       <span class="hl-cm">// 'runc', 'runsc' (gVisor), 'kata'</span>
   gpu: <span class="hl-str">'all'</span>,             <span class="hl-cm">// false, 'all', number, or device ID</span>
   verbose: <span class="hl-kw">true</span>,
-  tempDir: <span class="hl-str">'/tmp/lp'</span>,
 });</code></pre>
 </div>
 
@@ -1858,13 +1857,15 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
 
 <h3>Container lifecycle</h3>
 <ol>
-  <li>Node files are written to a temp directory</li>
+  <li>A named Docker volume (<code>lp-&lt;execId&gt;</code>) is created for the run</li>
   <li>An entrypoint script is generated from <code>setup</code> + <code>entrypoint</code></li>
-  <li><code>docker run</code> starts the container with volume mounts</li>
+  <li>Files are seeded into the volume via a short-lived helper container</li>
+  <li><code>docker run</code> starts the node container with the volume mounted at <code>workdir</code></li>
   <li>Input is piped to stdin as JSON</li>
-  <li>Output is read from <code>.lp-output.json</code> in the container</li>
-  <li>Container is removed after execution (<code>--rm</code>)</li>
+  <li>Output is read from <code>.lp-output.json</code> in the volume via a helper container</li>
+  <li>Node container is removed after execution (<code>--rm</code>); volume is destroyed</li>
 </ol>
+<p>This volume-based design lets the runner work the same way whether it runs on the host or inside a container with <code>/var/run/docker.sock</code> mounted - no host path needs to be shared between the two contexts. Orphan volumes from a previous crash are pruned at <code>light serve</code> startup.</p>
 
 <h3>DockerRunner options</h3>
 <div class="code-block">
@@ -1879,7 +1880,6 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
   gpu: <span class="hl-str">'all'</span>,              <span class="hl-cm">// --gpus flag</span>
   noNewPrivileges: <span class="hl-kw">true</span>,   <span class="hl-cm">// --security-opt (default: true)</span>
   verbose: <span class="hl-kw">false</span>,          <span class="hl-cm">// log Docker commands</span>
-  tempDir: <span class="hl-str">'/tmp/lp'</span>,      <span class="hl-cm">// custom temp directory</span>
 });</code></pre>
 </div>
 
@@ -1893,7 +1893,6 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
     <tr><td><code>gpu</code></td><td>boolean/string/number</td><td>false</td><td>GPU access: false, "all", count, device ID</td></tr>
     <tr><td><code>noNewPrivileges</code></td><td>boolean</td><td>true</td><td>Prevent privilege escalation</td></tr>
     <tr><td><code>verbose</code></td><td>boolean</td><td>false</td><td>Log Docker commands</td></tr>
-    <tr><td><code>tempDir</code></td><td>string</td><td>OS temp</td><td>Directory for node files</td></tr>
   </tbody>
 </table>
 </div>

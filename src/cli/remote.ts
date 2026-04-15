@@ -90,8 +90,8 @@ Config file: ~/.light/config.json`);
     const nameFlag = getFlagValue('--name');
     const remoteOverride = getFlagValue('--remote');
 
-    // No action: list remote profiles (like `git remote`)
-    if (!action) {
+    // No action (or `list`): list remote profiles (like `git remote`)
+    if (!action || action === 'list') {
       printRemotes();
       return;
     }

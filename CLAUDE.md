@@ -123,6 +123,7 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - Dropped capabilities: NET_RAW, MKNOD, SETPCAP, etc.
 - `--no-new-privileges`, PID limit 100
 - Output via `.lp-output.json` in container workdir (`/app`)
+- Per-execution named volume `lp-<execId>` mounts at workdir; seeded by a helper container, destroyed after run. Lets the runner work identically on host or inside a container with `/var/run/docker.sock` mounted (no shared host path needed). Orphans pruned at `light serve` startup.
 
 ## Rules
 
