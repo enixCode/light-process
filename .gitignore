@@ -9,3 +9,6 @@ _archive/
 .claude/settings.local.json
 TODO.md
 RELEASE.md
+
+.env
+workflows/
