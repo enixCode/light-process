@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { check } from './cli/check.js';
-import { config } from './cli/config.js';
 import { describe } from './cli/describe.js';
 import { doctor } from './cli/doctor.js';
 import { init } from './cli/init.js';
@@ -35,7 +34,6 @@ const commands: Record<string, Command> = {
   check,
   describe,
   doctor,
-  config,
   remote,
   pull,
   push,

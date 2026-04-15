@@ -69,7 +69,7 @@ With no arguments, pushes all workflows in current directory.
 Options:
   --path <dir>      Workflow folder path (instead of name lookup)
   --remote <name>   Use a specific remote profile
-  --yes, -y         Skip confirmation prompts
+  --yes, -y         Skip confirmation prompt when replacing an existing workflow
 
 Examples:
   light push my-workflow

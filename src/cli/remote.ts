@@ -34,8 +34,10 @@ function printRemotes(): void {
     return;
   }
   for (const name of names) {
+    const r = remotes[name];
     const marker = name === cfg.defaultRemote ? '*' : ' ';
-    console.log(`${marker} ${name.padEnd(20)} ${remotes[name].url}`);
+    const key = r.apiKey ? `${r.apiKey.slice(0, 4)}...` : '(none)';
+    console.log(`${marker} ${name.padEnd(20)} ${r.url}  [key: ${key}]`);
   }
 }
 
@@ -63,62 +65,24 @@ export const remote: Command = {
       console.log(`Manage remote light-process servers.
 
 Usage:
-  light remote                              List configured remote profiles
-  light remote bind <url> [options]         Register a new remote, or overwrite an existing one
-  light remote set-key <key> [options]      Update the API key on an existing remote (keeps url)
-  light remote use <name>                   Change the default remote
-  light remote forget <name>                Delete a remote from local config
-  light remote ping [options]               Ping the current remote (health check)
-  light remote ls [options]                 List workflows on the remote
-  light remote run <id> [options]           Run a workflow on the remote
-  light remote delete <id> [options]        Delete a workflow from the remote (alias: rm)
+  light remote                                                  List configured remote profiles
+  light remote bind <url> [--key <key>] [--name <name>]         Register or overwrite a remote
+  light remote set-key <key> [--name <name>]                    Update API key on a remote
+  light remote use <name>                                       Change the default remote
+  light remote forget <name>                                    Delete a remote from local config
+  light remote ping [--remote <name>]                           Ping the current remote
+  light remote ls [--remote <name>] [--json]                    List workflows on the remote
+  light remote run <id> [--input <json> | --input-file <path>] [--remote <name>] [--json]
+                                                                Run a workflow on the remote
+  light remote delete <id> [--soft] [--yes] [--remote <name>]   Delete a workflow (alias: rm)
 
-Options by subcommand:
+Defaults (used when flag is omitted):
+  --name <name>     "default" on bind, current default remote on set-key
+  --remote <name>   current default remote (marked with * in 'light remote')
+  --input           {} (empty object) for run
+  --json            off (pretty-printed output)
 
-  bind <url>
-    --key <key>           API key for this remote (skip if the remote has no auth)
-    --name <name>         Profile name to create or overwrite (default: "default")
-
-  set-key <key>
-    <key>                 The new API key (first positional argument)
-    --name <name>         Which profile to update (default: the current default remote)
-
-  ping | ls | run | delete
-    --remote <name>       Target a specific remote instead of the default
-
-  ls | run
-    --json                Output raw JSON instead of the pretty-printed format
-
-  run <id>
-    --input <json>        Inline JSON input, e.g. '{"x": 1}'
-    --input-file <path>   Read input from a file
-
-  delete <id>
-    --soft                Soft delete (keeps the file on disk, marks as deleted)
-    --yes, -y             Skip the confirmation prompt
-
-Common questions:
-
-  How do I add or change the API key on a remote I already bound?
-    light remote set-key <newkey>                  # updates the default remote
-    light remote set-key <newkey> --name test      # updates the 'test' remote
-    # Alternative: 'bind' overwrites by name (requires re-typing the url)
-    light remote bind <url> --key <newkey> --name default
-
-  How do I check if my key is correct?
-    light remote ls         # 401 if the key is wrong, list of workflows if ok
-
-  Where is my config stored?
-    ~/.light/config.json    # JSON file, safe to edit by hand
-
-Examples:
-  light remote bind https://my-server.com --key abc123
-  light remote set-key newkey123
-  light remote set-key newkey123 --name test
-  light remote use test
-  light remote ls
-  light remote run my-workflow --input '{"key": "value"}'
-  light remote delete old-workflow --yes`);
+Config file: ~/.light/config.json`);
       return;
     }
 

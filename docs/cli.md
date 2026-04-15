@@ -213,33 +213,6 @@ light doctor
 
 ---
 
-## light config
-
-Read, write, or list values in the global config (`~/.light/config.json`).
-
-```bash
-light config <get|set|list|path> [key] [value]
-```
-
-**Subcommands:**
-
-| Subcommand | Description |
-|---|---|
-| `list`, `show` | Print the full config |
-| `get <key>` | Read a nested key (dot notation supported) |
-| `set <key> <value>` | Write a nested key (JSON parsed when possible) |
-| `path` | Print the config file path |
-
-**Examples:**
-
-```bash
-light config list
-light config get defaultRemote
-light config set defaultRemote prod
-```
-
----
-
 ## light remote
 
 Manage remote A2A server profiles and run workflows remotely.
@@ -310,7 +283,7 @@ light push [<name>] [--path <dir>] [--remote <name>] [--yes]
 |---|---|---|
 | `--path <dir>` | Folder containing workflow folders | `.` |
 | `--remote <name>` | Use a specific remote | default remote |
-| `--yes` | Skip the replace confirmation | off |
+| `--yes`, `-y` | Skip the replace confirmation | off |
 
 ---
 

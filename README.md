@@ -152,7 +152,6 @@ Now you have a two-node pipeline. Run `light describe example` to visualize it.
 | `light link <dir>` | Manage links (inline flags or open in $EDITOR) |
 | `light node schema <dir>` | Edit a node's input/output JSON Schema |
 | `light node helpers <dir>` | Regenerate lp.d.ts from schema |
-| `light config <get\|set\|list>` | Read or write global config |
 | `light remote <subcommand>` | Manage remote profiles (bind, set-key, ls, run, ...) |
 | `light pull <id>` | Pull a workflow from a remote server |
 | `light push [name]` | Push local workflow(s) to a remote server |
