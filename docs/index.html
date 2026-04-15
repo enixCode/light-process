@@ -1034,27 +1034,6 @@ Checking: Example (from folder)
 </div>
 <p><strong>Checks:</strong> Node.js version (>= 18), Docker installation, Docker daemon status, gVisor (runsc) availability, GPU support (nvidia-smi), Docker GPU plugin.</p>
 
-<h3>light config</h3>
-<p>Manage global configuration stored at <code>~/.light/config.json</code>.</p>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">bash</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code><span class="hl-prompt">$ </span>light config &lt;get|set|list|path&gt; [key] [value]</code></pre>
-</div>
-<div class="table-wrap">
-<table>
-  <thead><tr><th>Subcommand</th><th>Description</th></tr></thead>
-  <tbody>
-    <tr><td><code>list</code>, <code>show</code></td><td>Show full config</td></tr>
-    <tr><td><code>path</code></td><td>Show config file path</td></tr>
-    <tr><td><code>get &lt;key&gt;</code></td><td>Get a value (supports dot notation)</td></tr>
-    <tr><td><code>set &lt;key&gt; &lt;value&gt;</code></td><td>Set a value (JSON or string)</td></tr>
-  </tbody>
-</table>
-</div>
-
 <h3>light remote</h3>
 <p>Manage remote light-process servers. Run with no arguments to list configured remotes.</p>
 <div class="code-block">

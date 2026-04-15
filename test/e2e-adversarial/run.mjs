@@ -211,14 +211,7 @@ function cleanup() {
     assertEq(r.body.unpersisted, true);
   });
 
-  section('CLI: light config + remote');
-  await t('light config list empty returns default shape', () => {
-    const r = cli(['config', 'list']);
-    assertEq(r.code, 0, `stderr: ${r.stderr}`);
-    const cfg = JSON.parse(r.stdout);
-    assertTrue('remotes' in cfg, 'no remotes field');
-  });
-
+  section('CLI: light remote');
   await t('light remote bind', () => {
     const r = cli(['remote', 'bind', BASE, '--key', KEY, '--name', 'local']);
     assertEq(r.code, 0, `stderr: ${r.stderr}`);
