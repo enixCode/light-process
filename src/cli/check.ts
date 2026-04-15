@@ -15,6 +15,7 @@ interface CheckReport {
   workflow: Workflow | null;
   source: string;
   deadNodes: string[];
+  deadLinks: string[];
   metaPath: string | null;
 }
 
@@ -23,6 +24,7 @@ function runChecks(resolved: string): CheckReport {
   let workflow: Workflow | null = null;
   let source = 'json';
   const deadNodes: string[] = [];
+  const deadLinks: string[] = [];
   let metaPath: string | null = null;
 
   if (existsSync(resolved) && statSync(resolved).isDirectory()) {
@@ -43,6 +45,7 @@ function runChecks(resolved: string): CheckReport {
         } else {
           checks.push({ name: 'workflow.json structure', passed: true, message: '' });
 
+          const validIds = new Set<string>();
           for (const nodeRef of meta.nodes) {
             const nodeDir = join(resolved, nodeRef.dir);
             if (!existsSync(nodeDir)) {
@@ -51,15 +54,37 @@ function runChecks(resolved: string): CheckReport {
             } else if (!existsSync(join(nodeDir, '.node.json'))) {
               checks.push({ name: `Node "${nodeRef.dir}"`, passed: false, message: '.node.json not found' });
               deadNodes.push(nodeRef.dir);
+            } else {
+              const nodeMeta = JSON.parse(readFileSync(join(nodeDir, '.node.json'), 'utf-8'));
+              if (nodeMeta.id) validIds.add(nodeMeta.id);
+            }
+          }
+
+          if (Array.isArray(meta.links)) {
+            for (const link of meta.links) {
+              const missing: string[] = [];
+              if (!validIds.has(link.from)) missing.push(`from "${link.from}"`);
+              if (!validIds.has(link.to)) missing.push(`to "${link.to}"`);
+              if (missing.length > 0) {
+                const label = link.name || link.id || `${link.from}->${link.to}`;
+                checks.push({
+                  name: `Link "${label}"`,
+                  passed: false,
+                  message: `references non-existent ${missing.join(' and ')}`,
+                });
+                if (link.id) deadLinks.push(link.id);
+              }
             }
           }
         }
 
-        workflow = loadWorkflowFromFolder(resolved);
-        if (!workflow) {
-          checks.push({ name: 'Workflow loads', passed: false, message: 'failed to load from folder' });
-        } else {
-          checks.push({ name: 'Workflow loads', passed: true, message: '' });
+        if (deadNodes.length === 0 && deadLinks.length === 0) {
+          workflow = loadWorkflowFromFolder(resolved);
+          if (!workflow) {
+            checks.push({ name: 'Workflow loads', passed: false, message: 'failed to load from folder' });
+          } else {
+            checks.push({ name: 'Workflow loads', passed: true, message: '' });
+          }
         }
       } catch (err: unknown) {
         checks.push({ name: 'workflow.json valid JSON', passed: false, message: (err as Error).message });
@@ -103,7 +128,7 @@ function runChecks(resolved: string): CheckReport {
     }
   }
 
-  return { checks, workflow, source, deadNodes, metaPath };
+  return { checks, workflow, source, deadNodes, deadLinks, metaPath };
 }
 
 function printReport(target: string, report: CheckReport): void {
@@ -147,7 +172,7 @@ Examples:
 
     let report = runChecks(resolved);
 
-    if (fix && report.deadNodes.length > 0 && report.metaPath) {
+    if (fix && (report.deadNodes.length > 0 || report.deadLinks.length > 0) && report.metaPath) {
       const meta = JSON.parse(readFileSync(report.metaPath, 'utf-8'));
       meta.nodes = meta.nodes.filter((n: any) => !report.deadNodes.includes(n.dir));
 
@@ -167,8 +192,10 @@ Examples:
       const removedLinks = linksBefore - (meta.links?.length ?? 0);
 
       writeFileSync(report.metaPath, JSON.stringify(meta, null, 2));
-      const linkMsg = removedLinks > 0 ? `, ${removedLinks} dangling link(s)` : '';
-      console.log(`Fixed: removed ${report.deadNodes.length} dead node ref(s)${linkMsg}`);
+      const parts: string[] = [];
+      if (report.deadNodes.length > 0) parts.push(`${report.deadNodes.length} dead node ref(s)`);
+      if (removedLinks > 0) parts.push(`${removedLinks} dangling link(s)`);
+      console.log(`Fixed: removed ${parts.join(', ')}`);
       report = runChecks(resolved);
     }
 
