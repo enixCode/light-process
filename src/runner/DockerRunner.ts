@@ -1,7 +1,5 @@
 import { execSync, spawn, spawnSync } from 'node:child_process';
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname } from 'node:path';
 import { isPathSafe, safeJsonParse } from '../CodeLoader.js';
 import { OUTPUT_FILE } from '../helpers.js';
 import type { Node } from '../models/index.js';
@@ -13,13 +11,9 @@ let containerSeq = 0;
 const CONTAINER_NAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
 const MAX_CONTAINER_NAME_LENGTH = 128;
 const ISOLATED_NETWORK = 'lp-isolated';
+const SEEDER_IMAGE = 'alpine:3.19';
 
 const DANGEROUS_CAPS = ['NET_RAW', 'MKNOD', 'SYS_CHROOT', 'SETPCAP', 'SETFCAP', 'AUDIT_WRITE'];
-
-function toDockerPath(p: string): string {
-  if (process.platform !== 'win32') return p;
-  return p.replace(/^([A-Za-z]):/, (_, drive: string) => `/${drive.toLowerCase()}`).replace(/\\/g, '/');
-}
 
 export interface DockerRunnerOptions {
   verbose?: boolean;
@@ -28,7 +22,6 @@ export interface DockerRunnerOptions {
   noNewPrivileges?: boolean;
   runtime?: 'runc' | 'runsc' | 'kata';
   gpu?: 'all' | number | string | false;
-  tempDir?: string;
   logger?: { info: (obj: unknown, msg?: string) => void };
 }
 
@@ -44,7 +37,6 @@ export class DockerRunner {
   public noNewPrivileges: boolean;
   public runtime: 'runc' | 'runsc' | 'kata';
   public gpu: 'all' | number | string | false;
-  public tempDir: string | null;
   private logger: { info: (obj: unknown, msg?: string) => void } | null;
   private networkReady = false;
 
@@ -55,7 +47,6 @@ export class DockerRunner {
     this.noNewPrivileges = options.noNewPrivileges ?? true;
     this.runtime = options.runtime ?? 'runc';
     this.gpu = options.gpu ?? false;
-    this.tempDir = options.tempDir ?? null;
     this.logger = options.logger ?? null;
   }
 
@@ -91,6 +82,31 @@ export class DockerRunner {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  static cleanupOrphanVolumes(): number {
+    try {
+      const out = execSync('docker volume ls --filter name=lp- --format "{{.Name}}"', {
+        encoding: 'utf-8',
+      });
+      const volumes = out
+        .trim()
+        .split('\n')
+        .map((v) => v.trim())
+        .filter(Boolean);
+      let cleaned = 0;
+      for (const v of volumes) {
+        try {
+          execSync(`docker volume rm ${v}`, { stdio: 'ignore' });
+          cleaned++;
+        } catch {
+          // Volume is in use, skip (will be cleaned by the runner that owns it)
+        }
+      }
+      return cleaned;
+    } catch {
+      return 0;
     }
   }
 
@@ -135,29 +151,32 @@ export class DockerRunner {
     }
 
     const startTime = Date.now();
-    let tempDir: string | null = null;
+    const volumeName = execution.id;
+    let volumeCreated = false;
 
     try {
-      tempDir = await mkdtemp(join(this.tempDir ?? tmpdir(), 'light-process-'));
-      await chmod(tempDir, 0o755);
-
       const entrypointScript = this.generateEntrypointScript(node);
       const filesToWrite = { ...node.files };
       if (entrypointScript) {
         filesToWrite['.lp-entrypoint.sh'] = entrypointScript;
       }
 
-      await this.writeFiles(tempDir, filesToWrite);
+      this.validateFilePaths(filesToWrite);
+
+      await this.createVolume(volumeName);
+      volumeCreated = true;
+      await this.seedVolume(volumeName, filesToWrite, !!entrypointScript);
 
       if (!node.network) {
         this.ensureIsolatedNetwork();
       }
 
-      const dockerArgs = this.buildDockerArgs(node, tempDir, execution.id, !!entrypointScript);
+      const dockerArgs = this.buildDockerArgs(node, volumeName, execution.id, !!entrypointScript);
 
       if (this.verbose) {
         const info = {
           container: execution.id,
+          volume: volumeName,
           cmd: `docker ${dockerArgs.join(' ')}`,
           stdinBytes: JSON.stringify(input).length,
         };
@@ -165,6 +184,7 @@ export class DockerRunner {
           this.logger.info(info, 'DockerRunner exec');
         } else {
           console.log(`[DockerRunner] Container: ${execution.id}`);
+          console.log(`[DockerRunner] Volume: ${volumeName}`);
           console.log(`[DockerRunner] Running: docker ${dockerArgs.join(' ')}`);
           console.log(`[DockerRunner] stdin: ${JSON.stringify(input).length} bytes`);
         }
@@ -172,7 +192,7 @@ export class DockerRunner {
 
       const result = await this.exec(dockerArgs, input, node.timeout, execution, onLog);
 
-      const output = await this.readOutputFile(tempDir);
+      const output = await this.readOutputFromVolume(volumeName);
 
       return {
         nodeId: node.id,
@@ -188,27 +208,108 @@ export class DockerRunner {
         resources: { cpu: this.cpuLimit, memory: this.memoryLimit },
       };
     } finally {
-      if (tempDir) {
-        try {
-          await rm(tempDir, { recursive: true, force: true });
-        } catch {
-          // Ignore cleanup errors
-        }
+      if (volumeCreated) {
+        await this.destroyVolume(volumeName);
       }
     }
   }
 
-  private async writeFiles(dir: string, files: Record<string, string>): Promise<void> {
-    for (const [filePath, content] of Object.entries(files)) {
-      if (!isPathSafe(filePath, dir)) {
+  private validateFilePaths(files: Record<string, string>): void {
+    for (const filePath of Object.keys(files)) {
+      if (!isPathSafe(filePath, '/dst')) {
         throw new Error(`Security: Path traversal detected in file path: ${filePath}`);
       }
-      const fullPath = resolve(join(dir, filePath));
-
-      const fileDir = dirname(fullPath);
-      await mkdir(fileDir, { recursive: true });
-      await writeFile(fullPath, content);
     }
+  }
+
+  private buildSeedScript(files: Record<string, string>, hasEntrypoint: boolean): string {
+    const lines = ['set -e'];
+    const dirs = new Set<string>();
+    for (const path of Object.keys(files)) {
+      const dir = dirname(path);
+      if (dir && dir !== '.' && dir !== '/') dirs.add(dir);
+    }
+    for (const dir of dirs) {
+      lines.push(`mkdir -p "/dst/${dir}"`);
+    }
+    for (const [path, content] of Object.entries(files)) {
+      const b64 = Buffer.from(content, 'utf-8').toString('base64');
+      lines.push(`base64 -d > "/dst/${path}" <<'LP_B64_END'`);
+      lines.push(b64);
+      lines.push('LP_B64_END');
+    }
+    if (hasEntrypoint) {
+      lines.push('chmod +x "/dst/.lp-entrypoint.sh"');
+    }
+    lines.push('chmod -R a+rX /dst');
+    return lines.join('\n');
+  }
+
+  private createVolume(volumeName: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const proc = spawn('docker', ['volume', 'create', volumeName], { stdio: ['ignore', 'pipe', 'pipe'] });
+      let stderr = '';
+      proc.stderr.on('data', (d) => {
+        stderr += d.toString();
+      });
+      proc.on('error', (err) => reject(err));
+      proc.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`docker volume create failed (${code}): ${stderr.trim()}`));
+      });
+    });
+  }
+
+  private seedVolume(volumeName: string, files: Record<string, string>, hasEntrypoint: boolean): Promise<void> {
+    const script = this.buildSeedScript(files, hasEntrypoint);
+    return new Promise((resolve, reject) => {
+      const proc = spawn('docker', ['run', '--rm', '-i', '-v', `${volumeName}:/dst`, SEEDER_IMAGE, 'sh'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      let stderr = '';
+      proc.stderr.on('data', (d) => {
+        stderr += d.toString();
+      });
+      proc.on('error', (err) => reject(err));
+      proc.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`seedVolume failed (${code}): ${stderr.trim()}`));
+      });
+      proc.stdin.write(script);
+      proc.stdin.end();
+    });
+  }
+
+  private readOutputFromVolume(volumeName: string): Promise<Record<string, unknown>> {
+    return new Promise((resolve) => {
+      const proc = spawn(
+        'docker',
+        ['run', '--rm', '-v', `${volumeName}:/src`, SEEDER_IMAGE, 'cat', `/src/${OUTPUT_FILE}`],
+        { stdio: ['ignore', 'pipe', 'pipe'] },
+      );
+      let stdout = '';
+      proc.stdout.on('data', (d) => {
+        stdout += d.toString();
+      });
+      proc.on('error', () => resolve({}));
+      proc.on('close', (code) => {
+        if (code !== 0) return resolve({});
+        try {
+          const parsed = safeJsonParse(stdout.trim()) as Record<string, unknown>;
+          resolve(parsed ?? {});
+        } catch {
+          resolve({});
+        }
+      });
+    });
+  }
+
+  private destroyVolume(volumeName: string): Promise<void> {
+    return new Promise((resolve) => {
+      const proc = spawn('docker', ['volume', 'rm', '-f', volumeName], { stdio: 'ignore' });
+      proc.on('error', () => resolve());
+      proc.on('close', () => resolve());
+    });
   }
 
   private generateEntrypointScript(node: Node): string | null {
@@ -228,7 +329,7 @@ export class DockerRunner {
 
   private buildDockerArgs(
     node: Node,
-    tempDir: string,
+    volumeName: string,
     containerName: string,
     hasEntrypoint: boolean = false,
   ): string[] {
@@ -268,7 +369,7 @@ export class DockerRunner {
     args.push('--pids-limit', '100');
 
     args.push('-w', node.workdir);
-    args.push('-v', `${toDockerPath(tempDir)}:${node.workdir}`);
+    args.push('-v', `${volumeName}:${node.workdir}`);
 
     for (const name of node.env ?? []) {
       const value = process.env[name];
@@ -363,15 +464,5 @@ export class DockerRunner {
       proc.stdin.write(JSON.stringify(input));
       proc.stdin.end();
     });
-  }
-
-  private async readOutputFile(tempDir: string): Promise<Record<string, unknown>> {
-    try {
-      const filePath = join(tempDir, OUTPUT_FILE);
-      const content = await readFile(filePath, 'utf-8');
-      return safeJsonParse(content.trim()) as Record<string, unknown>;
-    } catch {
-      return {};
-    }
   }
 }

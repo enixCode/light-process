@@ -9,12 +9,17 @@ Each node runs in an isolated Docker container with security hardening.
 
 ## Container lifecycle
 
-1. Node files are written to a temp directory
+1. A named Docker volume (`lp-<execId>`) is created for the run
 2. An entrypoint script is generated from `setup` + `entrypoint`
-3. `docker run` starts the container with volume mounts
-4. Input is piped to stdin as JSON
-5. Output is read from `.lp-output.json` in the container
-6. Container is removed after execution (`--rm`)
+3. Files (node files + entrypoint) are seeded into the volume via a short-lived helper container
+4. `docker run` starts the node container with the volume mounted at `workdir`
+5. Input is piped to stdin as JSON
+6. Output is read from `.lp-output.json` in the volume via a helper container
+7. Node container is removed after execution (`--rm`); volume is destroyed
+
+This volume-based design lets the runner work the same way whether it runs on the host or inside a container with `/var/run/docker.sock` mounted - no host path needs to be shared between the two contexts.
+
+Orphan volumes from a previous crash are pruned at `light serve` startup.
 
 ## DockerRunner options
 
@@ -26,7 +31,6 @@ const runner = new DockerRunner({
   gpu: 'all',              // --gpus flag
   noNewPrivileges: true,   // --security-opt (default: true)
   verbose: false,          // log Docker commands
-  tempDir: '/tmp/lp',      // custom temp directory
 });
 ```
 
@@ -38,7 +42,6 @@ const runner = new DockerRunner({
 | `gpu` | boolean/string/number | false | GPU access: false, "all", count, device ID |
 | `noNewPrivileges` | boolean | true | Prevent privilege escalation |
 | `verbose` | boolean | false | Log Docker commands |
-| `tempDir` | string | OS temp | Directory for node files |
 
 ## Security hardening
 
@@ -57,7 +60,7 @@ The following dangerous capabilities are always dropped:
 
 - `--no-new-privileges` prevents privilege escalation
 - `--pids-limit 100` limits process count
-- Temp files cleaned up after execution
+- Per-execution Docker volume destroyed after run; orphans pruned at startup
 - Path traversal checks on file operations
 - Prototype pollution prevention on JSON parsing
 
