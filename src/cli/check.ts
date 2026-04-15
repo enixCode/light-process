@@ -150,8 +150,25 @@ Examples:
     if (fix && report.deadNodes.length > 0 && report.metaPath) {
       const meta = JSON.parse(readFileSync(report.metaPath, 'utf-8'));
       meta.nodes = meta.nodes.filter((n: any) => !report.deadNodes.includes(n.dir));
+
+      const validIds = new Set<string>();
+      for (const nodeRef of meta.nodes) {
+        const nodeMetaPath = join(resolved, nodeRef.dir, '.node.json');
+        if (existsSync(nodeMetaPath)) {
+          const nodeMeta = JSON.parse(readFileSync(nodeMetaPath, 'utf-8'));
+          if (nodeMeta.id) validIds.add(nodeMeta.id);
+        }
+      }
+
+      const linksBefore = Array.isArray(meta.links) ? meta.links.length : 0;
+      if (Array.isArray(meta.links)) {
+        meta.links = meta.links.filter((l: any) => validIds.has(l.from) && validIds.has(l.to));
+      }
+      const removedLinks = linksBefore - (meta.links?.length ?? 0);
+
       writeFileSync(report.metaPath, JSON.stringify(meta, null, 2));
-      console.log(`Fixed: removed ${report.deadNodes.length} dead node ref(s)`);
+      const linkMsg = removedLinks > 0 ? `, ${removedLinks} dangling link(s)` : '';
+      console.log(`Fixed: removed ${report.deadNodes.length} dead node ref(s)${linkMsg}`);
       report = runChecks(resolved);
     }
 
