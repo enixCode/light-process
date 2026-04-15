@@ -7,5 +7,6 @@ services:
       - COMMIT_SHA=${COMMIT_SHA:-unknown}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      # Put your workflow folders here (or use light push to populate remotely)
       - ./workflows:/workflows
     restart: unless-stopped
