@@ -1,0 +1,38 @@
+name: Deploy
+
+# OPTIONAL - only needed for service-type projects (not pure npm libs).
+# Copy to .github/workflows/deploy.yml and customize the SSH script target.
+#
+# Triggered by mobile git tag moves pushed by release.yml:
+# - alpha  -> every main push   -> deploys staging  (e.g. lp-test.example.com)
+# - latest -> every stable v*   -> deploys prod     (e.g. lp.example.com)
+#
+# Required repo secrets:
+#   SSH_HOST        - server hostname or IP
+#   SSH_PORT        - SSH port (usually 22)
+#   SSH_USER        - deploy user on the server
+#   SSH_DEPLOY_KEY  - private SSH key for the deploy user
+
+on:
+  push:
+    tags:
+      - alpha
+      - latest
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_DEPLOY_KEY }}
+          # The deploy script on the server should be named accordingly. It is
+          # responsible for pulling the new version (e.g. npm install -g pkg@latest),
+          # running migrations if any, and bouncing the systemd unit.
+          #
+          # For light-process the scripts are literally named `light-process`
+          # (prod) and `light-process-test` (staging). Adjust to your project.
+          script: ${{ github.ref_name == 'latest' && 'myproject' || 'myproject-test' }}
