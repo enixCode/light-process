@@ -29,12 +29,12 @@ export type {
 // Models
 export { checkCondition, Link, Node, validateWhen } from './models/index.js';
 export type {
-  DockerRunnerOptions,
+  LightRunClientOptions,
   NodeExecutionResult,
   RunNodeOptions,
 } from './runner/index.js';
 // Runner
-export { DockerRunner, Execution } from './runner/index.js';
+export { Execution, LightRunClient } from './runner/index.js';
 export type { IOSchema, JSONSchema, ValidationResult } from './schema.js';
 export { Schema, validate, validateInput, validateOutput } from './schema.js';
 export type {

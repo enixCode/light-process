@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { loadDirectory, loadWorkflowFromFolder } from '../CodeLoader.js';
 import { DEFAULT_IGNORE } from '../defaults.js';
 import { Node } from '../models/index.js';
-import { DockerRunner } from '../runner/index.js';
+import { LightRunClient } from '../runner/index.js';
 import { Workflow } from '../Workflow.js';
 import { type Command, getFlagValue, getPositional, hasFlag, resolveWorkflow, wantsHelp } from './utils.js';
 
@@ -112,9 +112,9 @@ Examples:
       }
     }
 
-    if (!DockerRunner.isAvailable()) {
-      console.error('Docker is not available. Workflows require Docker to execute.');
-      console.error('Run "light doctor" to check your environment.');
+    if (!LightRunClient.isAvailable()) {
+      console.error('LIGHT_RUN_URL is not configured. Workflows require a light-run service to execute.');
+      console.error('Set LIGHT_RUN_URL=http://localhost:3001 to point to your light-run instance.');
       process.exit(1);
     }
 
@@ -130,7 +130,7 @@ Examples:
     }
 
     try {
-      const runner = new DockerRunner();
+      const runner = new LightRunClient();
 
       if (!jsonOutput) console.log(`Running: ${workflow.name} (from ${source})`);
 

@@ -1,7 +1,7 @@
 <h1 align="center">Light Process</h1>
 
 <p align="center">
-  Lightweight workflow engine with Docker container isolation and A2A protocol support.
+  Lightweight DAG workflow engine with A2A protocol support. Delegates container execution to <a href="https://github.com/enixCode/light-run">light-run</a>.
 </p>
 
 <p align="center">
@@ -13,7 +13,6 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" alt="Node 20+" />
-  <img src="https://img.shields.io/badge/docker-required-blue" alt="Docker" />
   <img src="https://img.shields.io/badge/license-AGPL--3.0-purple" alt="AGPL-3.0" />
   <img src="https://img.shields.io/badge/A2A-protocol-orange" alt="A2A Protocol" />
 </p>
@@ -22,33 +21,46 @@
 
 ## Use Cases
 
-**AI agent pipelines** - Call an LLM, validate its JSON output against a schema, retry up to 3 times on bad output, then route by the result. Every step sandboxed in its own container.
+**Per-tenant report pipelines** - SaaS sending a PDF per customer: fetch data (Python) -> transform (R) -> render PDF (Node) -> send email. One `POST /run` per customer, full Docker isolation per step, no shared state. Temporal is too heavy, n8n has no real container execution.
 
-**Run untrusted code** - Execute user-submitted scripts safely. Dropped capabilities, PID limits, optional network isolation. Perfect for coding playgrounds, graders, or plugin systems.
+**Security automation chains** - Run Trivy, nuclei, nmap in sequence with conditional branching: if a CVE is found, trigger a deeper scan. Each scanner in its own container, self-hosted, HTTP-triggered. No GitHub Actions cloud dependency, no Bash fragility.
 
-**Polyglot scripts** - Node scraper, Python parser, shell uploader - all in one pipeline. No virtualenvs, no global installs. Each step gets only the deps it needs, reproducible on any machine.
+**Polyglot processing pipelines** - Node scraper, Python parser, Go enricher, shell uploader - all chained. No virtualenvs, no global installs, no runtime conflicts. Each step gets only the deps it needs. Mixed runtimes that LangChain and Prefect cannot handle natively.
 
-**Workflows as APIs** - `light serve` turns every workflow into an HTTP endpoint and an A2A agent skill. Ship your automation as a callable service without writing a server.
+**Run untrusted code** - Execute user-submitted scripts in containers isolated upstream by light-run (dropped caps, PID limits, isolated network, optional gVisor). Perfect for coding playgrounds, graders, or plugin systems where you cannot trust the input.
 
 ## Install
 
-```bash
-# Stable release from npm (recommended)
-npm install -g light-process
+light-process is the DAG orchestrator. Container execution is delegated to a separate service called [light-run](https://github.com/enixCode/light-run). You install both:
 
-# Latest dev snapshot from GitHub (for testing unreleased features)
-npm install -g github:enixCode/light-process#alpha
+```bash
+# 1. The runner (executes containers). Requires Node 22+ and Docker on the same host.
+npm install -g light-run
+
+# 2. The orchestrator (this package).
+npm install -g light-process
 ```
 
-The `#alpha` variant installs the most recent commit on the `main` branch
-(via a mobile git tag). It always reflects the latest code, unlike npm
-packages which only update on tagged releases. There is no `@alpha` tag
-on npm - alpha builds are only available via the GitHub URL.
+Alpha snapshots from GitHub:
+
+```bash
+npm install -g github:enixCode/light-process#alpha
+npm install -g github:enixCode/light-run#alpha
+```
+
+The `#alpha` variant installs the most recent commit on `main`. It always reflects the latest code, unlike npm packages which only update on tagged releases.
 
 ## Quick Start
 
 ```bash
-light doctor                    # check Node + Docker
+# In one terminal - start the runner (keeps running)
+light-run serve --token $(openssl rand -hex 32) --port 3001
+
+# In another terminal - point light-process at it
+export LIGHT_RUN_URL=http://localhost:3001
+export LIGHT_RUN_TOKEN=<same token as above>
+
+light doctor                    # check Node + light-run connectivity
 light init my-project           # scaffold a project
 cd my-project
 light run example               # run the example workflow
@@ -123,12 +135,12 @@ Now you have a two-node pipeline. Run `light describe example` to visualize it.
 
 > Note: `light init --node` only auto-registers the node if its parent directory contains a `workflow.json`. Outside a workflow folder, the node is created standalone and you'll see a hint in the output.
 
-**Stuck?** Run `light doctor` to check your environment (Node + Docker).
+**Stuck?** Run `light doctor` to check your environment (Node + light-run).
 
 ## Features
 
 - **DAG workflows** - nodes run in parallel when possible, linked with conditions
-- **Docker isolation** - each node runs in its own container with dropped capabilities
+- **Delegated execution** - containers run on a light-run service (isolation, caps, gVisor handled upstream)
 - **A2A protocol** - expose workflows as AI agents with streaming support
 - **Web dashboard** - terminal-style UI to inspect workflows and nodes
 - **Multi-language** - JavaScript and Python out of the box, any language via Docker
@@ -377,7 +389,7 @@ echo '{"done": true}' > .lp-output.json
 ## SDK Usage
 
 ```javascript
-import { Workflow, Node, Schema, DockerRunner } from 'light-process';
+import { Workflow, Node, Schema, LightRunClient } from 'light-process';
 
 // Create workflow
 const wf = new Workflow({ name: 'greeting-pipeline' });
@@ -395,7 +407,7 @@ upper.setCode((input) => ({ result: input.message.toUpperCase() }));
 wf.addLink({ from: greet.id, to: upper.id });
 
 // Run
-const result = await wf.execute({ name: 'World' }, { runner: new DockerRunner() });
+const result = await wf.execute({ name: 'World' }, { runner: new LightRunClient() });
 console.log(result.results);
 // { "greet-id": { output: { message: "Hello, World!" } },
 //   "upper-id": { output: { result: "HELLO, WORLD!" } } }
@@ -433,10 +445,10 @@ wf.addLink({
 ### Load from folder
 
 ```javascript
-import { loadWorkflowFromFolder, DockerRunner } from 'light-process';
+import { loadWorkflowFromFolder, LightRunClient } from 'light-process';
 
 const wf = loadWorkflowFromFolder('./my-workflow');
-const result = await wf.execute({ key: 'value' }, { runner: new DockerRunner() });
+const result = await wf.execute({ key: 'value' }, { runner: new LightRunClient() });
 ```
 
 ### Node from folder
@@ -467,27 +479,25 @@ Links support MongoDB-style `when` conditions on the source node's output:
 
 All top-level fields use AND logic by default.
 
-## Docker Configuration
+## Execution (light-run)
 
-### DockerRunner options
+Container execution is delegated to a [light-run](https://github.com/enixCode/light-run) HTTP service. light-process never touches Docker itself.
+
+```bash
+# Point light-process at a running light-run instance
+export LIGHT_RUN_URL=http://localhost:3001
+export LIGHT_RUN_TOKEN=your-bearer-token   # optional, if light-run requires auth
+```
 
 ```javascript
-const runner = new DockerRunner({
-  memoryLimit: '512m',     // container memory limit
-  cpuLimit: '1.5',         // CPU cores
-  runtime: 'runsc',        // 'runc' (default), 'runsc' (gVisor), 'kata'
-  gpu: 'all',              // false, 'all', number, or device ID
-  verbose: true,           // log Docker commands
+// SDK: point the client explicitly if env vars aren't set
+const runner = new LightRunClient({
+  url: 'http://localhost:3001',
+  token: process.env.LIGHT_RUN_TOKEN,
 });
 ```
 
-### Security
-
-- Containers run with `--no-new-privileges`
-- Capabilities dropped: NET_RAW, MKNOD, SYS_CHROOT, SETPCAP, SETFCAP, AUDIT_WRITE
-- PID limit: 100 per container
-- Default network: `lp-isolated` (bridge, inter-container communication disabled)
-- `network: "none"` fully isolates a node
+Isolation (cap drops, PID limits, network, gVisor runtime, GPU access) is configured on the light-run service - see its [README](https://github.com/enixCode/light-run#readme). A `network` value on the node (`'none'`, named network, etc.) is forwarded to light-run.
 
 ## A2A Protocol
 
@@ -560,10 +570,8 @@ npm run test:all       # unit + integration tests
 
 ## Requirements
 
-- **Node.js** >= 18
-- **Docker** (daemon running)
-- Optional: gVisor (runsc) for extra sandboxing
-- Optional: NVIDIA GPU support
+- **Node.js** >= 20
+- A running [light-run](https://github.com/enixCode/light-run) instance reachable via `LIGHT_RUN_URL`
 
 ## License
 

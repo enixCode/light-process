@@ -16,7 +16,7 @@ npm install light-process
 ## Basic workflow
 
 ```javascript
-import { Workflow, DockerRunner } from 'light-process';
+import { Workflow, LightRunClient } from 'light-process';
 
 const wf = new Workflow({ name: 'hello' });
 
@@ -25,7 +25,7 @@ node.setCode((input) => ({ message: `Hello, ${input.name}!` }));
 
 const result = await wf.execute(
   { name: 'World' },
-  { runner: new DockerRunner() }
+  { runner: new LightRunClient() }
 );
 
 console.log(result.success); // true
@@ -35,7 +35,7 @@ console.log(result.results);
 ## Multi-node pipeline
 
 ```javascript
-import { Workflow, Schema, DockerRunner } from 'light-process';
+import { Workflow, Schema, LightRunClient } from 'light-process';
 
 const wf = new Workflow({ name: 'pipeline' });
 
@@ -76,7 +76,7 @@ wf.addLink({
 
 const result = await wf.execute(
   { email: 'alice@example.com' },
-  { runner: new DockerRunner() }
+  { runner: new LightRunClient() }
 );
 ```
 
@@ -102,7 +102,7 @@ node.addFolder('./my-node', 'node index.js');
 ## Load workflow from folder
 
 ```javascript
-import { loadWorkflowFromFolder, DockerRunner } from 'light-process';
+import { loadWorkflowFromFolder, LightRunClient } from 'light-process';
 
 const wf = loadWorkflowFromFolder('./my-workflow');
 if (!wf) {
@@ -110,7 +110,7 @@ if (!wf) {
   process.exit(1);
 }
 
-const result = await wf.execute({}, { runner: new DockerRunner() });
+const result = await wf.execute({}, { runner: new LightRunClient() });
 ```
 
 ## Export workflow to folder
@@ -127,7 +127,7 @@ exportWorkflowToFolder(wf, './output/my-workflow');
 
 ```javascript
 const result = await wf.execute(input, {
-  runner: new DockerRunner(),
+  runner: new LightRunClient(),
   timeout: 30000, // 30s global timeout
 
   onNodeStart: (nodeId, nodeName) => {
@@ -149,18 +149,16 @@ const result = await wf.execute(input, {
 });
 ```
 
-## DockerRunner options
+## LightRunClient options
 
 ```javascript
-const runner = new DockerRunner({
-  memoryLimit: '512m',
-  cpuLimit: '1.5',
-  runtime: 'runsc',       // 'runc', 'runsc' (gVisor), 'kata'
-  gpu: 'all',             // false, 'all', number, or device ID
-  verbose: true,
-  tempDir: '/tmp/lp',
+const runner = new LightRunClient({
+  url: 'http://localhost:3001',   // light-run endpoint (default: $LIGHT_RUN_URL)
+  token: process.env.LIGHT_RUN_TOKEN, // optional Bearer token
 });
 ```
+
+Container-level isolation (memory, CPU, gVisor runtime, GPU) is configured on the light-run service, not here. See the [light-run docs](https://github.com/enixCode/light-run#readme).
 
 ## Node.setCode
 
@@ -204,13 +202,13 @@ const restored = Workflow.fromJSON(json);
 Expose workflows as an A2A agent programmatically. See [A2A Protocol](a2a.html) for the full protocol surface.
 
 ```javascript
-import { createA2AServer, DockerRunner } from 'light-process';
+import { createA2AServer, LightRunClient } from 'light-process';
 
-const runner = new DockerRunner();
+const runner = new LightRunClient();
 const app = createA2AServer({
   port: 3000,                 // listen port (default: 3000)
   host: '0.0.0.0',            // bind host (default: '0.0.0.0')
-  runner,                     // shared DockerRunner instance
+  runner,                     // shared LightRunClient instance
   apiKey: process.env.LP_API_KEY, // enable Bearer auth when set
   persistDir: './workflows',  // directory for workflows added with ?persist=true
   card: {

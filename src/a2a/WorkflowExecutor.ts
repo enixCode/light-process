@@ -1,6 +1,6 @@
 import type { DataPart, Part, TaskArtifactUpdateEvent, TaskStatusUpdateEvent } from '@a2a-js/sdk';
 import type { AgentExecutor, ExecutionEventBus, RequestContext } from '@a2a-js/sdk/server';
-import type { DockerRunner } from '../runner/index.js';
+import type { LightRunClient } from '../runner/index.js';
 import type { Workflow } from '../Workflow.js';
 
 /** Extract structured data from A2A message parts */
@@ -42,7 +42,7 @@ export class WorkflowExecutor implements AgentExecutor {
 
   constructor(
     private workflows: Map<string, Workflow>,
-    private runner: DockerRunner,
+    private runner: LightRunClient,
   ) {}
 
   async execute(context: RequestContext, eventBus: ExecutionEventBus): Promise<void> {

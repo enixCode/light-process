@@ -1,8 +1,20 @@
-# Light Process - Technical Guide
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## What is this?
 
-Lightweight DAG workflow engine. Runs code in Docker containers, connected by links with conditions. Exposes an A2A protocol API. CLI + SDK.
+Lightweight DAG workflow engine. Orchestrates code that runs in Docker containers, connected by links with conditions. Container execution is delegated to a separate `light-run` HTTP service (see `ECOSYSTEM.md`). Exposes an A2A protocol API. CLI + SDK.
+
+## Sibling projects (local checkouts)
+
+light-process is the top of a 3-tier stack. When reading or debugging, the other two tiers are cloned side-by-side:
+
+- `../light-runner` - npm package `light-runner` (v0.9.0). Low-level Docker runner: caps drop, networks, ephemeral volumes, tar-stream file seeding. Pure library, no HTTP, no CLI. Entry: `../light-runner/src/index.ts`. Doc: `../light-runner/README.md`, `../light-runner/CLAUDE.md`.
+- `../light-run` - npm package `light-run` (v0.1.0). Thin HTTP wrapper around `light-runner`: Fastify server exposing `POST /run`, `GET /runs/:id`, `GET /runs/:id/artifacts/:name`, `POST /runs/:id/cancel`, `GET /health`. This is the only service light-process talks to. Entry: `../light-run/src/bin/light-run.js`. Doc: `../light-run/README.md`, `../light-run/CLAUDE.md`.
+- `./` (this repo) - `light-process`. DAG orchestrator. Sends HTTP requests to `light-run`, never touches Docker itself.
+
+Dependency direction: `light-process -> light-run -> light-runner -> Docker`. When a container-level bug surfaces (image not found, caps, volumes, stream), fix it in `../light-runner`. When an HTTP contract bug surfaces (payload shape, auth, cancel, artifacts), fix it in `../light-run`. Only workflow/DAG/A2A concerns belong here.
 
 ## Quick commands
 
@@ -33,8 +45,9 @@ src/
     conditions.ts     MongoDB-style condition evaluation
 
   runner/
-    DockerRunner.ts   Docker container execution engine
-    Execution.ts      Async result wrapper with cancellation
+    LightRunClient.ts HTTP client calling the light-run service (POST /run, artifact fetch, cancel)
+                      Exported under the legacy name `DockerRunner` from runner/index.ts for backward compat
+    Execution.ts      Async result wrapper with cancellation (NodeExecutionResult shape)
 
   cli/
     run.ts            Execute workflow or single node
@@ -70,6 +83,7 @@ src/
 - **Back-link** = link creating a cycle - requires `maxIterations` to prevent infinite loops
 - **Entry nodes** = nodes with no incoming forward links (back-links excluded)
 - **Execution** = queue-based batches with `Promise.all()` for parallel nodes
+- **light-run** = the external HTTP service that actually runs containers. light-process is now a pure orchestrator
 
 ## Workflow formats
 
@@ -117,23 +131,85 @@ All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 - Adding/removing workflows calls `rebuildHandler()` to update the AgentCard and transport
 - The persist directory is set by `light serve [dir]` (defaults to `.`) and passed as `persistDir` to `createA2AServer`
 
-## Docker isolation
+## Container execution via light-run
 
-- Default network: `lp-isolated` (bridge, icc=false)
-- Dropped capabilities: NET_RAW, MKNOD, SETPCAP, etc.
-- `--no-new-privileges`, PID limit 100
-- Output via `.lp-output.json` in container workdir (`/app`)
-- Per-execution named volume `lp-<execId>` mounts at workdir; seeded by a helper container, destroyed after run. Lets the runner work identically on host or inside a container with `/var/run/docker.sock` mounted (no shared host path needed). Orphans pruned at `light serve` startup.
+light-process no longer talks to the Docker daemon directly. All container work is delegated to a `light-run` HTTP service over the network.
+
+- Required env: `LIGHT_RUN_URL` (e.g. `http://localhost:3001`)
+- Optional env: `LIGHT_RUN_TOKEN` (sent as `Authorization: Bearer <token>`)
+- `light doctor` checks `LIGHT_RUN_URL` (required) and Docker/gVisor/GPU on the current host (informational - Docker must actually be on the light-run host)
+- Both `light run` and `light serve` refuse to start if `LIGHT_RUN_URL` is unset
+- Isolation (cap drops, networks, PID limits, per-execution volumes, gVisor/runsc, GPU) is implemented by light-run, not here. See `ECOSYSTEM.md`
+
+### Wire contract (LightRunClient <-> light-run)
+
+`LightRunClient.runNode` builds this body and POSTs it to `POST /run` synchronously (no `async:true`):
+
+| field | source | Zod rule in light-run (`../light-run/src/schemas.ts`) |
+|-------|--------|--------------------------------------------------------|
+| `image` | `node.image` | required, 1-300 chars |
+| `files` | `node.files` | **required, >= 1 entry**, keys relative, no `..`, max 1024 chars each |
+| `entrypoint` | `node.entrypoint` if set | optional, 1-2048 chars |
+| `setup` | `node.setup` if non-empty | optional, <=50 entries |
+| `timeout` | `node.timeout` if `> 0` | optional, 1 ms to 1 h (`60*60*1000`) |
+| `network` | `node.network` if set | optional, max 100 chars |
+| `workdir` | `node.workdir` if `!== '/app'` | optional, max 200 chars |
+| `input` | runtime input if non-empty | optional, unknown |
+| `env` | `{name: process.env[name]}` filtered | optional, keys `[A-Za-z_][A-Za-z0-9_]*` |
+| `extract` | `[<workdir>/.lp-output.json]` | optional, <=20 entries, each <=1024 chars |
+
+Response: the final `RunState`. Output retrieval: `GET /runs/:id/artifacts/.lp-output.json`. Cancel: `POST /runs/:id/cancel` (204). The run id is a UUID v4 minted server-side (the `lp-*` prefix built in `LightRunClient` is only used for our own `Execution.id`, not sent to light-run).
+
+### Edge cases and gotchas
+
+- **Empty `files`**: Zod rejects with 400. `Node.setCode()`, `addHelper()`, `loadDirectory()` always populate files, but a bare `new Node({name, image, entrypoint})` in SDK mode would break. If adding new Node paths, ensure at least one file is written.
+- **Payload size**: default `bodyLimit` on light-run is 10 MiB. Big models/binaries in `files` need `LIGHT_RUN_BODY_LIMIT` bumped on the light-run side (we don't set it).
+- **Artifact path match**: `LightRunClient` looks for `a.path === OUTPUT_FILE` (= `.lp-output.json`). This relies on light-runner's rule "file `from` lands as `to/basename(from)`" -> `scanArtifacts` returns the bare basename, which matches. If light-run ever changes extract semantics, this breaks silently (we'd just report empty output).
+- **Type drift**: `../light-run/src/schemas.ts` holds a compile-time alignment assert against `light-runner`'s `RunRequest`. If light-runner widens/tightens shared fields (`image`, `timeout`, `network`, `env`, `workdir`, `input`), light-run's build fails before the drift reaches us. Our only defense is the HTTP contract above - re-read it when upgrading light-run.
+- **Timeouts**: `node.timeout = 0` means "no timeout" -> we omit the field and light-run lets light-runner use its 20-minute default (see `../light-runner/README.md`). For unbounded runs, that default still applies.
+- **No Docker artifacts shipped**: light-process is pure npm. Users install `light-run` and `light-process` globally via npm; light-run provides the Docker connection on its own host.
+
+## Distribution
+
+Pure npm - no Docker images, no compose file shipped. Users install both packages globally and run them as two processes:
+
+```bash
+npm install -g light-run light-process
+
+# terminal 1 - runner (keeps running, needs Docker on the same host)
+light-run serve --token $(openssl rand -hex 32) --port 3001
+
+# terminal 2 - orchestrator
+export LIGHT_RUN_URL=http://localhost:3001
+export LIGHT_RUN_TOKEN=<same token>
+light serve
+```
+
+Requires Node 22+ and Docker on the machine running `light-run`. light-process itself only needs Node - it never talks to Docker directly.
+
+### Production deploy (your own VPS)
+
+`.github/workflows/deploy.yml` SSHes into a server on push to `main` / `staging` and runs a shell script named `light-process` (or `light-process-test` for staging). That script lives on the server - it can restart a systemd unit, re-run `npm install -g light-process@latest`, and bounce the process. Same pattern for `light-run` (restart it with `systemctl restart light-run` or equivalent). No compose, no Docker image, no build step on the CI.
+
+### What lives where
+
+| Concern | Fixed in |
+|---------|----------|
+| Container flags, caps, volumes, tar streaming, gVisor runtime | `../light-runner` |
+| HTTP route, auth token, Zod validation, artifact storage/eviction, async+callback | `../light-run` |
+| Workflow DAG, link conditions, back-link loops, A2A protocol, CLI, SDK | here |
+| `.lp-output.json` convention (JSON only, in `workdir`) | here (helpers.ts, LightRunClient) |
 
 ## Rules
 
+3- **ALWAYS VERIFY THAT A FIX REALLY WORKS ON THE ACTUAL BROKEN CASE, AND ASK FOR CONFIRMATION BEFORE ANY COMMIT OR PUSH.**
 - ESM-only (`"type": "module"` in package.json)
 - Node 20+ required
 - Target: ES2022, module: Node16
 - All imports use `.js` extension (TypeScript convention for ESM)
 - No default exports - use named exports
 - Errors extend `LightProcessError`
-- Commit messages: just the message + "build with cc"
+- Commit messages: short and synthetic, just the fix + "build with cc" (no long body)
 - Follow KISS, SOLID, YAGNI
 - Version: single source of truth in `package.json` - the server reads it at runtime
 
@@ -176,3 +252,4 @@ When changing files in `src/`, you MUST also update:
 - `docs/index.html` - if the change affects any documented feature, API, CLI, or behavior
 - `README.md` - if the change affects quick start, examples, or feature list
 - `CLAUDE.md` - if the change affects architecture, key concepts, or rules
+- `ECOSYSTEM.md` - if the change affects the light-run / light-process boundary or the shared projects diagram

@@ -1,8 +1,14 @@
 name: Deploy
 
+# Triggered by mobile git tag moves pushed by release.yml:
+# - alpha  -> every push to main         -> deploys light-process-test (lp-test.enixcode.fr)
+# - latest -> every stable v* tag push   -> deploys light-process       (lp.enixcode.fr)
+
 on:
   push:
-    branches: [main, staging]
+    tags:
+      - alpha
+      - latest
 
 jobs:
   deploy:
@@ -14,7 +20,4 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_DEPLOY_KEY }}
-          script: ${{ github.ref_name == 'main' && 'light-process' || 'light-process-test' }}
-          # main -> prod (light-process)
-          # staging -> test (light-process-test). Push main to staging to test:
-          #   git push origin main:staging
+          script: ${{ github.ref_name == 'latest' && 'light-process' || 'light-process-test' }}

@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { AgentCard } from '@a2a-js/sdk';
 import { DefaultRequestHandler, InMemoryTaskStore, JsonRpcTransportHandler } from '@a2a-js/sdk/server';
-import { DockerRunner } from '../runner/index.js';
+import { LightRunClient } from '../runner/index.js';
 import { Workflow } from '../Workflow.js';
 import { buildAgentCard, type CardOptions } from './cardBuilder.js';
 import { MANIFEST_JSON, SERVICE_WORKER_JS, UI_HTML } from './ui.js';
@@ -20,8 +20,8 @@ export interface A2AServerOptions {
   port?: number;
   /** Host to bind to (default: '0.0.0.0') */
   host?: string;
-  /** DockerRunner instance shared across executions */
-  runner?: DockerRunner;
+  /** LightRunClient instance shared across executions */
+  runner?: LightRunClient;
   /** Agent card options */
   card?: CardOptions;
   /** API key for Bearer token authentication (optional - no auth when unset) */
@@ -58,7 +58,7 @@ function isProtectedRoute(method: string, pathname: string): boolean {
 }
 
 export function createA2AServer(options: A2AServerOptions = {}) {
-  const { port = 3000, host = '0.0.0.0', runner = new DockerRunner(), apiKey, persistDir } = options;
+  const { port = 3000, host = '0.0.0.0', runner = new LightRunClient(), apiKey, persistDir } = options;
   const persistPath = persistDir ? resolve(persistDir) : null;
   const persistFile = (id: string) => join(persistPath as string, `${id}.json`);
 
@@ -285,8 +285,40 @@ export function createA2AServer(options: A2AServerOptions = {}) {
         return;
       }
 
-      // ROADMAP: GET /api/workflows/:id/history - execution logs
-      // ROADMAP: POST /api/workflows/:id/run - trigger execution
+      const runMatch = pathname.match(/^\/api\/workflows\/([^/]+)\/run$/);
+      if (method === 'POST' && runMatch) {
+        const id = runMatch[1];
+        const wf = workflows.get(id);
+        if (!wf) {
+          json(res, 404, { error: 'Workflow not found' });
+          return;
+        }
+        let input: Record<string, unknown> = {};
+        const body = await readBody(req);
+        if (body.trim()) {
+          try {
+            const parsed = JSON.parse(body);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              input = parsed as Record<string, unknown>;
+            } else {
+              json(res, 400, { error: 'Body must be a JSON object' });
+              return;
+            }
+          } catch {
+            json(res, 400, { error: 'Invalid JSON body' });
+            return;
+          }
+        }
+        try {
+          const result = await wf.execute(input, { runner });
+          json(res, result.success ? 200 : 500, result);
+        } catch (err) {
+          json(res, 500, { error: (err as Error).message });
+        }
+        return;
+      }
+
+      // ROADMAP: GET /api/workflows/:id/runs - execution history
       // ROADMAP: GET /api/workflows/:id/stream - SSE live updates
 
       if (method === 'GET' && (pathname === '/.well-known/agent-card.json' || pathname === '/.well-known/agent.json')) {

@@ -2,13 +2,16 @@ node_modules/
 dist/
 _archive/
 *.tgz
-.light.pid
 .DS_Store
 .playwright-mcp/
 .vscode/
-.claude/settings.local.json
+.claude/
+CLAUDE.md
 TODO.md
 RELEASE.md
+research.md
+NEXT.md
 
 .env
 workflows/
+.artifacts/
