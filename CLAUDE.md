@@ -189,7 +189,9 @@ Requires Node 22+ and Docker on the machine running `light-run`. light-process i
 
 ### Production deploy (your own VPS)
 
-`.github/workflows/deploy.yml` SSHes into a server on push to `main` / `staging` and runs a shell script named `light-process` (or `light-process-test` for staging). That script lives on the server - it can restart a systemd unit, re-run `npm install -g light-process@latest`, and bounce the process. Same pattern for `light-run` (restart it with `systemctl restart light-run` or equivalent). No compose, no Docker image, no build step on the CI.
+`.github/workflows/deploy.yml` triggers on mobile git tag pushes (`alpha` or `latest`) that `release.yml` moves automatically. It SSHes into the server and runs `light-process-test` (staging, lp-test.enixcode.fr) when `alpha` moves, or `light-process` (prod, lp.enixcode.fr) when `latest` moves. Those scripts live on the server - they restart a systemd unit, re-run `npm install -g light-process@latest`, and bounce the process. Same pattern for `light-run` (`systemctl restart light-run` or equivalent). No `staging` branch, no compose image published, no build step on the CI.
+
+Concretely: push to `main` auto-deploys staging via the `alpha` tag hop; push a `v*` tag auto-deploys prod via the `latest` tag hop.
 
 ### What lives where
 
@@ -243,7 +245,7 @@ GitHub Flow - single long-lived branch.
 - Published on npm as `light-process` (bins: `light`, `light-process`). Install: `npm i -g light-process`
 - `.github/workflows/ci.yml` - lint/build/test
 - `.github/workflows/release.yml` - triggered by push to `main` (move mobile git tag `alpha`) or push of tag `v*` (lint/build/test + `npm publish --tag latest --provenance` via OIDC + move mobile git tag `latest` + GitHub Release). Tag-based releases: pushing a version tag triggers publish.
-- `.github/workflows/deploy.yml` - on push to `main` or `staging`, SSH deploy runs `light-process` (main/prod) or `light-process-test` (staging) on the server. For test deploys: `git push origin main:staging`
+- `.github/workflows/deploy.yml` - triggered by push of mobile tags `alpha` (-> `light-process-test` on lp-test.enixcode.fr, staging) or `latest` (-> `light-process` on lp.enixcode.fr, prod). Tags are moved automatically by `release.yml`, so push to `main` auto-deploys staging and push a `v*` tag auto-deploys prod. There is **no `staging` branch** - staging is an environment driven by the `alpha` mobile tag.
 - No Docker image is published for light-process itself - it runs on the host and uses Docker only to execute node containers
 
 ## Documentation

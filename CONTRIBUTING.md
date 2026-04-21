@@ -106,19 +106,22 @@ What happens on tag push:
 
 ### CI/CD
 
-- **Push to `main`** - CI runs + VPS prod redeploys + mobile `alpha` tag moves to HEAD
-- **Push tag `v*`** - CI runs + npm publish + mobile `latest` tag moves + GitHub Release
+- **Push to `main`** - CI runs + mobile `alpha` tag moves to HEAD -> triggers **staging deploy** (lp-test.enixcode.fr)
+- **Push tag `v*`** - CI runs + npm publish + mobile `latest` tag moves -> triggers **prod deploy** (lp.enixcode.fr) + GitHub Release
 - **No more `dev` branch** - legacy artifact, can be deleted
 
 ### Deploy test (staging)
 
-Push `main` to a staging branch manually when you want to test a deploy:
+Staging is an environment driven by the `alpha` mobile tag - **not a branch**. Any merge to `main` auto-deploys to lp-test.enixcode.fr through the tag hop.
+
+To force-redeploy staging without a new commit, re-push the `alpha` tag:
 
 ```bash
-git push origin main:staging
+git tag -f alpha <sha>
+git push -f origin alpha
 ```
 
-Or skip staging and trust CI + local testing.
+Or skip staging and trust CI + local testing before tagging a `v*` release.
 
 ## Quick commands
 
