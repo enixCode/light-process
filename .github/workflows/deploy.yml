@@ -1,14 +1,14 @@
 name: Deploy
 
-# Triggered by mobile git tag moves pushed by release.yml:
-# - alpha  -> every push to main         -> deploys light-process-test (lp-test.enixcode.fr)
-# - latest -> every stable v* tag push   -> deploys light-process       (lp.enixcode.fr)
+# - push to main -> light-process-test (staging, lp-test.enixcode.fr)
+# - push tag v*  -> light-process      (prod, lp.enixcode.fr)
+#
+# Both triggers are user pushes, so GitHub's anti-loop rule never applies.
 
 on:
   push:
-    tags:
-      - alpha
-      - latest
+    branches: [main]
+    tags: ['v*']
 
 jobs:
   deploy:
@@ -20,4 +20,4 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_DEPLOY_KEY }}
-          script: ${{ github.ref_name == 'latest' && 'light-process' || 'light-process-test' }}
+          script: ${{ github.ref_type == 'tag' && 'light-process' || 'light-process-test' }}
