@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What is this?
 
-Lightweight DAG workflow engine. Orchestrates code that runs in Docker containers, connected by links with conditions. Container execution is delegated to a separate `light-run` HTTP service (see `ECOSYSTEM.md`). Exposes an A2A protocol API. CLI + SDK.
+Lightweight DAG workflow engine. Orchestrates code that runs in Docker containers, connected by links with conditions. Container execution is delegated to a separate `light-run` HTTP service (see `ECOSYSTEM.md`). Exposes a minimal REST API. CLI + SDK.
 
 ## Sibling projects (local checkouts)
 
@@ -14,7 +14,7 @@ light-process is the top of a 3-tier stack. When reading or debugging, the other
 - `../light-run` - npm package `light-run` (v0.1.0). Thin HTTP wrapper around `light-runner`: Fastify server exposing `POST /run`, `GET /runs/:id`, `GET /runs/:id/artifacts/:name`, `POST /runs/:id/cancel`, `GET /health`. This is the only service light-process talks to. Entry: `../light-run/src/bin/light-run.js`. Doc: `../light-run/README.md`, `../light-run/CLAUDE.md`.
 - `./` (this repo) - `light-process`. DAG orchestrator. Sends HTTP requests to `light-run`, never touches Docker itself.
 
-Dependency direction: `light-process -> light-run -> light-runner -> Docker`. When a container-level bug surfaces (image not found, caps, volumes, stream), fix it in `../light-runner`. When an HTTP contract bug surfaces (payload shape, auth, cancel, artifacts), fix it in `../light-run`. Only workflow/DAG/A2A concerns belong here.
+Dependency direction: `light-process -> light-run -> light-runner -> Docker`. When a container-level bug surfaces (image not found, caps, volumes, stream), fix it in `../light-runner`. When an HTTP contract bug surfaces (payload shape, auth, cancel, artifacts), fix it in `../light-run`. Only workflow/DAG concerns belong here.
 
 ## Quick commands
 
@@ -32,6 +32,7 @@ npm run test:all     # unit + integration
 src/
   cli.ts              CLI entry - dispatches to commands
   index.ts            SDK barrel exports
+  server.ts           REST API server (node:http) - /health, /api/workflows CRUD, /api/workflows/:id/run
   Workflow.ts         Core DAG - nodes, links, batch execution
   CodeLoader.ts       Load/export workflows from folder structure
   schema.ts           JSON Schema validation via AJV
@@ -51,7 +52,7 @@ src/
 
   cli/
     run.ts            Execute workflow or single node
-    serve.ts          Start A2A API server
+    serve.ts          Start the REST API server (wraps src/server.ts)
     init.ts           Scaffold project or node
     check.ts          Validate workflow structure
     describe.ts       DAG visualization with I/O schemas (text + Mermaid HTML)
@@ -68,12 +69,7 @@ src/
     utils.ts          Arg parsing, workflow resolution
 
   config.ts           Global config manager (remotes, defaults, override resolution)
-  remoteClient.ts     HTTP client for the A2A server (list/get/getFull/create/update/delete/ping/sendMessage)
-
-  a2a/
-    server.ts         HTTP server with JSON-RPC + SSE
-    WorkflowExecutor.ts  A2A AgentExecutor implementation
-    cardBuilder.ts    Builds AgentCard from workflows
+  remoteClient.ts     HTTP client for the REST server (list/get/getFull/create/update/delete/ping/runWorkflow)
 ```
 
 ## Key concepts
@@ -119,17 +115,25 @@ MongoDB-style operators: `gt`, `gte`, `lt`, `lte`, `ne`, `in`, `exists`, `regex`
 
 All top-level fields are AND. Use `{ "or": [...] }` for OR logic.
 
-## API key authentication
+## REST API server
 
-- `light serve` enables API key auth only when `LP_API_KEY` env var is set
-- If `LP_API_KEY` is unset, auth is disabled (all routes public)
-- Protects POST routes and `/api/*` routes - requires `Authorization: Bearer <key>` header
-- GET routes like `/health` and `/.well-known/agent-card.json` are public
-- AgentCard advertises security schemes when auth is enabled
-- `POST /api/workflows` - add a workflow at runtime (JSON body). In-memory only by default. Add `?persist=true` to also write `<workflows-dir>/<id>.json` so it survives restarts
-- `DELETE /api/workflows/:id` - remove a workflow at runtime. Add `?persist=true` to also delete the file from disk
-- Adding/removing workflows calls `rebuildHandler()` to update the AgentCard and transport
-- The persist directory is set by `light serve [dir]` (defaults to `.`) and passed as `persistDir` to `createA2AServer`
+`light serve [dir]` starts a minimal REST server (built on `node:http`, no framework) exposing:
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/health` | Health check (public) |
+| GET | `/api/workflows` | List workflow summaries |
+| GET | `/api/workflows/:id` | Workflow detail (`?full=true` for full JSON) |
+| POST | `/api/workflows` | Register a workflow (`?persist=true` to write `<dir>/<id>.json`) |
+| PUT | `/api/workflows/:id` | Replace a workflow (`?persist=true`) |
+| DELETE | `/api/workflows/:id` | Remove a workflow (`?persist=true` to delete file) |
+| POST | `/api/workflows/:id/run` | Execute the workflow with body as input |
+
+**API key authentication**:
+- `LP_API_KEY` env var enables Bearer auth
+- If unset, auth is disabled (all routes public)
+- Protects write routes (POST/PUT/DELETE) and every `/api/*` route
+- `/health` is always public
 
 ## Container execution via light-run
 
@@ -199,7 +203,7 @@ Concretely: push to `main` auto-deploys staging via the `alpha` tag hop; push a 
 |---------|----------|
 | Container flags, caps, volumes, tar streaming, gVisor runtime | `../light-runner` |
 | HTTP route, auth token, Zod validation, artifact storage/eviction, async+callback | `../light-run` |
-| Workflow DAG, link conditions, back-link loops, A2A protocol, CLI, SDK | here |
+| Workflow DAG, link conditions, back-link loops, REST API, CLI, SDK | here |
 | `.lp-output.json` convention (JSON only, in `workdir`) | here (helpers.ts, LightRunClient) |
 
 ## Rules
@@ -245,7 +249,7 @@ GitHub Flow - single long-lived branch.
 - Published on npm as `light-process` (bins: `light`, `light-process`). Install: `npm i -g light-process`
 - `.github/workflows/ci.yml` - lint/build/test
 - `.github/workflows/release.yml` - triggered by push to `main` (move mobile git tag `alpha`) or push of tag `v*` (lint/build/test + `npm publish --tag latest --provenance` via OIDC + move mobile git tag `latest` + GitHub Release). Tag-based releases: pushing a version tag triggers publish.
-- `.github/workflows/deploy.yml` - triggered by push of mobile tags `alpha` (-> `light-process-test` on lp-test.enixcode.fr, staging) or `latest` (-> `light-process` on lp.enixcode.fr, prod). Tags are moved automatically by `release.yml`, so push to `main` auto-deploys staging and push a `v*` tag auto-deploys prod. There is **no `staging` branch** - staging is an environment driven by the `alpha` mobile tag.
+- `.github/workflows/deploy.yml` - triggered directly on push to `main` (-> `light-process-test` on lp-test.enixcode.fr, staging) or push of a `v*` tag (-> `light-process` on lp.enixcode.fr, prod). Flat 13-line workflow with a ternary picking the SSH script name. No tag-hop chain (GitHub anti-loop rule would block it).
 - No Docker image is published for light-process itself - it runs on the host and uses Docker only to execute node containers
 
 ## Documentation

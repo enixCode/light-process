@@ -62,10 +62,10 @@ light run my-workflow --dir ./custom-workflows
 
 ## light serve
 
-Start the A2A API server with web dashboard.
+Start the REST API server.
 
 ```bash
-light serve [dir] [--port 3000] [--verbose]
+light serve [dir] [--port 3000]
 ```
 
 **Options:**
@@ -73,27 +73,26 @@ light serve [dir] [--port 3000] [--verbose]
 | Flag | Description | Default |
 |---|---|---|
 | `--port <number>` | Port to listen on | `3000` |
-| `--verbose` | Verbose Docker logging | off |
 
 **Environment:**
 
 | Variable | Description |
 |---|---|
 | `LP_API_KEY` | Enable Bearer token authentication on protected routes. If unset, all routes are public. |
+| `LIGHT_RUN_URL` | URL of the light-run service (required). |
+| `LIGHT_RUN_TOKEN` | Bearer token for light-run (optional). |
 
 **Endpoints:**
 
 | Method | Path | Description |
 |---|---|---|
-| GET | `/` | Web dashboard |
-| GET | `/health` | Health check |
-| GET | `/.well-known/agent-card.json` | A2A agent card |
+| GET | `/health` | Health check (public) |
 | GET | `/api/workflows` | List workflows |
 | GET | `/api/workflows/:id` | Workflow detail (add `?full=true` for full JSON) |
 | POST | `/api/workflows` | Add workflow at runtime (add `?persist=true` to save) |
 | PUT | `/api/workflows/:id` | Replace a workflow (add `?persist=true` to save) |
 | DELETE | `/api/workflows/:id` | Remove workflow (add `?persist=true` to delete file) |
-| POST | `/` or `/a2a` | A2A JSON-RPC 2.0 |
+| POST | `/api/workflows/:id/run` | Execute the workflow with the JSON body as input |
 
 **Examples:**
 
@@ -215,7 +214,7 @@ light doctor
 
 ## light remote
 
-Manage remote A2A server profiles and run workflows remotely.
+Manage remote light-process server profiles and run workflows remotely.
 
 ```bash
 light remote <bind|set-key|list|use|forget|ping|ls|run|delete|rm> [...]

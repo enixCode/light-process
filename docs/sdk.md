@@ -197,25 +197,20 @@ const str = JSON.stringify(json, null, 2);
 const restored = Workflow.fromJSON(json);
 ```
 
-## A2A server
+## REST API server
 
-Expose workflows as an A2A agent programmatically. See [A2A Protocol](a2a.html) for the full protocol surface.
+Expose workflows over a minimal REST API programmatically.
 
 ```javascript
-import { createA2AServer, LightRunClient } from 'light-process';
+import { createServer, LightRunClient } from 'light-process';
 
 const runner = new LightRunClient();
-const app = createA2AServer({
-  port: 3000,                 // listen port (default: 3000)
-  host: '0.0.0.0',            // bind host (default: '0.0.0.0')
-  runner,                     // shared LightRunClient instance
+const app = createServer({
+  port: 3000,                     // listen port (default: 3000)
+  host: '0.0.0.0',                // bind host (default: '0.0.0.0')
+  runner,                         // shared LightRunClient instance
   apiKey: process.env.LP_API_KEY, // enable Bearer auth when set
-  persistDir: './workflows',  // directory for workflows added with ?persist=true
-  card: {
-    name: 'My Agent',
-    description: 'Custom agent',
-    url: 'https://my.host',
-  },
+  persistDir: './workflows',      // directory for workflows added with ?persist=true
 });
 
 // Register workflows up front
@@ -229,7 +224,7 @@ await app.listen();
 await app.close();
 ```
 
-When `apiKey` is provided, every `POST` and `/api/*` route requires `Authorization: Bearer <key>`. Leave it undefined to run without auth.
+When `apiKey` is provided, every write route (POST/PUT/DELETE) and every `/api/*` route requires `Authorization: Bearer <key>`. Leave it undefined to run without auth. `/health` is always public.
 
 ## Error types
 

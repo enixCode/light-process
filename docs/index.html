@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Light Process - Lightweight workflow engine with Docker container isolation and A2A protocol support.">
+<meta name="description" content="Light Process - Lightweight DAG workflow engine for orchestrating code in Docker containers.">
 <title>Light Process - Documentation</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>&#9889;</text></svg>">
 <style>
@@ -543,7 +543,6 @@ tbody tr:hover{background:var(--table-hover)}
   <div class="nav-group">
     <div class="nav-group-label">Advanced</div>
     <a href="#docker">Docker &amp; Security</a>
-    <a href="#a2a">A2A Protocol</a>
     <a href="#schema">Schema Validation</a>
   </div>
 
@@ -563,12 +562,11 @@ tbody tr:hover{background:var(--table-hover)}
      ============================================================ -->
 <section class="hero" id="hero">
   <h1>Light Process</h1>
-  <p class="tagline">Lightweight workflow engine with Docker container isolation, conditional DAG execution, and A2A protocol support.</p>
+  <p class="tagline">Lightweight DAG workflow engine. Orchestrates code that runs in Docker containers, connected by links with conditions.</p>
   <div class="badges">
     <span class="badge badge-green">Docker Isolated</span>
     <span class="badge badge-blue">DAG Engine</span>
-    <span class="badge badge-amber">A2A Protocol</span>
-    <span class="badge badge-gray">Node.js >= 18</span>
+    <span class="badge badge-gray">Node.js >= 20</span>
     <span class="badge badge-gray">AGPL-3.0</span>
   </div>
   <div class="install-box">
@@ -772,8 +770,8 @@ Checking: Example (from folder)
 </div>
 
 <div class="use-case-card">
-  <h4>Multi-Agent AI Systems (A2A)</h4>
-  <p>Expose workflows as A2A agents that other AI agents can discover and invoke. Each workflow appears as a skill in the agent card. Structured data exchange via JSON-RPC 2.0.</p>
+  <h4>Remote workflow execution</h4>
+  <p>Serve workflows over a minimal REST API. Any HTTP client, CI pipeline, or service can invoke them with Bearer auth. No SDK required.</p>
 </div>
 
 <div class="use-case-card">
@@ -793,9 +791,8 @@ Checking: Example (from folder)
     <tr><td>Schema validation</td><td>Catch data issues between steps</td></tr>
     <tr><td>Conditional routing</td><td>Handle success/failure/edge cases</td></tr>
     <tr><td>Parallel execution</td><td>Fast pipelines with independent steps</td></tr>
-    <tr><td>A2A protocol</td><td>Integrate with AI agent ecosystems</td></tr>
+    <tr><td>REST API</td><td>Invoke workflows from any HTTP client</td></tr>
     <tr><td>Loop support</td><td>Retry and iteration patterns</td></tr>
-    <tr><td>Web dashboard</td><td>Visual inspection of workflow structure</td></tr>
   </tbody>
 </table>
 </div>
@@ -873,13 +870,13 @@ Checking: Example (from folder)
 </ol>
 
 <h3>light serve</h3>
-<p>Start the A2A API server with web dashboard.</p>
+<p>Start the REST API server.</p>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light serve [dir] [<span class="hl-flag">--port</span> <span class="hl-num">3000</span>] [<span class="hl-flag">--verbose</span>]</code></pre>
+  <pre><code><span class="hl-prompt">$ </span>light serve [dir] [<span class="hl-flag">--port</span> <span class="hl-num">3000</span>]</code></pre>
 </div>
 
 <h4>Endpoints</h4>
@@ -887,14 +884,13 @@ Checking: Example (from folder)
 <table>
   <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
   <tbody>
-    <tr><td>GET</td><td><code>/</code></td><td>Web dashboard</td></tr>
-    <tr><td>GET</td><td><code>/health</code></td><td>Health check</td></tr>
-    <tr><td>GET</td><td><code>/.well-known/agent-card.json</code></td><td>A2A agent card</td></tr>
+    <tr><td>GET</td><td><code>/health</code></td><td>Health check (public)</td></tr>
     <tr><td>GET</td><td><code>/api/workflows</code></td><td>List workflows</td></tr>
-    <tr><td>GET</td><td><code>/api/workflows/:id</code></td><td>Workflow detail</td></tr>
-    <tr><td>POST</td><td><code>/api/workflows</code></td><td>Add a workflow (in-memory). Add <code>?persist=true</code> to also save to disk</td></tr>
-    <tr><td>DELETE</td><td><code>/api/workflows/:id</code></td><td>Remove a workflow. Add <code>?persist=true</code> to also delete file</td></tr>
-    <tr><td>POST</td><td><code>/</code> or <code>/a2a</code></td><td>A2A JSON-RPC 2.0</td></tr>
+    <tr><td>GET</td><td><code>/api/workflows/:id</code></td><td>Workflow detail (add <code>?full=true</code> for full JSON)</td></tr>
+    <tr><td>POST</td><td><code>/api/workflows</code></td><td>Register a workflow (add <code>?persist=true</code> to save)</td></tr>
+    <tr><td>PUT</td><td><code>/api/workflows/:id</code></td><td>Replace a workflow (add <code>?persist=true</code>)</td></tr>
+    <tr><td>DELETE</td><td><code>/api/workflows/:id</code></td><td>Remove a workflow (add <code>?persist=true</code> to delete file)</td></tr>
+    <tr><td>POST</td><td><code>/api/workflows/:id/run</code></td><td>Execute with the JSON body as input</td></tr>
   </tbody>
 </table>
 </div>
@@ -911,16 +907,13 @@ Checking: Example (from folder)
 <span class="hl-cm"># Custom port</span>
 <span class="hl-prompt">$ </span>light serve <span class="hl-flag">--port</span> <span class="hl-num">8080</span>
 
-<span class="hl-cm"># Verbose Docker logging</span>
-<span class="hl-prompt">$ </span>light serve <span class="hl-flag">--verbose</span>
-
-<span class="hl-cm"># Set a custom API key</span>
+<span class="hl-cm"># Enable Bearer auth</span>
 <span class="hl-prompt">$ </span>LP_API_KEY=my-secret-key light serve</code></pre>
 </div>
 
 <h4>Authentication</h4>
 <p>API key authentication is opt-in. Set the <code>LP_API_KEY</code> environment variable to enable Bearer auth. If unset, auth is disabled and all routes are public.</p>
-<p>Protected routes (POST and <code>/api/*</code>) require a Bearer token in the <code>Authorization</code> header. GET routes like <code>/health</code> and <code>/.well-known/agent-card.json</code> are public.</p>
+<p>Protected routes (write verbs and every <code>/api/*</code> path) require a Bearer token in the <code>Authorization</code> header. <code>/health</code> is always public.</p>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">bash</span>
@@ -932,7 +925,6 @@ Checking: Example (from folder)
 <span class="hl-cm"># Protected - requires Bearer token</span>
 <span class="hl-prompt">$ </span>curl <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> http://localhost:<span class="hl-num">3000</span>/api/workflows</code></pre>
 </div>
-<p>The AgentCard at <code>/.well-known/agent-card.json</code> advertises the security scheme so that A2A clients can discover that authentication is required.</p>
 
 <h3>light init</h3>
 <p>Scaffold a new project or node.</p>
@@ -1921,193 +1913,6 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
 </section>
 
 <!-- ============================================================
-     A2A PROTOCOL
-     ============================================================ -->
-<section id="a2a">
-<h2>A2A Protocol</h2>
-<p>Light Process implements the <a href="https://google.github.io/A2A/" target="_blank" rel="noopener">A2A protocol</a> (Agent-to-Agent) for exposing workflows as AI agents.</p>
-
-<h3>Start the server</h3>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">bash</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code><span class="hl-cm"># Start the server (no auth - public)</span>
-<span class="hl-prompt">$ </span>light serve <span class="hl-flag">--port</span> <span class="hl-num">3000</span>
-
-<span class="hl-cm"># Enable Bearer auth by setting LP_API_KEY</span>
-<span class="hl-prompt">$ </span>LP_API_KEY=my-secret-key light serve <span class="hl-flag">--port</span> <span class="hl-num">3000</span></code></pre>
-</div>
-<p>This starts:</p>
-<ul>
-  <li><strong>Web dashboard</strong> at <code>http://localhost:3000/</code></li>
-  <li><strong>A2A agent</strong> at <code>http://localhost:3000/</code></li>
-  <li><strong>Agent card</strong> at <code>http://localhost:3000/.well-known/agent-card.json</code></li>
-</ul>
-<p>API key authentication is opt-in via <code>LP_API_KEY</code>. When enabled, POST routes and <code>/api/*</code> routes require a Bearer token in the <code>Authorization</code> header. See <a href="#cli">light serve - Authentication</a> for details.</p>
-
-<h3>Agent discovery</h3>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">bash</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code><span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/.well-known/agent-card.json</code></pre>
-</div>
-
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">json</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code>{
-  <span class="hl-key">"name"</span>: <span class="hl-str">"Light Process"</span>,
-  <span class="hl-key">"description"</span>: <span class="hl-str">"Workflow engine with Docker container isolation"</span>,
-  <span class="hl-key">"url"</span>: <span class="hl-str">"http://localhost:3000"</span>,
-  <span class="hl-key">"protocolVersion"</span>: <span class="hl-str">"0.2.1"</span>,
-  <span class="hl-key">"capabilities"</span>: {
-    <span class="hl-key">"streaming"</span>: <span class="hl-kw">true</span>,
-    <span class="hl-key">"pushNotifications"</span>: <span class="hl-kw">false</span>,
-    <span class="hl-key">"stateTransitionHistory"</span>: <span class="hl-kw">true</span>
-  },
-  <span class="hl-key">"defaultInputModes"</span>: [<span class="hl-str">"application/json"</span>],
-  <span class="hl-key">"defaultOutputModes"</span>: [<span class="hl-str">"application/json"</span>],
-  <span class="hl-key">"skills"</span>: [
-    {
-      <span class="hl-key">"id"</span>: <span class="hl-str">"my-workflow"</span>,
-      <span class="hl-key">"name"</span>: <span class="hl-str">"My Workflow"</span>,
-      <span class="hl-key">"description"</span>: <span class="hl-str">"Workflow: My Workflow (3 nodes)"</span>,
-      <span class="hl-key">"tags"</span>: [<span class="hl-str">"workflow"</span>]
-    }
-  ]
-}</code></pre>
-</div>
-<p>Each registered workflow appears as a <strong>skill</strong>.</p>
-
-<h3>Send a task</h3>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">bash</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code><span class="hl-prompt">$ </span>curl -X POST http://localhost:<span class="hl-num">3000</span> \
-  <span class="hl-flag">-H</span> <span class="hl-str">"Content-Type: application/json"</span> \
-  <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> \
-  <span class="hl-flag">-d</span> <span class="hl-str">'{
-    "jsonrpc": "2.0",
-    "id": "1",
-    "method": "message/send",
-    "params": {
-      "message": {
-        "messageId": "msg-1",
-        "role": "user",
-        "parts": [{
-          "kind": "data",
-          "data": {
-            "workflowId": "my-workflow",
-            "name": "Alice"
-          }
-        }]
-      }
-    }
-  }'</span></code></pre>
-</div>
-
-<h3>Workflow resolution</h3>
-<p>The executor selects a workflow using these rules:</p>
-<ol>
-  <li>If <code>workflowId</code> is in the data, use that workflow</li>
-  <li>If <code>workflowName</code> is in the data, match by name (case-insensitive)</li>
-  <li>If only one workflow is registered, use it automatically</li>
-  <li>Otherwise, return an error with available workflow names</li>
-</ol>
-
-<h3>REST API</h3>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">bash</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code><span class="hl-cm"># List all workflows (auth required)</span>
-<span class="hl-prompt">$ </span>curl <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> http://localhost:<span class="hl-num">3000</span>/api/workflows
-
-<span class="hl-cm"># Get workflow detail (auth required)</span>
-<span class="hl-prompt">$ </span>curl <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> http://localhost:<span class="hl-num">3000</span>/api/workflows/my-workflow-id
-
-<span class="hl-cm"># Health check (no auth required)</span>
-<span class="hl-prompt">$ </span>curl http://localhost:<span class="hl-num">3000</span>/health
-
-<span class="hl-cm"># Add a workflow dynamically (auth required)</span>
-<span class="hl-prompt">$ </span>curl <span class="hl-flag">-X POST</span> <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> \
-  <span class="hl-flag">-H</span> <span class="hl-str">"Content-Type: application/json"</span> \
-  <span class="hl-flag">-d</span> <span class="hl-str">'{"id":"my-wf","name":"My Workflow","nodes":[...],"links":[]}'</span> \
-  http://localhost:<span class="hl-num">3000</span>/api/workflows
-
-<span class="hl-cm"># Remove a workflow (auth required)</span>
-<span class="hl-prompt">$ </span>curl <span class="hl-flag">-X DELETE</span> <span class="hl-flag">-H</span> <span class="hl-str">"Authorization: Bearer &lt;your-api-key&gt;"</span> \
-  http://localhost:<span class="hl-num">3000</span>/api/workflows/my-wf</code></pre>
-</div>
-
-<h3>SDK usage</h3>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">javascript</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">createA2AServer</span>, <span class="hl-fn">Workflow</span>, <span class="hl-fn">LightRunClient</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
-
-<span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>();
-<span class="hl-kw">const</span> app = <span class="hl-fn">createA2AServer</span>({ port: <span class="hl-num">3000</span>, runner });
-
-<span class="hl-cm">// Register workflows</span>
-app.<span class="hl-fn">registerWorkflow</span>(myWorkflow);
-
-<span class="hl-cm">// Start listening</span>
-<span class="hl-kw">await</span> app.<span class="hl-fn">listen</span>();
-
-<span class="hl-cm">// Later: stop</span>
-<span class="hl-kw">await</span> app.<span class="hl-fn">close</span>();</code></pre>
-</div>
-
-<h4>Server options</h4>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">javascript</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code><span class="hl-fn">createA2AServer</span>({
-  port: <span class="hl-num">3000</span>,              <span class="hl-cm">// listen port (default: 3000)</span>
-  host: <span class="hl-str">'0.0.0.0'</span>,         <span class="hl-cm">// bind host (default: '0.0.0.0')</span>
-  runner: <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>(), <span class="hl-cm">// shared runner instance</span>
-  card: {
-    name: <span class="hl-str">'My Agent'</span>,       <span class="hl-cm">// agent name</span>
-    description: <span class="hl-str">'Custom'</span>,  <span class="hl-cm">// agent description</span>
-    url: <span class="hl-str">'https://my.host'</span>, <span class="hl-cm">// public URL</span>
-  },
-});</code></pre>
-</div>
-
-<h3>Task lifecycle</h3>
-<p>When a task is received via <code>message/send</code>:</p>
-<ol>
-  <li><strong>working</strong> - workflow execution starts</li>
-  <li><strong>working</strong> - status update per node start</li>
-  <li><strong>artifact-update</strong> - result per node completion</li>
-  <li><strong>completed</strong> or <strong>failed</strong> - final status with workflow result</li>
-</ol>
-
-<h3>CORS</h3>
-<p>The server allows cross-origin requests:</p>
-<ul>
-  <li><code>Access-Control-Allow-Origin: *</code></li>
-  <li><code>Access-Control-Allow-Methods: GET, POST, OPTIONS</code></li>
-  <li><code>Access-Control-Allow-Headers: Content-Type, Authorization</code></li>
-</ul>
-
-</section>
-
-<!-- ============================================================
      SCHEMA VALIDATION
      ============================================================ -->
 <section id="schema">
@@ -2318,7 +2123,7 @@ Output validation failed: output.score: must be >= <span class="hl-num">0</span>
   <li>Node model (Docker containers, code files, I/O schema)</li>
   <li>Link model (conditions, data injection, back-links)</li>
   <li>CLI (run, serve, init, check, describe, doctor)</li>
-  <li>A2A protocol server with web dashboard</li>
+  <li>REST API server (<code>/api/workflows</code> CRUD + <code>/api/workflows/:id/run</code>)</li>
   <li>JavaScript and Python helpers</li>
   <li>JSON Schema validation</li>
 </ul>
@@ -2326,8 +2131,7 @@ Output validation failed: output.score: must be >= <span class="hl-num">0</span>
 <h4>What's not stable yet</h4>
 <ul>
   <li>API surface may change</li>
-  <li>A2A integration (SDK compatibility)</li>
-  <li>Dashboard features (roadmap items)</li>
+  <li>REST payload shapes may evolve</li>
 </ul>
 
 </section>

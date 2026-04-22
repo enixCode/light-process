@@ -1,7 +1,7 @@
 {
   "name": "light-process",
-  "version": "0.2.1",
-  "description": "Lightweight workflow engine with Docker container isolation and A2A protocol support.",
+  "version": "0.3.0",
+  "description": "Lightweight DAG workflow engine for orchestrating code in Docker containers via light-run.",
   "main": "dist/index.js",
   "exports": {
     ".": {
@@ -40,7 +40,6 @@
     "workflow",
     "dag",
     "docker",
-    "a2a",
     "orchestration",
     "container"
   ],
@@ -54,7 +53,6 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@a2a-js/sdk": "^0.3.13",
     "ajv": "^8.18.0",
     "uuid": "^9.0.0"
   },

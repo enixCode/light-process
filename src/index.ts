@@ -1,8 +1,3 @@
-// Schema
-
-export type { A2AServerOptions, CardOptions } from './a2a/index.js';
-// A2A
-export { buildAgentCard, createA2AServer, WorkflowExecutor } from './a2a/index.js';
 export type { LoadOptions } from './CodeLoader.js';
 // Utils
 export { exportWorkflowToFolder, loadDirectory, loadWorkflowFromFolder, slugify } from './CodeLoader.js';
@@ -37,6 +32,9 @@ export type {
 export { Execution, LightRunClient } from './runner/index.js';
 export type { IOSchema, JSONSchema, ValidationResult } from './schema.js';
 export { Schema, validate, validateInput, validateOutput } from './schema.js';
+// Server
+export type { ServerOptions } from './server.js';
+export { createServer } from './server.js';
 export type {
   ExecuteOptions,
   ExecutionResult,

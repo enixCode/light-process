@@ -8,7 +8,7 @@ import {
   setRemote,
   setRemoteKey,
 } from '../config.js';
-import { deleteWorkflow, listWorkflows, ping, sendMessage, type WorkflowSummary } from '../remoteClient.js';
+import { deleteWorkflow, listWorkflows, ping, runWorkflow, type WorkflowSummary } from '../remoteClient.js';
 import type { Command } from './utils.js';
 import { confirm, getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 
@@ -182,7 +182,7 @@ Config file: ~/.light/config.json`);
         process.exit(1);
       }
       const r = resolveRemoteOrFail(remoteOverride);
-      let input: unknown = {};
+      let input: Record<string, unknown> = {};
       const inputStr = getFlagValue('--input');
       const inputFile = getFlagValue('--input-file');
       if (inputStr) input = JSON.parse(inputStr);
@@ -193,7 +193,7 @@ Config file: ~/.light/config.json`);
         }
         input = JSON.parse(readFileSync(inputFile, 'utf-8'));
       }
-      const result = await sendMessage(r.remote, id, input);
+      const result = await runWorkflow(r.remote, id, input);
       // Default: pretty-printed JSON. `--json` gives compact raw JSON.
       console.log(JSON.stringify(result, null, hasFlag('--json') ? 0 : 2));
       return;

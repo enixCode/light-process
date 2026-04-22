@@ -1,7 +1,7 @@
 <h1 align="center">Light Process</h1>
 
 <p align="center">
-  Lightweight DAG workflow engine with A2A protocol support. Delegates container execution to <a href="https://github.com/enixCode/light-run">light-run</a>.
+  Lightweight DAG workflow engine for orchestrating code in Docker containers. Delegates container execution to <a href="https://github.com/enixCode/light-run">light-run</a>.
 </p>
 
 <p align="center">
@@ -14,7 +14,6 @@
 <p align="center">
   <img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" alt="Node 20+" />
   <img src="https://img.shields.io/badge/license-AGPL--3.0-purple" alt="AGPL-3.0" />
-  <img src="https://img.shields.io/badge/A2A-protocol-orange" alt="A2A Protocol" />
 </p>
 
 ---
@@ -141,8 +140,7 @@ Now you have a two-node pipeline. Run `light describe example` to visualize it.
 
 - **DAG workflows** - nodes run in parallel when possible, linked with conditions
 - **Delegated execution** - containers run on a light-run service (isolation, caps, gVisor handled upstream)
-- **A2A protocol** - expose workflows as AI agents with streaming support
-- **Web dashboard** - terminal-style UI to inspect workflows and nodes
+- **REST API** - serve workflows over HTTP for remote clients
 - **Multi-language** - JavaScript and Python out of the box, any language via Docker
 - **Schema validation** - JSON Schema for inputs/outputs on every node
 - **Conditional routing** - MongoDB-style `when` clauses on links
@@ -154,7 +152,7 @@ Now you have a two-node pipeline. Run `light describe example` to visualize it.
 | Command | Description |
 |---|---|
 | `light run <target>` | Execute a workflow or single node |
-| `light serve [dir]` | Start A2A server + web dashboard |
+| `light serve [dir]` | Start the REST API server |
 | `light init [dir]` | Scaffold a new project or node |
 | `light check <target>` | Validate workflow structure |
 | `light describe <target>` | Visualize the DAG with schemas (text + Mermaid) |
@@ -193,54 +191,44 @@ light run --node my-node
 light run my-workflow --timeout 30000
 ```
 
-### Serve (API + Dashboard)
+### Serve (REST API)
 
 ```bash
 light serve --port 3000
 ```
 
-Opens a web dashboard at `http://localhost:3000/` and exposes the A2A API.
+Exposes a small REST API used by `light remote`, `light pull`, and `light push` to drive a remote instance.
 
-**API key authentication** is opt-in. Set `LP_API_KEY` to enable Bearer auth on POST and `/api/*` routes. If unset, auth is disabled and all routes are public:
+**API key authentication** is opt-in. Set `LP_API_KEY` to enable Bearer auth on write routes and `/api/*`. If unset, auth is disabled and all routes are public:
 
 ```bash
 LP_API_KEY=my-secret-key light serve --port 3000
 ```
 
-Protected routes (POST and `/api/*`) require a Bearer token in the Authorization header:
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/health` | public | Health check |
+| GET | `/api/workflows` | required | List workflow summaries |
+| GET | `/api/workflows/:id` | required | Get workflow detail (add `?full=true` for full JSON) |
+| POST | `/api/workflows` | required | Register a workflow (add `?persist=true` to write to disk) |
+| PUT | `/api/workflows/:id` | required | Replace a workflow (add `?persist=true`) |
+| DELETE | `/api/workflows/:id` | required | Remove a workflow (add `?persist=true` to delete file) |
+| POST | `/api/workflows/:id/run` | required | Execute a workflow with the JSON body as input |
+
+Examples:
 
 ```bash
 # Health check (no auth required)
 curl http://localhost:3000/health
 
-# Agent card (no auth required)
-curl http://localhost:3000/.well-known/agent-card.json
+# List workflows
+curl -H "Authorization: Bearer <key>" http://localhost:3000/api/workflows
 
-# List workflows (auth required)
-curl -H "Authorization: Bearer <your-api-key>" http://localhost:3000/api/workflows
-
-# Workflow detail (auth required)
-curl -H "Authorization: Bearer <your-api-key>" http://localhost:3000/api/workflows/my-workflow-id
-
-# Add a workflow dynamically (in-memory only)
-curl -X POST -H "Authorization: Bearer <your-api-key>" \
+# Run a workflow
+curl -X POST -H "Authorization: Bearer <key>" \
   -H "Content-Type: application/json" \
-  -d '{"id":"my-wf","name":"My Workflow","nodes":[...],"links":[]}' \
-  http://localhost:3000/api/workflows
-
-# Add a workflow AND persist it to disk (survives restart)
-curl -X POST -H "Authorization: Bearer <your-api-key>" \
-  -H "Content-Type: application/json" \
-  -d '{"id":"my-wf","name":"My Workflow","nodes":[...],"links":[]}' \
-  "http://localhost:3000/api/workflows?persist=true"
-
-# Remove a workflow (in-memory only)
-curl -X DELETE -H "Authorization: Bearer <your-api-key>" \
-  http://localhost:3000/api/workflows/my-wf
-
-# Remove a workflow AND delete its file from disk
-curl -X DELETE -H "Authorization: Bearer <your-api-key>" \
-  "http://localhost:3000/api/workflows/my-wf?persist=true"
+  -d '{"name":"Alice"}' \
+  http://localhost:3000/api/workflows/my-wf/run
 ```
 
 ### Init examples
@@ -498,43 +486,6 @@ const runner = new LightRunClient({
 ```
 
 Isolation (cap drops, PID limits, network, gVisor runtime, GPU access) is configured on the light-run service - see its [README](https://github.com/enixCode/light-run#readme). A `network` value on the node (`'none'`, named network, etc.) is forwarded to light-run.
-
-## A2A Protocol
-
-Light Process implements the [A2A protocol](https://google.github.io/A2A/) for agent-to-agent communication.
-
-```bash
-# Start the server (no auth - public)
-light serve --port 3000
-
-# Enable Bearer auth by setting LP_API_KEY
-LP_API_KEY=my-secret-key light serve --port 3000
-
-# Discover the agent (no auth required)
-curl http://localhost:3000/.well-known/agent-card.json
-
-# Send a task via JSON-RPC 2.0 (auth required)
-curl -X POST http://localhost:3000 \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <your-api-key>" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": "1",
-    "method": "message/send",
-    "params": {
-      "message": {
-        "messageId": "msg-1",
-        "role": "user",
-        "parts": [{
-          "kind": "data",
-          "data": { "workflowId": "my-workflow", "name": "World" }
-        }]
-      }
-    }
-  }'
-```
-
-Each registered workflow appears as a **skill** in the agent card.
 
 ## Schema Validation
 
