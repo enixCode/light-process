@@ -1,91 +1,50 @@
-import { spawnSync } from 'node:child_process';
 import type { Command } from './utils.js';
 import { wantsHelp } from './utils.js';
 
 export const doctor: Command = {
-  desc: 'Check environment and dependencies',
+  desc: 'Check environment and light-run connectivity',
   usage: 'light doctor',
-  run() {
+  async run() {
     if (wantsHelp()) {
       console.log(`Usage:
   light doctor
 
-Checks environment and dependencies (Node.js, Docker, GPU support).`);
+Checks Node.js version, LIGHT_RUN_URL, and pings the light-run service.`);
       return;
     }
 
     console.log('Checking environment...\n');
 
-    const checks = [
-      { name: 'Node.js', check: () => process.version, required: true },
-      {
-        name: 'Docker',
-        check: () => {
-          const r = spawnSync('docker', ['--version'], { encoding: 'utf-8' });
-          return r.status === 0 ? r.stdout.trim().split('\n')[0] : null;
-        },
-        required: true,
-      },
-      {
-        name: 'Docker daemon',
-        check: () => {
-          const r = spawnSync('docker', ['info'], { encoding: 'utf-8', stdio: 'pipe' });
-          return r.status === 0 ? 'running' : null;
-        },
-        required: true,
-      },
-      {
-        name: 'gVisor (runsc)',
-        check: () => {
-          const r = spawnSync('docker', ['info', '--format', '{{.Runtimes}}'], { encoding: 'utf-8' });
-          return r.stdout?.includes('runsc') ? 'available' : null;
-        },
-        required: false,
-      },
-      {
-        name: 'GPU (nvidia-smi)',
-        check: () => {
-          const r = spawnSync('nvidia-smi', ['--query-gpu=name', '--format=csv,noheader'], {
-            encoding: 'utf-8',
-            stdio: 'pipe',
-          });
-          return r.status === 0 ? r.stdout.trim().split('\n')[0] : null;
-        },
-        required: false,
-      },
-      {
-        name: 'Docker GPU',
-        check: () => {
-          const r = spawnSync('docker', ['info'], { encoding: 'utf-8', stdio: 'pipe' });
-          if (r.stdout?.includes('nvidia')) return 'available';
-          const test = spawnSync('docker', ['run', '--rm', '--gpus', 'all', 'hello-world'], {
-            encoding: 'utf-8',
-            stdio: 'pipe',
-            timeout: 10000,
-          });
-          return test.status === 0 ? 'available' : null;
-        },
-        required: false,
-      },
-    ];
-
     let allPassed = true;
-    for (const { name, check, required } of checks) {
-      try {
-        const result = check();
-        if (result) {
-          console.log(`  [ok] ${name}: ${result}`);
-        } else {
-          console.log(`  ${required ? '[fail]' : '-'} ${name}: not found`);
-          if (required) allPassed = false;
-        }
-      } catch {
-        console.log(`  ${required ? '[fail]' : '-'} ${name}: error`);
-        if (required) allPassed = false;
+
+    console.log(`  [ok] Node.js: ${process.version}`);
+
+    const url = process.env.LIGHT_RUN_URL;
+    if (!url) {
+      console.log('  [fail] LIGHT_RUN_URL: not set');
+      console.log('\n[fail] Set LIGHT_RUN_URL=http://localhost:3001 to point to your light-run instance.');
+      process.exit(1);
+    }
+    console.log(`  [ok] LIGHT_RUN_URL: ${url}`);
+
+    const token = process.env.LIGHT_RUN_TOKEN;
+    const headers: Record<string, string> = {};
+    if (token) headers.authorization = `Bearer ${token}`;
+
+    try {
+      const res = await fetch(`${url}/health`, { headers });
+      if (res.ok) {
+        console.log(`  [ok] light-run /health: ${res.status}`);
+      } else {
+        console.log(`  [fail] light-run /health: ${res.status}`);
+        allPassed = false;
       }
+    } catch (err) {
+      console.log(`  [fail] light-run unreachable: ${(err as Error).message}`);
+      allPassed = false;
     }
 
-    console.log(allPassed ? '\n[ok] Ready' : '\n[fail] Some required dependencies are missing');
+    console.log(allPassed ? '\n[ok] Ready' : '\n[fail] light-run is not reachable');
     if (!allPassed) process.exit(1);
   },
 };

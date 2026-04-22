@@ -10,7 +10,7 @@ import {
   type NodeJSON,
   validateWhen,
 } from './models/index.js';
-import { DockerRunner } from './runner/index.js';
+import { LightRunClient } from './runner/index.js';
 import { validateInput, validateOutput } from './schema.js';
 
 export interface ExecutionResultNode {
@@ -23,7 +23,6 @@ export interface ExecutionResultNode {
   stdout?: string;
   stderr?: string;
   duration?: number;
-  resources?: { cpu: string | null; memory: string | null };
   timestamp: string;
 }
 
@@ -36,7 +35,7 @@ export interface ExecutionResult {
 }
 
 export interface ExecuteOptions {
-  runner?: DockerRunner;
+  runner?: LightRunClient;
   timeout?: number;
   onNodeStart?: (nodeId: string, nodeName: string) => void;
   onNodeComplete?: (nodeId: string, nodeName: string, success: boolean, duration: number) => void;
@@ -244,7 +243,7 @@ export class Workflow {
     node: Node,
     input: Record<string, unknown>,
     ctx: {
-      runner: DockerRunner;
+      runner: LightRunClient;
       signal: AbortSignal;
       onNodeStart?: (nodeId: string, nodeName: string) => void;
       onNodeComplete?: (nodeId: string, nodeName: string, success: boolean, duration: number) => void;
@@ -290,7 +289,6 @@ export class Workflow {
           stdout: result.stdout,
           stderr: `Output validation failed: ${validation.errors.join(', ')}`,
           duration: result.duration,
-          resources: result.resources,
         });
       }
     }
@@ -302,7 +300,6 @@ export class Workflow {
       stdout: result.stdout,
       stderr: result.stderr,
       duration: result.duration,
-      resources: result.resources,
     });
 
     ctx.onNodeComplete?.(node.id, node.name, result.success, result.duration);
@@ -310,7 +307,7 @@ export class Workflow {
   }
 
   async execute(initialData: Record<string, unknown> = {}, options: ExecuteOptions = {}): Promise<ExecutionResult> {
-    const { runner = new DockerRunner(), timeout = 0, onNodeStart, onNodeComplete, onLog, onStatusChange } = options;
+    const { runner = new LightRunClient(), timeout = 0, onNodeStart, onNodeComplete, onLog, onStatusChange } = options;
 
     const startTime = Date.now();
     const results = new Map<string, ExecutionResultNode>();

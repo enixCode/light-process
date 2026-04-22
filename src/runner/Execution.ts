@@ -1,5 +1,3 @@
-import { spawnSync } from 'node:child_process';
-
 export interface NodeExecutionResult {
   nodeId: string;
   nodeName: string;
@@ -11,7 +9,11 @@ export interface NodeExecutionResult {
   input: Record<string, unknown>;
   output: Record<string, unknown>;
   cancelled: boolean;
-  resources: { cpu: string | null; memory: string | null };
+}
+
+export interface RunNodeOptions {
+  signal?: AbortSignal;
+  onLog?: (log: string) => void;
 }
 
 export class Execution {
@@ -21,9 +23,11 @@ export class Execution {
   private _cancelled = false;
   private _signal?: AbortSignal;
   private _abortListener?: () => void;
+  private _cancelFn?: () => void;
 
-  constructor(id: string, result: Promise<NodeExecutionResult>, signal?: AbortSignal) {
+  constructor(id: string, result: Promise<NodeExecutionResult>, signal?: AbortSignal, cancelFn?: () => void) {
     this.id = id;
+    this._cancelFn = cancelFn;
 
     this.result = result.finally(() => {
       if (this._signal && this._abortListener) {
@@ -45,11 +49,10 @@ export class Execution {
   cancel(): void {
     if (this._cancelled) return;
     this._cancelled = true;
-
     try {
-      spawnSync('docker', ['kill', this.id], { stdio: 'ignore' });
+      this._cancelFn?.();
     } catch {
-      // Container may have already stopped
+      // Run may have already stopped
     }
   }
 

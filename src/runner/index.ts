@@ -1,4 +1,4 @@
-export type { DockerRunnerOptions, RunNodeOptions } from './DockerRunner.js';
-export { DockerRunner } from './DockerRunner.js';
-export type { NodeExecutionResult } from './Execution.js';
+export type { NodeExecutionResult, RunNodeOptions } from './Execution.js';
 export { Execution } from './Execution.js';
+export type { LightRunClientOptions } from './LightRunClient.js';
+export { LightRunClient } from './LightRunClient.js';

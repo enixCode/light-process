@@ -145,9 +145,9 @@ Add `Authorization: Bearer <key>` to every request above when `LP_API_KEY` is se
 ## SDK usage
 
 ```javascript
-import { createA2AServer, Workflow, DockerRunner } from 'light-process';
+import { createA2AServer, Workflow, LightRunClient } from 'light-process';
 
-const runner = new DockerRunner();
+const runner = new LightRunClient();
 const app = createA2AServer({ port: 3000, runner });
 
 // Register workflows
@@ -166,7 +166,7 @@ await app.close();
 createA2AServer({
   port: 3000,               // listen port (default: 3000)
   host: '0.0.0.0',          // bind host (default: '0.0.0.0')
-  runner: new DockerRunner(), // shared runner instance
+  runner: new LightRunClient(), // shared runner instance
   apiKey: 'my-secret-key',  // enable Bearer auth (optional - no auth when omitted)
   persistDir: './workflows',// directory for runtime-persisted workflows (?persist=true)
   card: {

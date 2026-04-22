@@ -122,7 +122,7 @@ Examples:
     if (!existsSync(mainPath)) {
       writeFileSync(
         mainPath,
-        `import { DockerRunner, loadWorkflowFromFolder } from 'light-process';
+        `import { LightRunClient, loadWorkflowFromFolder } from 'light-process';
 
 const wf = loadWorkflowFromFolder('./example');
 if (!wf) {
@@ -130,7 +130,7 @@ if (!wf) {
   process.exit(1);
 }
 
-const result = await wf.execute({}, { runner: new DockerRunner() });
+const result = await wf.execute({}, { runner: new LightRunClient() });
 console.log(result.success ? 'Success' : 'Failed');
 console.log(JSON.stringify(result.results, null, 2));
 `,

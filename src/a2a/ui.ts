@@ -328,13 +328,21 @@ let current = null;
 let selectedNode = null;
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-async function api(url){const r=await fetch(url);return r.json()}
+async function api(url){const r=await fetch(url);if(!r.ok){const e=new Error('HTTP '+r.status);e.status=r.status;throw e}return r.json()}
 
 async function loadList(){
-  workflows=await api('/api/workflows');
   const el=$('#workflow-list');
+  try{workflows=await api('/api/workflows')}
+  catch(err){
+    if(err.status===401){
+      el.innerHTML='<div class="empty-state"><div class="empty-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg></div><p>Authentication required.<br>Unset <code>LP_API_KEY</code> to browse the UI, or call <code>/api/workflows</code> with <code>Authorization: Bearer &lt;key&gt;</code>.</p></div>';
+    } else {
+      el.innerHTML='<div class="empty-state"><p>Failed to load workflows: '+esc(err.message)+'</p></div>';
+    }
+    return;
+  }
   if(!workflows.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><p>No workflows loaded.<br>Run <code>light serve</code> to get started.</p></div>';
+    el.innerHTML='<div class="empty-state"><div class="empty-icon"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><p>No workflows loaded.<br>Drop a folder in the workflows directory and restart, or POST to <code>/api/workflows</code>.</p></div>';
     return;
   }
   el.innerHTML=workflows.map(wf=>

@@ -788,7 +788,7 @@ Checking: Example (from folder)
 <table>
   <thead><tr><th>Feature</th><th>Benefit</th></tr></thead>
   <tbody>
-    <tr><td>Docker isolation</td><td>Steps can't interfere with each other</td></tr>
+    <tr><td>Container isolation</td><td>Steps can't interfere with each other (provided by light-run)</td></tr>
     <tr><td>Multi-language</td><td>Use the best tool for each step</td></tr>
     <tr><td>Schema validation</td><td>Catch data issues between steps</td></tr>
     <tr><td>Conditional routing</td><td>Handle success/failure/edge cases</td></tr>
@@ -1032,7 +1032,7 @@ Checking: Example (from folder)
   </div>
   <pre><code><span class="hl-prompt">$ </span>light doctor</code></pre>
 </div>
-<p><strong>Checks:</strong> Node.js version (>= 18), Docker installation, Docker daemon status, gVisor (runsc) availability, GPU support (nvidia-smi), Docker GPU plugin.</p>
+<p><strong>Checks:</strong> Node.js version, <code>LIGHT_RUN_URL</code> is set, and <code>GET {LIGHT_RUN_URL}/health</code> responds on the configured light-run instance.</p>
 
 <h3>light remote</h3>
 <p>Manage remote light-process servers. Run with no arguments to list configured remotes.</p>
@@ -1269,7 +1269,7 @@ Checking: Example (from folder)
     <span class="code-lang">javascript</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">Workflow</span>, <span class="hl-fn">DockerRunner</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">Workflow</span>, <span class="hl-fn">LightRunClient</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
 
 <span class="hl-kw">const</span> wf = <span class="hl-kw">new</span> <span class="hl-fn">Workflow</span>({ name: <span class="hl-str">'hello'</span> });
 
@@ -1278,7 +1278,7 @@ node.<span class="hl-fn">setCode</span>((input) =&gt; ({ message: <span class="h
 
 <span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>(
   { name: <span class="hl-str">'World'</span> },
-  { runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>() }
+  { runner: <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>() }
 );
 
 console.<span class="hl-fn">log</span>(result.success); <span class="hl-cm">// true</span>
@@ -1291,7 +1291,7 @@ console.<span class="hl-fn">log</span>(result.results);</code></pre>
     <span class="code-lang">javascript</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">Workflow</span>, <span class="hl-fn">Schema</span>, <span class="hl-fn">DockerRunner</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">Workflow</span>, <span class="hl-fn">Schema</span>, <span class="hl-fn">LightRunClient</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
 
 <span class="hl-kw">const</span> wf = <span class="hl-kw">new</span> <span class="hl-fn">Workflow</span>({ name: <span class="hl-str">'pipeline'</span> });
 
@@ -1332,7 +1332,7 @@ wf.<span class="hl-fn">addLink</span>({
 
 <span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>(
   { email: <span class="hl-str">'alice@example.com'</span> },
-  { runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>() }
+  { runner: <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>() }
 );</code></pre>
 </div>
 
@@ -1364,7 +1364,7 @@ node.<span class="hl-fn">addFolder</span>(<span class="hl-str">'./my-node'</span
     <span class="code-lang">javascript</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">loadWorkflowFromFolder</span>, <span class="hl-fn">DockerRunner</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">loadWorkflowFromFolder</span>, <span class="hl-fn">LightRunClient</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
 
 <span class="hl-kw">const</span> wf = <span class="hl-fn">loadWorkflowFromFolder</span>(<span class="hl-str">'./my-workflow'</span>);
 <span class="hl-kw">if</span> (!wf) {
@@ -1372,7 +1372,7 @@ node.<span class="hl-fn">addFolder</span>(<span class="hl-str">'./my-node'</span
   process.<span class="hl-fn">exit</span>(<span class="hl-num">1</span>);
 }
 
-<span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>({}, { runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>() });</code></pre>
+<span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>({}, { runner: <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>() });</code></pre>
 </div>
 
 <h3>Export workflow to folder</h3>
@@ -1395,7 +1395,7 @@ node.<span class="hl-fn">addFolder</span>(<span class="hl-str">'./my-node'</span
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
   <pre><code><span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>(input, {
-  runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>(),
+  runner: <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>(),
   timeout: <span class="hl-num">30000</span>, <span class="hl-cm">// 30s global timeout</span>
 
   <span class="hl-fn">onNodeStart</span>: (nodeId, nodeName) =&gt; {
@@ -1417,20 +1417,18 @@ node.<span class="hl-fn">addFolder</span>(<span class="hl-str">'./my-node'</span
 });</code></pre>
 </div>
 
-<h3>DockerRunner options</h3>
+<h3>LightRunClient options</h3>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">javascript</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>({
-  memoryLimit: <span class="hl-str">'512m'</span>,
-  cpuLimit: <span class="hl-str">'1.5'</span>,
-  runtime: <span class="hl-str">'runsc'</span>,       <span class="hl-cm">// 'runc', 'runsc' (gVisor), 'kata'</span>
-  gpu: <span class="hl-str">'all'</span>,             <span class="hl-cm">// false, 'all', number, or device ID</span>
-  verbose: <span class="hl-kw">true</span>,
+  <pre><code><span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>({
+  url: <span class="hl-str">'http://localhost:3001'</span>,       <span class="hl-cm">// default: $LIGHT_RUN_URL</span>
+  token: process.env.LIGHT_RUN_TOKEN, <span class="hl-cm">// optional Bearer token</span>
 });</code></pre>
 </div>
+<p>Container-level isolation (memory, CPU, gVisor, GPU, caps, networks) is configured on the light-run service, not here.</p>
 
 <h3>Node.setCode</h3>
 <p>Wraps a JavaScript function as node code. The function receives input as an argument and returns the output.</p>
@@ -1565,7 +1563,7 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
   <tbody>
     <tr><td><code>id</code></td><td>yes</td><td>Unique identifier</td></tr>
     <tr><td><code>name</code></td><td>yes</td><td>Display name</td></tr>
-    <tr><td><code>network</code></td><td>no</td><td>Docker network for all nodes (null = <code>lp-isolated</code>)</td></tr>
+    <tr><td><code>network</code></td><td>no</td><td>Container network forwarded to light-run (null = light-run default)</td></tr>
     <tr><td><code>nodes</code></td><td>yes</td><td>Array of node references (<code>id</code>, <code>name</code>, <code>dir</code>)</td></tr>
     <tr><td><code>links</code></td><td>no</td><td>Array of links between nodes</td></tr>
   </tbody>
@@ -1670,7 +1668,7 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
 <ul>
   <li>Workflow <code>network</code> applies to all nodes with <code>network: null</code></li>
   <li>Node <code>network</code> overrides the workflow network</li>
-  <li>Default network is <code>lp-isolated</code> (bridge, no inter-container communication)</li>
+  <li>When null on both, light-run uses its default isolated network</li>
   <li>Set <code>network: "none"</code> to fully isolate a node</li>
 </ul>
 
@@ -1852,172 +1850,66 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
      DOCKER & SECURITY
      ============================================================ -->
 <section id="docker">
-<h2>Docker &amp; Security</h2>
-<p>Each node runs in an isolated Docker container with security hardening.</p>
+<h2>Execution (light-run)</h2>
+<p>light-process no longer talks to Docker directly. Every node runs inside a container spawned by the <a href="https://github.com/enixCode/light-run">light-run</a> HTTP service.</p>
 
-<h3>Container lifecycle</h3>
-<ol>
-  <li>A named Docker volume (<code>lp-&lt;execId&gt;</code>) is created for the run</li>
-  <li>An entrypoint script is generated from <code>setup</code> + <code>entrypoint</code></li>
-  <li>Files are seeded into the volume via a short-lived helper container</li>
-  <li><code>docker run</code> starts the node container with the volume mounted at <code>workdir</code></li>
-  <li>Input is piped to stdin as JSON</li>
-  <li>Output is read from <code>.lp-output.json</code> in the volume via a helper container</li>
-  <li>Node container is removed after execution (<code>--rm</code>); volume is destroyed</li>
-</ol>
-<p>This volume-based design lets the runner work the same way whether it runs on the host or inside a container with <code>/var/run/docker.sock</code> mounted - no host path needs to be shared between the two contexts. Orphan volumes from a previous crash are pruned at <code>light serve</code> startup.</p>
-
-<h3>DockerRunner options</h3>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">javascript</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code><span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>({
-  memoryLimit: <span class="hl-str">'512m'</span>,     <span class="hl-cm">// --memory flag</span>
-  cpuLimit: <span class="hl-str">'1.5'</span>,         <span class="hl-cm">// --cpus flag</span>
-  runtime: <span class="hl-str">'runsc'</span>,        <span class="hl-cm">// --runtime flag</span>
-  gpu: <span class="hl-str">'all'</span>,              <span class="hl-cm">// --gpus flag</span>
-  noNewPrivileges: <span class="hl-kw">true</span>,   <span class="hl-cm">// --security-opt (default: true)</span>
-  verbose: <span class="hl-kw">false</span>,          <span class="hl-cm">// log Docker commands</span>
-});</code></pre>
-</div>
-
-<div class="table-wrap">
-<table>
-  <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-  <tbody>
-    <tr><td><code>memoryLimit</code></td><td>string</td><td>none</td><td>Container memory limit (e.g. "256m", "2g")</td></tr>
-    <tr><td><code>cpuLimit</code></td><td>string</td><td>none</td><td>CPU cores (e.g. "0.5", "2")</td></tr>
-    <tr><td><code>runtime</code></td><td>string</td><td>"runc"</td><td>Container runtime: "runc", "runsc" (gVisor), "kata"</td></tr>
-    <tr><td><code>gpu</code></td><td>boolean/string/number</td><td>false</td><td>GPU access: false, "all", count, device ID</td></tr>
-    <tr><td><code>noNewPrivileges</code></td><td>boolean</td><td>true</td><td>Prevent privilege escalation</td></tr>
-    <tr><td><code>verbose</code></td><td>boolean</td><td>false</td><td>Log Docker commands</td></tr>
-  </tbody>
-</table>
-</div>
-
-<h3>Security hardening</h3>
-<h4>Capabilities dropped</h4>
-<p>The following dangerous capabilities are always dropped:</p>
-<ul>
-  <li><code>NET_RAW</code> - raw socket access</li>
-  <li><code>MKNOD</code> - device file creation</li>
-  <li><code>SYS_CHROOT</code> - chroot</li>
-  <li><code>SETPCAP</code> - capability modification</li>
-  <li><code>SETFCAP</code> - file capability modification</li>
-  <li><code>AUDIT_WRITE</code> - audit log writing</li>
-</ul>
-
-<h4>Other security measures</h4>
-<ul>
-  <li><code>--no-new-privileges</code> prevents privilege escalation</li>
-  <li><code>--pids-limit 100</code> limits process count</li>
-  <li>Temp files cleaned up after execution</li>
-  <li>Path traversal checks on file operations</li>
-  <li>Prototype pollution prevention on JSON parsing</li>
-</ul>
-
-<h3>Networks</h3>
-<h4>Default: lp-isolated</h4>
-<p>By default, all containers run on a shared <code>lp-isolated</code> bridge network with inter-container communication disabled (ICC=false).</p>
+<h3>Configuration</h3>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-cm"># Created automatically on first use:</span>
-<span class="hl-prompt">$ </span>docker network create <span class="hl-flag">--driver</span> bridge \
-  <span class="hl-flag">-o</span> com.docker.network.bridge.enable_icc=false \
-  lp-isolated</code></pre>
+  <pre><code><span class="hl-prompt">$ </span><span class="hl-kw">export</span> LIGHT_RUN_URL=http://localhost:3001
+<span class="hl-prompt">$ </span><span class="hl-kw">export</span> LIGHT_RUN_TOKEN=your-bearer-token    <span class="hl-cm"># optional</span></code></pre>
 </div>
 
-<h4>Network options</h4>
-<div class="table-wrap">
-<table>
-  <thead><tr><th>Value</th><th>Effect</th></tr></thead>
-  <tbody>
-    <tr><td><code>null</code></td><td>Use workflow network (default: <code>lp-isolated</code>)</td></tr>
-    <tr><td><code>"none"</code></td><td>No network access</td></tr>
-    <tr><td><code>"host"</code></td><td>Host network (no isolation)</td></tr>
-    <tr><td><code>"my-net"</code></td><td>Custom Docker network</td></tr>
-  </tbody>
-</table>
-</div>
-
-<p>Set per-node in <code>.node.json</code>:</p>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">json</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code>{ <span class="hl-key">"network"</span>: <span class="hl-str">"none"</span> }</code></pre>
-</div>
-
-<p>Or per-workflow in <code>workflow.json</code>:</p>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">json</span>
-    <button class="code-copy" aria-label="Copy code">Copy</button>
-  </div>
-  <pre><code>{ <span class="hl-key">"network"</span>: <span class="hl-str">"my-custom-network"</span> }</code></pre>
-</div>
-<p>Node network overrides workflow network.</p>
-
-<h3>GPU support</h3>
+<p>Or programmatically via the SDK:</p>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">javascript</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>({ gpu: <span class="hl-str">'all'</span> });</code></pre>
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">LightRunClient</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+
+<span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>({
+  url: <span class="hl-str">'http://localhost:3001'</span>,
+  token: process.env.LIGHT_RUN_TOKEN,
+});</code></pre>
 </div>
 
+<h3>Node to light-run mapping</h3>
 <div class="table-wrap">
 <table>
-  <thead><tr><th>Value</th><th>Docker flag</th></tr></thead>
+  <thead><tr><th>Node field</th><th>light-run field</th><th>Notes</th></tr></thead>
   <tbody>
-    <tr><td><code>false</code></td><td>no GPU</td></tr>
-    <tr><td><code>'all'</code></td><td><code>--gpus all</code></td></tr>
-    <tr><td><code>2</code></td><td><code>--gpus 2</code></td></tr>
-    <tr><td><code>'"device=0,1"'</code></td><td><code>--gpus "device=0,1"</code></td></tr>
+    <tr><td><code>image</code></td><td><code>image</code></td><td>Required</td></tr>
+    <tr><td><code>files</code></td><td><code>files</code></td><td>Record&lt;path, content&gt;, at least 1 entry</td></tr>
+    <tr><td><code>entrypoint</code></td><td><code>entrypoint</code></td><td>Executed via <code>sh -c</code></td></tr>
+    <tr><td><code>setup</code></td><td><code>setup</code></td><td>Commands chained with <code>&amp;&amp;</code> before entrypoint</td></tr>
+    <tr><td><code>timeout</code></td><td><code>timeout</code></td><td>Omitted when <code>0</code> (light-runner default applies)</td></tr>
+    <tr><td><code>network</code></td><td><code>network</code></td><td><code>"none"</code>, named network, or omitted</td></tr>
+    <tr><td><code>workdir</code></td><td><code>workdir</code></td><td>Omitted when <code>/app</code></td></tr>
+    <tr><td><code>env</code> (names)</td><td><code>env</code></td><td>Values resolved from light-process env</td></tr>
+    <tr><td>runtime input</td><td><code>input</code></td><td>Piped to container stdin</td></tr>
+    <tr><td>-</td><td><code>extract</code></td><td>Always <code>[&lt;workdir&gt;/.lp-output.json]</code></td></tr>
   </tbody>
 </table>
 </div>
-<p>Requires NVIDIA Container Toolkit. Check with <code>light doctor</code>.</p>
 
-<h3>Runtimes</h3>
-<div class="table-wrap">
-<table>
-  <thead><tr><th>Runtime</th><th>Description</th></tr></thead>
-  <tbody>
-    <tr><td><code>runc</code></td><td>Default OCI runtime</td></tr>
-    <tr><td><code>runsc</code></td><td>gVisor sandbox (stronger isolation)</td></tr>
-    <tr><td><code>kata</code></td><td>Kata Containers (VM-level isolation)</td></tr>
-  </tbody>
-</table>
-</div>
-<p>Check availability with <code>light doctor</code>.</p>
+<h3>Output channel</h3>
+<p>A node writes its result to <code>.lp-output.json</code> in its workdir. light-process fetches the artifact via <code>GET /runs/:id/artifacts/.lp-output.json</code> once the run succeeds. Empty or non-object output becomes <code>{}</code>.</p>
 
-<h3>Container naming</h3>
-<p>Containers are named <code>lp-&lt;nodeId&gt;-&lt;timestamp&gt;-&lt;seq&gt;</code> for easy identification:</p>
-<div class="code-block">
-  <div class="code-header">
-    <span class="code-lang">output</span>
-  </div>
-  <pre><code>lp-hello-<span class="hl-num">1712345678901</span>-<span class="hl-num">0</span></code></pre>
-</div>
+<h3>Isolation</h3>
+<p>Capability drops, PID limits, isolated bridge networks, gVisor/runsc runtime, GPU access, memory/CPU caps - <strong>all handled by light-run</strong> (which delegates to light-runner). Configure them on the light-run instance, not here. See the <a href="https://github.com/enixCode/light-run#readme">light-run README</a>.</p>
 
 <h3>Cancellation</h3>
-<p>Workflows support cancellation via <code>AbortController</code>:</p>
+<p>Workflows support cancellation via <code>AbortController</code>. When aborted, light-process calls <code>POST /runs/:id/cancel</code> on light-run.</p>
 <div class="code-block">
   <div class="code-header">
     <span class="code-lang">javascript</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
   <pre><code><span class="hl-kw">const</span> controller = <span class="hl-kw">new</span> <span class="hl-fn">AbortController</span>();
-
-<span class="hl-cm">// Cancel after 5 seconds</span>
 <span class="hl-fn">setTimeout</span>(() =&gt; controller.<span class="hl-fn">abort</span>(), <span class="hl-num">5000</span>);
 
 <span class="hl-kw">const</span> result = <span class="hl-kw">await</span> wf.<span class="hl-fn">execute</span>(input, {
@@ -2025,7 +1917,6 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
   signal: controller.signal,
 });</code></pre>
 </div>
-<p>Cancelled containers are killed with <code>docker kill</code>.</p>
 
 </section>
 
@@ -2164,9 +2055,9 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
     <span class="code-lang">javascript</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">createA2AServer</span>, <span class="hl-fn">Workflow</span>, <span class="hl-fn">DockerRunner</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
+  <pre><code><span class="hl-kw">import</span> { <span class="hl-fn">createA2AServer</span>, <span class="hl-fn">Workflow</span>, <span class="hl-fn">LightRunClient</span> } <span class="hl-kw">from</span> <span class="hl-str">'light-process'</span>;
 
-<span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>();
+<span class="hl-kw">const</span> runner = <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>();
 <span class="hl-kw">const</span> app = <span class="hl-fn">createA2AServer</span>({ port: <span class="hl-num">3000</span>, runner });
 
 <span class="hl-cm">// Register workflows</span>
@@ -2188,7 +2079,7 @@ app.<span class="hl-fn">registerWorkflow</span>(myWorkflow);
   <pre><code><span class="hl-fn">createA2AServer</span>({
   port: <span class="hl-num">3000</span>,              <span class="hl-cm">// listen port (default: 3000)</span>
   host: <span class="hl-str">'0.0.0.0'</span>,         <span class="hl-cm">// bind host (default: '0.0.0.0')</span>
-  runner: <span class="hl-kw">new</span> <span class="hl-fn">DockerRunner</span>(), <span class="hl-cm">// shared runner instance</span>
+  runner: <span class="hl-kw">new</span> <span class="hl-fn">LightRunClient</span>(), <span class="hl-cm">// shared runner instance</span>
   card: {
     name: <span class="hl-str">'My Agent'</span>,       <span class="hl-cm">// agent name</span>
     description: <span class="hl-str">'Custom'</span>,  <span class="hl-cm">// agent description</span>

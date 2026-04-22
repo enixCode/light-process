@@ -1,8 +1,8 @@
 import { resolve } from 'node:path';
 import { createA2AServer } from '../a2a/server.js';
-import { DockerRunner } from '../runner/index.js';
+import { LightRunClient } from '../runner/index.js';
 import type { Command } from './utils.js';
-import { getFlagValue, getPositional, hasFlag, loadWorkflowsFromDir, wantsHelp } from './utils.js';
+import { getFlagValue, getPositional, loadWorkflowsFromDir, wantsHelp } from './utils.js';
 
 export const serve: Command = {
   desc: 'Start the A2A API server',
@@ -14,7 +14,6 @@ export const serve: Command = {
 
 Options:
   --port <number>   Port to listen on (default: 3000)
-  --verbose         Verbose output
 
 Environment:
   LP_API_KEY        Enable API key authentication
@@ -32,12 +31,11 @@ Examples:
     if (!apiKey) {
       console.log('  No LP_API_KEY set - auth disabled');
     }
-    const runner = new DockerRunner({ verbose: hasFlag('--verbose') });
-
-    if (DockerRunner.isAvailable()) {
-      const cleaned = DockerRunner.cleanupOrphanVolumes();
-      if (cleaned > 0) console.log(`  Cleaned ${cleaned} orphan volume(s)`);
+    if (!LightRunClient.isAvailable()) {
+      console.error('  LIGHT_RUN_URL is not configured. Set LIGHT_RUN_URL=http://localhost:3001');
+      process.exit(1);
     }
+    const runner = new LightRunClient();
 
     const app = createA2AServer({ port, runner, apiKey, persistDir: resolve(dir) });
 

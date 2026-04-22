@@ -1,12 +1,51 @@
 services:
-  light-process:
-    build: .
-    env_file:
-      - .env
-    environment:
-      - COMMIT_SHA=${COMMIT_SHA:-unknown}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      # Put your workflow folders here (or use light push to populate remotely)
-      - ./workflows:/workflows
+  light-run:
+    build:
+      context: .
+      dockerfile: Dockerfile.light-run
     restart: unless-stopped
+    environment:
+      LIGHT_RUN_TOKEN: ${LIGHT_RUN_TOKEN:-}
+      LIGHT_RUN_BODY_LIMIT: ${LIGHT_RUN_BODY_LIMIT:-10485760}
+      LIGHT_RUN_MAX_ARTIFACTS_BYTES: ${LIGHT_RUN_MAX_ARTIFACTS_BYTES:-21474836480}
+      LIGHT_RUN_ARTIFACTS_DIR: /app/artifacts
+    volumes:
+      # Host Docker socket - workload containers land as siblings on the host
+      # daemon, not nested inside this container.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Artifact dir - inspectable from the host without exec'ing in.
+      - ./.artifacts:/app/artifacts
+    networks:
+      - light
+    # Not exposed on the host by default: only light-process talks to it.
+    # Uncomment to expose for debugging / direct client access.
+    # ports:
+    #   - "${LIGHT_RUN_PORT:-3001}:3001"
+
+  light-process:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - light-run
+    environment:
+      LIGHT_RUN_URL: http://light-run:3001
+      LIGHT_RUN_TOKEN: ${LIGHT_RUN_TOKEN:-}
+      LP_API_KEY: ${LP_API_KEY:-}
+      COMMIT_SHA: ${COMMIT_SHA:-unknown}
+    volumes:
+      # Workflow folders served by the A2A API. Use `light push` against the
+      # server, or drop workflow folders / .json files here directly.
+      - ./workflows:/workflows
+    # Host port mapping intentionally omitted: production deploys expose
+    # light-process via a reverse proxy (Traefik) over the docker network,
+    # not a host port. Uncomment for local dev if you want curl from the host:
+    # ports:
+    #   - "${LP_PORT:-3000}:3000"
+    networks:
+      - light
+
+networks:
+  light:
+    driver: bridge

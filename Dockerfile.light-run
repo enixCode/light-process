@@ -1,0 +1,15 @@
+FROM node:22-alpine
+
+# docker-cli lets light-runner (spawned inside this container by light-run)
+# drive the host Docker daemon through the mounted /var/run/docker.sock.
+# Workload containers land as siblings on the host, not nested.
+RUN apk add --no-cache docker-cli
+
+# Pin the published version so prod deploys are reproducible.
+# Bump this when a new light-run release is validated.
+ARG LIGHT_RUN_VERSION=0.1.0
+RUN npm install -g --no-audit --no-fund @enixcode/light-run@${LIGHT_RUN_VERSION}
+
+EXPOSE 3001
+
+CMD ["light-run", "serve", "--port", "3001", "--host", "0.0.0.0"]
