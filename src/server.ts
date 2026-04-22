@@ -4,6 +4,8 @@ import { createServer as httpCreateServer, type IncomingMessage, type ServerResp
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { LightRunClient } from './runner/index.js';
+import { type RunStatus, RunStore } from './runStore.js';
+import { UI_HTML } from './ui.js';
 import { Workflow } from './Workflow.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -51,6 +53,7 @@ export function createServer(options: ServerOptions = {}) {
   const persistFile = (id: string) => join(persistPath as string, `${id}.json`);
 
   const workflows = new Map<string, Workflow>();
+  const runStore = new RunStore();
 
   const server = httpCreateServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
@@ -259,12 +262,50 @@ export function createServer(options: ServerOptions = {}) {
             return;
           }
         }
+        const run = runStore.start(wf.id, wf.name, input);
         try {
-          const result = await wf.execute(input, { runner });
-          json(res, result.success ? 200 : 500, result);
+          const result = await wf.execute(input, {
+            runner,
+            onNodeStart: (nodeId, nodeName) => runStore.nodeStart(run.id, nodeId, nodeName),
+            onNodeComplete: (nodeId, _name, success, duration) =>
+              runStore.nodeComplete(run.id, nodeId, success, duration),
+          });
+          runStore.finish(run.id, result.success ? 'success' : 'failed', result, null);
+          json(res, result.success ? 200 : 500, { ...result, runId: run.id });
         } catch (err) {
-          json(res, 500, { error: (err as Error).message });
+          const message = (err as Error).message;
+          runStore.finish(run.id, 'failed', null, message);
+          json(res, 500, { error: message, runId: run.id });
         }
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/api/runs') {
+        const filter: { workflowId?: string; status?: RunStatus } = {};
+        const wfId = url.searchParams.get('workflowId');
+        const status = url.searchParams.get('status');
+        if (wfId) filter.workflowId = wfId;
+        if (status === 'running' || status === 'success' || status === 'failed') filter.status = status;
+        const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+        const list = runStore.list(filter).slice(0, limit);
+        json(res, 200, list);
+        return;
+      }
+
+      const runIdMatch = pathname.match(/^\/api\/runs\/([^/]+)$/);
+      if (method === 'GET' && runIdMatch) {
+        const run = runStore.get(runIdMatch[1]);
+        if (!run) {
+          json(res, 404, { error: 'Run not found' });
+          return;
+        }
+        json(res, 200, run);
+        return;
+      }
+
+      if (method === 'GET' && pathname === '/') {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(UI_HTML.replace('__AUTH_REQUIRED__', apiKey ? 'true' : 'false'));
         return;
       }
 

@@ -240,6 +240,39 @@ describe('REST API server', () => {
       assert.ok(res.headers['access-control-allow-headers']);
     });
   });
+
+  describe('GET /', () => {
+    it('serves the embedded HTML UI', async () => {
+      const res = await request(port, 'GET', '/');
+      assert.equal(res.status, 200);
+      assert.ok(res.headers['content-type'].includes('text/html'));
+      assert.ok(res.body.includes('<!DOCTYPE'));
+      assert.ok(res.body.includes('Light Process'));
+    });
+  });
+
+  describe('GET /api/runs', () => {
+    it('returns empty array when no runs yet', async () => {
+      const res = await request(port, 'GET', '/api/runs');
+      assert.equal(res.status, 200);
+      const list = res.json();
+      assert.ok(Array.isArray(list));
+    });
+
+    it('accepts limit, workflowId, and status filters', async () => {
+      const res = await request(port, 'GET', '/api/runs?limit=5&status=running');
+      assert.equal(res.status, 200);
+      const list = res.json();
+      assert.ok(Array.isArray(list));
+    });
+  });
+
+  describe('GET /api/runs/:id', () => {
+    it('returns 404 for unknown run', async () => {
+      const res = await request(port, 'GET', '/api/runs/unknown-run-id');
+      assert.equal(res.status, 404);
+    });
+  });
 });
 
 describe('REST API server with auth', () => {
