@@ -3,30 +3,20 @@ import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { createServer as httpCreateServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AgentCard } from '@a2a-js/sdk';
-import { DefaultRequestHandler, InMemoryTaskStore, JsonRpcTransportHandler } from '@a2a-js/sdk/server';
-import { LightRunClient } from '../runner/index.js';
-import { Workflow } from '../Workflow.js';
-import { buildAgentCard, type CardOptions } from './cardBuilder.js';
-import { MANIFEST_JSON, SERVICE_WORKER_JS, UI_HTML } from './ui.js';
-import { WorkflowExecutor } from './WorkflowExecutor.js';
+import { LightRunClient } from './runner/index.js';
+import { type RunStatus, RunStore } from './runStore.js';
+import { UI_HTML } from './ui.js';
+import { Workflow } from './Workflow.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf-8'));
+const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8'));
 const VERSION: string = pkg.version;
 
-export interface A2AServerOptions {
-  /** Port to listen on (default: 3000) */
+export interface ServerOptions {
   port?: number;
-  /** Host to bind to (default: '0.0.0.0') */
   host?: string;
-  /** LightRunClient instance shared across executions */
   runner?: LightRunClient;
-  /** Agent card options */
-  card?: CardOptions;
-  /** API key for Bearer token authentication (optional - no auth when unset) */
   apiKey?: string;
-  /** Directory used to persist runtime-added workflows when ?persist=true */
   persistDir?: string;
 }
 
@@ -52,35 +42,18 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 function isProtectedRoute(method: string, pathname: string): boolean {
-  if (method === 'POST') return true;
+  if (method === 'POST' || method === 'PUT' || method === 'DELETE') return true;
   if (pathname.startsWith('/api/')) return true;
   return false;
 }
 
-export function createA2AServer(options: A2AServerOptions = {}) {
+export function createServer(options: ServerOptions = {}) {
   const { port = 3000, host = '0.0.0.0', runner = new LightRunClient(), apiKey, persistDir } = options;
   const persistPath = persistDir ? resolve(persistDir) : null;
   const persistFile = (id: string) => join(persistPath as string, `${id}.json`);
 
   const workflows = new Map<string, Workflow>();
-
-  let agentCard: AgentCard;
-  let requestHandler: DefaultRequestHandler;
-  let transport: JsonRpcTransportHandler;
-
-  function rebuildHandler() {
-    agentCard = buildAgentCard(workflows, {
-      ...options.card,
-      url: options.card?.url || `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`,
-      apiKey: !!apiKey,
-    });
-    const taskStore = new InMemoryTaskStore();
-    const executor = new WorkflowExecutor(workflows, runner);
-    requestHandler = new DefaultRequestHandler(agentCard, taskStore, executor);
-    transport = new JsonRpcTransportHandler(requestHandler);
-  }
-
-  rebuildHandler();
+  const runStore = new RunStore();
 
   const server = httpCreateServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
@@ -88,7 +61,7 @@ export function createA2AServer(options: A2AServerOptions = {}) {
     const method = req.method?.toUpperCase() || 'GET';
 
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     if (method === 'OPTIONS') {
@@ -97,7 +70,6 @@ export function createA2AServer(options: A2AServerOptions = {}) {
       return;
     }
 
-    // API key auth check
     if (apiKey && isProtectedRoute(method, pathname)) {
       const auth = req.headers.authorization || '';
       const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
@@ -108,29 +80,11 @@ export function createA2AServer(options: A2AServerOptions = {}) {
     }
 
     try {
-      // UI routes
-      if (method === 'GET' && pathname === '/') {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        const commit = process.env.COMMIT_SHA || '';
-        let html = UI_HTML.replace('__VERSION__', `v${VERSION}`);
-        if (commit) html = html.replace('__COMMIT__', commit).replace('display:none', '');
-        res.end(html);
+      if (method === 'GET' && pathname === '/health') {
+        json(res, 200, { status: 'ok', version: VERSION, commit: process.env.COMMIT_SHA || 'unknown' });
         return;
       }
 
-      if (method === 'GET' && pathname === '/manifest.json') {
-        res.writeHead(200, { 'Content-Type': 'application/manifest+json' });
-        res.end(MANIFEST_JSON);
-        return;
-      }
-
-      if (method === 'GET' && pathname === '/sw.js') {
-        res.writeHead(200, { 'Content-Type': 'application/javascript' });
-        res.end(SERVICE_WORKER_JS);
-        return;
-      }
-
-      // API routes
       if (method === 'GET' && pathname === '/api/workflows') {
         const list = Array.from(workflows.values()).map((wf) => ({
           id: wf.id,
@@ -196,7 +150,7 @@ export function createA2AServer(options: A2AServerOptions = {}) {
             json(res, 409, { error: 'Workflow already exists', id: wf.id });
             return;
           }
-          registerWorkflow(wf);
+          workflows.set(wf.id, wf);
           let persisted = false;
           if (url.searchParams.get('persist') === 'true') {
             if (!persistPath) {
@@ -239,7 +193,6 @@ export function createA2AServer(options: A2AServerOptions = {}) {
             return;
           }
           workflows.set(id, wf);
-          rebuildHandler();
           let persisted = false;
           if (url.searchParams.get('persist') === 'true') {
             if (!persistPath) {
@@ -267,7 +220,7 @@ export function createA2AServer(options: A2AServerOptions = {}) {
           json(res, 404, { error: 'Workflow not found' });
           return;
         }
-        unregisterWorkflow(id);
+        workflows.delete(id);
         let unpersisted = false;
         if (url.searchParams.get('persist') === 'true' && persistPath) {
           const file = persistFile(id);
@@ -309,55 +262,50 @@ export function createA2AServer(options: A2AServerOptions = {}) {
             return;
           }
         }
+        const run = runStore.start(wf.id, wf.name, input);
         try {
-          const result = await wf.execute(input, { runner });
-          json(res, result.success ? 200 : 500, result);
+          const result = await wf.execute(input, {
+            runner,
+            onNodeStart: (nodeId, nodeName) => runStore.nodeStart(run.id, nodeId, nodeName),
+            onNodeComplete: (nodeId, _name, success, duration) =>
+              runStore.nodeComplete(run.id, nodeId, success, duration),
+          });
+          runStore.finish(run.id, result.success ? 'success' : 'failed', result, null);
+          json(res, result.success ? 200 : 500, { ...result, runId: run.id });
         } catch (err) {
-          json(res, 500, { error: (err as Error).message });
+          const message = (err as Error).message;
+          runStore.finish(run.id, 'failed', null, message);
+          json(res, 500, { error: message, runId: run.id });
         }
         return;
       }
 
-      // ROADMAP: GET /api/workflows/:id/runs - execution history
-      // ROADMAP: GET /api/workflows/:id/stream - SSE live updates
-
-      if (method === 'GET' && (pathname === '/.well-known/agent-card.json' || pathname === '/.well-known/agent.json')) {
-        json(res, 200, agentCard);
+      if (method === 'GET' && pathname === '/api/runs') {
+        const filter: { workflowId?: string; status?: RunStatus } = {};
+        const wfId = url.searchParams.get('workflowId');
+        const status = url.searchParams.get('status');
+        if (wfId) filter.workflowId = wfId;
+        if (status === 'running' || status === 'success' || status === 'failed') filter.status = status;
+        const limit = parseInt(url.searchParams.get('limit') || '50', 10);
+        const list = runStore.list(filter).slice(0, limit);
+        json(res, 200, list);
         return;
       }
 
-      if (method === 'GET' && pathname === '/health') {
-        json(res, 200, { status: 'ok', version: VERSION, commit: process.env.COMMIT_SHA || 'unknown' });
-        return;
-      }
-
-      if (method === 'POST' && (pathname === '/' || pathname === '/a2a')) {
-        const body = await readBody(req);
-        let request: unknown;
-        try {
-          request = JSON.parse(body);
-        } catch {
-          json(res, 400, { error: 'Invalid JSON' });
+      const runIdMatch = pathname.match(/^\/api\/runs\/([^/]+)$/);
+      if (method === 'GET' && runIdMatch) {
+        const run = runStore.get(runIdMatch[1]);
+        if (!run) {
+          json(res, 404, { error: 'Run not found' });
           return;
         }
+        json(res, 200, run);
+        return;
+      }
 
-        const result = await transport.handle(request);
-
-        if (result && typeof (result as AsyncGenerator).next === 'function') {
-          res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            Connection: 'keep-alive',
-          });
-
-          const generator = result as AsyncGenerator;
-          for await (const event of generator) {
-            res.write(`data: ${JSON.stringify(event)}\n\n`);
-          }
-          res.end();
-        } else {
-          json(res, 200, result);
-        }
+      if (method === 'GET' && pathname === '/') {
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(UI_HTML.replace('__AUTH_REQUIRED__', apiKey ? 'true' : 'false'));
         return;
       }
 
@@ -369,22 +317,19 @@ export function createA2AServer(options: A2AServerOptions = {}) {
 
   function registerWorkflow(workflow: Workflow): void {
     workflows.set(workflow.id, workflow);
-    rebuildHandler();
   }
 
   function unregisterWorkflow(id: string): boolean {
-    const deleted = workflows.delete(id);
-    if (deleted) rebuildHandler();
-    return deleted;
+    return workflows.delete(id);
   }
 
   function listen(): Promise<void> {
     return new Promise((resolve) => {
       server.listen(port, host, () => {
         const base = `http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`;
-        console.log(`Light Process A2A agent listening on ${base}`);
-        console.log(`Dashboard:  ${base}/`);
-        console.log(`Agent Card: ${base}/.well-known/agent-card.json`);
+        console.log(`Light Process REST API listening on ${base}`);
+        console.log(`Health:     ${base}/health`);
+        console.log(`Workflows:  ${base}/api/workflows`);
         if (apiKey) console.log(`Auth:       Bearer token required on API routes`);
         resolve();
       });

@@ -39,28 +39,29 @@ Why light-process fits:
 - Conditional routing separates valid and invalid records without if/else in code
 - Each step is isolated - a buggy cleanup script can't corrupt the loader
 
-## Multi-Agent AI (A2A)
+## Remote workflow execution
 
-Expose workflows as A2A agents that other AI systems can discover and invoke.
+Serve workflows over HTTP for remote clients, CI pipelines, or other services to trigger them.
 
 ```bash
-# Start the server
-light serve --port 3000
+# Start the REST server
+LP_API_KEY=secret light serve --port 3000
 
-# Another AI agent discovers skills
-curl http://localhost:3000/.well-known/agent-card.json
-# -> { skills: [{ name: "Process Order", description: "...", examples: [...] }] }
+# Discover workflows
+curl -H "Authorization: Bearer secret" http://localhost:3000/api/workflows
 
-# Agent invokes the workflow
-curl -X POST http://localhost:3000 -d '{ "jsonrpc": "2.0", ... }'
+# Invoke a workflow
+curl -X POST -H "Authorization: Bearer secret" \
+  -H "Content-Type: application/json" \
+  -d '{"orderId": "abc"}' \
+  http://localhost:3000/api/workflows/order-pipeline/run
 ```
 
 Why light-process fits:
-- Standard A2A protocol - any A2A-compatible agent can call your workflows
-- Agent card auto-generated from workflow metadata, input schemas, and output schemas
-- Each workflow is a skill with description, examples, and tags
-- Streaming support for long-running workflows
-- Multiple workflows on a single server
+- Plain REST - any HTTP client works, no SDK required
+- Bearer auth on write routes, `/health` public for load balancers
+- One server hosts multiple workflows, add/remove at runtime with persistence
+- `light remote`/`pull`/`push` CLIs already talk to this API
 
 ## Microservice Orchestration
 

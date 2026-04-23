@@ -29,7 +29,7 @@
 │                                                             │
 │  DAG de containers - workflow.json (nodes + links + when)   │
 │  LightRunClient -> POST /run sur LIGHT_RUN_URL              │
-│  light serve (A2A API)  |  light push/pull  |  SDK          │
+│  light serve (REST API) | light push/pull | SDK             │
 │  Zero Docker direct, zero infra (Node only)                 │
 └──────────────────────────┬──────────────────────────────────┘
                            │
@@ -40,7 +40,7 @@
                 │  Frontend Next.js optionnel │
                 │  - @xyflow/react (DAG viz)  │
                 │  - pages workflows/jobs     │
-                │  - consomme l'API A2A       │
+                │  - consomme l'API REST      │
                 └─────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
@@ -115,7 +115,7 @@ depasse ce que light-runner (Node) fournirait.
 ## Projets a clarifier
 
 - **lite-light-process** - ancien prototype, meme description que light-process. A archiver proprement (README note explicative + derniere release + archive GitHub).
-- **light-process-ui** - optionnel, autonome. Garder si UI riche desiree, archiver si le dashboard built-in de `light serve` suffit.
+- **light-process-ui** - optionnel, autonome. Consomme l'API REST `/api/workflows/*`.
 - **jsontoui** - side project, integration deja fonctionnelle via /jtu. Approfondir plus tard si besoin d'UI auto-generees depuis schemas.
 
 ## Ce que light-process peut apprendre de parpaing

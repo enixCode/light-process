@@ -72,19 +72,10 @@ export async function ping(remote: RemoteConfig): Promise<{ status: string }> {
   return request(remote, 'GET', '/health');
 }
 
-export async function sendMessage(remote: RemoteConfig, workflowId: string, input: unknown): Promise<unknown> {
-  const rpc = {
-    jsonrpc: '2.0',
-    id: Date.now(),
-    method: 'message/send',
-    params: {
-      message: {
-        messageId: `msg-${Date.now()}`,
-        role: 'user',
-        parts: [{ kind: 'data', data: { workflowId, input } }],
-        kind: 'message',
-      },
-    },
-  };
-  return request(remote, 'POST', '/', rpc);
+export async function runWorkflow(
+  remote: RemoteConfig,
+  workflowId: string,
+  input: Record<string, unknown> = {},
+): Promise<unknown> {
+  return request(remote, 'POST', `/api/workflows/${encodeURIComponent(workflowId)}/run`, input);
 }

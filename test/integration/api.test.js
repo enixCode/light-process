@@ -2,11 +2,9 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { after, before, describe, it } from 'node:test';
 
-import { createA2AServer } from '../../dist/a2a/index.js';
 import { Node } from '../../dist/models/Node.js';
+import { createServer } from '../../dist/server.js';
 import { Workflow } from '../../dist/Workflow.js';
-
-// --- helpers ---
 
 function makeTestWorkflow(id = 'test-wf', name = 'Test Workflow') {
   const node = new Node({
@@ -51,15 +49,12 @@ function request(port, method, path, body) {
   });
 }
 
-// --- test suite ---
-
-describe('A2A Server API', () => {
+describe('REST API server', () => {
   let app;
   let port;
 
   before(async () => {
-    // Use port 0 so the OS assigns a random free port
-    app = createA2AServer({ port: 0, host: '127.0.0.1' });
+    app = createServer({ port: 0, host: '127.0.0.1' });
     await new Promise((resolve) => {
       app.server.listen(0, '127.0.0.1', () => {
         port = app.server.address().port;
@@ -72,73 +67,16 @@ describe('A2A Server API', () => {
     await app.close();
   });
 
-  // ---------------------------------------------------------------
-  // Health
-  // ---------------------------------------------------------------
   describe('GET /health', () => {
     it('returns { status: "ok" }', async () => {
       const res = await request(port, 'GET', '/health');
       assert.equal(res.status, 200);
       const data = res.json();
       assert.equal(data.status, 'ok');
+      assert.ok(data.version);
     });
   });
 
-  // ---------------------------------------------------------------
-  // Agent card
-  // ---------------------------------------------------------------
-  describe('GET /.well-known/agent-card.json', () => {
-    it('returns valid agent card with expected fields', async () => {
-      const res = await request(port, 'GET', '/.well-known/agent-card.json');
-      assert.equal(res.status, 200);
-      assert.ok(res.headers['content-type'].includes('application/json'));
-      const card = res.json();
-      assert.ok(card.name);
-      assert.ok(card.url);
-      assert.ok(card.protocolVersion);
-      assert.ok(card.capabilities);
-    });
-  });
-
-  // ---------------------------------------------------------------
-  // Dashboard (HTML)
-  // ---------------------------------------------------------------
-  describe('GET /', () => {
-    it('returns HTML', async () => {
-      const res = await request(port, 'GET', '/');
-      assert.equal(res.status, 200);
-      assert.ok(res.headers['content-type'].includes('text/html'));
-      assert.ok(res.body.includes('<html') || res.body.includes('<!DOCTYPE'));
-    });
-  });
-
-  // ---------------------------------------------------------------
-  // PWA manifest
-  // ---------------------------------------------------------------
-  describe('GET /manifest.json', () => {
-    it('returns valid JSON manifest', async () => {
-      const res = await request(port, 'GET', '/manifest.json');
-      assert.equal(res.status, 200);
-      assert.ok(res.headers['content-type'].includes('json'));
-      const manifest = res.json();
-      assert.ok(manifest.name || manifest.short_name);
-    });
-  });
-
-  // ---------------------------------------------------------------
-  // Service worker
-  // ---------------------------------------------------------------
-  describe('GET /sw.js', () => {
-    it('returns JavaScript', async () => {
-      const res = await request(port, 'GET', '/sw.js');
-      assert.equal(res.status, 200);
-      assert.ok(res.headers['content-type'].includes('javascript'));
-    });
-  });
-
-  // ---------------------------------------------------------------
-  // Workflows list - empty
-  // ---------------------------------------------------------------
   describe('GET /api/workflows (empty)', () => {
     it('returns empty array when no workflows registered', async () => {
       const res = await request(port, 'GET', '/api/workflows');
@@ -149,9 +87,6 @@ describe('A2A Server API', () => {
     });
   });
 
-  // ---------------------------------------------------------------
-  // Register + list workflows
-  // ---------------------------------------------------------------
   describe('Workflow registration and retrieval', () => {
     before(() => {
       app.registerWorkflow(makeTestWorkflow());
@@ -185,6 +120,15 @@ describe('A2A Server API', () => {
       assert.equal(wf.links.length, 0);
     });
 
+    it('GET /api/workflows/:id?full=true returns full workflow JSON', async () => {
+      const res = await request(port, 'GET', '/api/workflows/test-wf?full=true');
+      assert.equal(res.status, 200);
+      const wf = res.json();
+      assert.equal(wf.id, 'test-wf');
+      assert.ok(Array.isArray(wf.nodes));
+      assert.equal(wf.nodes[0].files['index.js'], 'console.log("ok")');
+    });
+
     it('GET /api/workflows/nonexistent returns 404', async () => {
       const res = await request(port, 'GET', '/api/workflows/nonexistent');
       assert.equal(res.status, 404);
@@ -193,9 +137,87 @@ describe('A2A Server API', () => {
     });
   });
 
-  // ---------------------------------------------------------------
-  // 404 on unknown route
-  // ---------------------------------------------------------------
+  describe('POST /api/workflows', () => {
+    it('creates a workflow from JSON body', async () => {
+      const body = {
+        id: 'wf-create',
+        name: 'Created',
+        nodes: [
+          {
+            id: 'n1',
+            name: 'N1',
+            image: 'node:20-alpine',
+            entrypoint: 'node index.js',
+            files: { 'index.js': 'console.log(1)' },
+          },
+        ],
+        links: [],
+      };
+      const res = await request(port, 'POST', '/api/workflows', body);
+      assert.equal(res.status, 201);
+      const data = res.json();
+      assert.equal(data.id, 'wf-create');
+      assert.equal(data.persisted, false);
+    });
+
+    it('rejects duplicate id with 409', async () => {
+      const body = {
+        id: 'wf-create',
+        name: 'Dup',
+        nodes: [
+          {
+            id: 'n1',
+            name: 'N1',
+            image: 'node:20-alpine',
+            entrypoint: 'node index.js',
+            files: { 'index.js': 'console.log(1)' },
+          },
+        ],
+        links: [],
+      };
+      const res = await request(port, 'POST', '/api/workflows', body);
+      assert.equal(res.status, 409);
+    });
+
+    it('rejects invalid JSON with 400', async () => {
+      const res = await new Promise((resolve, reject) => {
+        const opts = {
+          hostname: '127.0.0.1',
+          port,
+          path: '/api/workflows',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        };
+        const req = http.request(opts, (httpRes) => {
+          const chunks = [];
+          httpRes.on('data', (c) => chunks.push(c));
+          httpRes.on('end', () => {
+            resolve({ status: httpRes.statusCode });
+          });
+        });
+        req.on('error', reject);
+        req.write('not json{{{');
+        req.end();
+      });
+      assert.equal(res.status, 400);
+    });
+  });
+
+  describe('DELETE /api/workflows/:id', () => {
+    it('deletes a registered workflow', async () => {
+      const res = await request(port, 'DELETE', '/api/workflows/wf-create');
+      assert.equal(res.status, 200);
+      const data = res.json();
+      assert.equal(data.deleted, true);
+      assert.equal(data.id, 'wf-create');
+    });
+
+    it('returns 404 for unknown id', async () => {
+      const res = await request(port, 'DELETE', '/api/workflows/wf-create');
+      assert.equal(res.status, 404);
+    });
+  });
+
   describe('GET /nonexistent', () => {
     it('returns 404', async () => {
       const res = await request(port, 'GET', '/nonexistent');
@@ -205,20 +227,12 @@ describe('A2A Server API', () => {
     });
   });
 
-  // ---------------------------------------------------------------
-  // CORS preflight
-  // ---------------------------------------------------------------
-  describe('OPTIONS /', () => {
-    it('returns 204', async () => {
+  describe('CORS', () => {
+    it('OPTIONS returns 204', async () => {
       const res = await request(port, 'OPTIONS', '/');
       assert.equal(res.status, 204);
     });
-  });
 
-  // ---------------------------------------------------------------
-  // CORS headers present
-  // ---------------------------------------------------------------
-  describe('CORS headers', () => {
     it('includes Access-Control-Allow-Origin on responses', async () => {
       const res = await request(port, 'GET', '/health');
       assert.equal(res.headers['access-control-allow-origin'], '*');
@@ -227,61 +241,88 @@ describe('A2A Server API', () => {
     });
   });
 
-  // ---------------------------------------------------------------
-  // POST with invalid JSON
-  // ---------------------------------------------------------------
-  describe('POST / with invalid JSON', () => {
-    it('returns 400', async () => {
-      const res = await new Promise((resolve, reject) => {
-        const opts = {
-          hostname: '127.0.0.1',
-          port,
-          path: '/',
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-        };
-        const req = http.request(opts, (httpRes) => {
-          const chunks = [];
-          httpRes.on('data', (c) => chunks.push(c));
-          httpRes.on('end', () => {
-            const raw = Buffer.concat(chunks).toString();
-            resolve({
-              status: httpRes.statusCode,
-              headers: httpRes.headers,
-              body: raw,
-              json() {
-                return JSON.parse(raw);
-              },
-            });
-          });
-        });
-        req.on('error', reject);
-        req.write('this is not json{{{');
-        req.end();
-      });
-      assert.equal(res.status, 400);
-      const data = res.json();
-      assert.ok(data.error);
-      assert.ok(data.error.includes('Invalid JSON'));
+  describe('GET /', () => {
+    it('serves the embedded HTML UI', async () => {
+      const res = await request(port, 'GET', '/');
+      assert.equal(res.status, 200);
+      assert.ok(res.headers['content-type'].includes('text/html'));
+      assert.ok(res.body.includes('<!DOCTYPE'));
+      assert.ok(res.body.includes('Light Process'));
     });
   });
 
-  // ---------------------------------------------------------------
-  // POST with valid JSON-RPC but invalid method
-  // ---------------------------------------------------------------
-  describe('POST / with valid JSON-RPC but unknown method', () => {
-    it('returns a JSON-RPC error response', async () => {
-      const rpcRequest = {
-        jsonrpc: '2.0',
-        id: 1,
-        method: 'nonexistent/method',
-        params: {},
-      };
-      const res = await request(port, 'POST', '/', rpcRequest);
+  describe('GET /api/runs', () => {
+    it('returns empty array when no runs yet', async () => {
+      const res = await request(port, 'GET', '/api/runs');
       assert.equal(res.status, 200);
-      const data = res.json();
-      // JSON-RPC error should have error field
-      assert.ok(data.error, 'Should contain an error field for unknown method');
+      const list = res.json();
+      assert.ok(Array.isArray(list));
     });
+
+    it('accepts limit, workflowId, and status filters', async () => {
+      const res = await request(port, 'GET', '/api/runs?limit=5&status=running');
+      assert.equal(res.status, 200);
+      const list = res.json();
+      assert.ok(Array.isArray(list));
+    });
+  });
+
+  describe('GET /api/runs/:id', () => {
+    it('returns 404 for unknown run', async () => {
+      const res = await request(port, 'GET', '/api/runs/unknown-run-id');
+      assert.equal(res.status, 404);
+    });
+  });
+});
+
+describe('REST API server with auth', () => {
+  let app;
+  let port;
+  const apiKey = 'secret-123';
+
+  before(async () => {
+    app = createServer({ port: 0, host: '127.0.0.1', apiKey });
+    await new Promise((resolve) => {
+      app.server.listen(0, '127.0.0.1', () => {
+        port = app.server.address().port;
+        resolve();
+      });
+    });
+  });
+
+  after(async () => {
+    await app.close();
+  });
+
+  it('rejects protected routes without token', async () => {
+    const res = await request(port, 'GET', '/api/workflows');
+    assert.equal(res.status, 401);
+  });
+
+  it('accepts protected routes with correct token', async () => {
+    const res = await new Promise((resolve, reject) => {
+      const opts = {
+        hostname: '127.0.0.1',
+        port,
+        path: '/api/workflows',
+        method: 'GET',
+        headers: { Authorization: `Bearer ${apiKey}` },
+      };
+      const req = http.request(opts, (httpRes) => {
+        const chunks = [];
+        httpRes.on('data', (c) => chunks.push(c));
+        httpRes.on('end', () => {
+          resolve({ status: httpRes.statusCode });
+        });
+      });
+      req.on('error', reject);
+      req.end();
+    });
+    assert.equal(res.status, 200);
+  });
+
+  it('allows /health without token', async () => {
+    const res = await request(port, 'GET', '/health');
+    assert.equal(res.status, 200);
   });
 });

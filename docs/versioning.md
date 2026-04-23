@@ -65,11 +65,10 @@ What's included:
 - Node model (Docker containers, code files, I/O schema)
 - Link model (conditions, data injection, back-links)
 - CLI (run, serve, init, check, describe, doctor)
-- A2A protocol server with web dashboard
+- REST API server (`/api/workflows` CRUD + `/api/workflows/:id/run`)
 - JavaScript and Python helpers
 - JSON Schema validation
 
 What's not stable yet:
 - API surface may change
-- A2A integration (SDK compatibility)
-- Dashboard features (roadmap items)
+- REST payload shapes may evolve

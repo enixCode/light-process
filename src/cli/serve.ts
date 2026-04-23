@@ -1,11 +1,11 @@
 import { resolve } from 'node:path';
-import { createA2AServer } from '../a2a/server.js';
 import { LightRunClient } from '../runner/index.js';
+import { createServer } from '../server.js';
 import type { Command } from './utils.js';
 import { getFlagValue, getPositional, loadWorkflowsFromDir, wantsHelp } from './utils.js';
 
 export const serve: Command = {
-  desc: 'Start the A2A API server',
+  desc: 'Start the REST API server',
   usage: 'light serve [dir] [--port 3000]',
   async run() {
     if (wantsHelp()) {
@@ -17,6 +17,8 @@ Options:
 
 Environment:
   LP_API_KEY        Enable API key authentication
+  LIGHT_RUN_URL     URL of the light-run service (required)
+  LIGHT_RUN_TOKEN   Bearer token for light-run (optional)
 
 Examples:
   light serve
@@ -37,7 +39,7 @@ Examples:
     }
     const runner = new LightRunClient();
 
-    const app = createA2AServer({ port, runner, apiKey, persistDir: resolve(dir) });
+    const app = createServer({ port, runner, apiKey, persistDir: resolve(dir) });
 
     const workflows = loadWorkflowsFromDir(dir);
     for (const wf of workflows) {
@@ -46,7 +48,7 @@ Examples:
     }
 
     if (workflows.length === 0) {
-      console.log('  No workflows found. Register via A2A message/send.');
+      console.log('  No workflows found. Register via POST /api/workflows.');
     }
 
     await app.listen();
