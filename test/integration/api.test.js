@@ -3,7 +3,7 @@ import http from 'node:http';
 import { after, before, describe, it } from 'node:test';
 
 import { Node } from '../../dist/models/Node.js';
-import { createServer } from '../../dist/server.js';
+import { createServer } from '../../dist/server/index.js';
 import { Workflow } from '../../dist/Workflow.js';
 
 function makeTestWorkflow(id = 'test-wf', name = 'Test Workflow') {
@@ -241,13 +241,13 @@ describe('REST API server', () => {
     });
   });
 
-  describe('GET /', () => {
-    it('serves the embedded HTML UI', async () => {
-      const res = await request(port, 'GET', '/');
+  describe('GET /api/meta', () => {
+    it('returns authRequired and version (public route)', async () => {
+      const res = await request(port, 'GET', '/api/meta');
       assert.equal(res.status, 200);
-      assert.ok(res.headers['content-type'].includes('text/html'));
-      assert.ok(res.body.includes('<!DOCTYPE'));
-      assert.ok(res.body.includes('Light Process'));
+      const data = res.json();
+      assert.equal(typeof data.authRequired, 'boolean');
+      assert.ok(data.version);
     });
   });
 

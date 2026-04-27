@@ -99,7 +99,7 @@ export class Node implements NodeJSON {
   }
 
   /** Set code from a JS function. Closures/external vars won't be available at runtime. */
-  setCode(fn: Function): this {
+  setCode(fn: (...args: never) => unknown): this {
     if (typeof fn !== 'function') {
       throw new Error('setCode expects a function');
     }

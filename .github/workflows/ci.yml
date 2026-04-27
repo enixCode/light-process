@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build UI
+        run: cd ui && npm ci && npm run build
+
       - name: Lint
         run: npx biome check src/ test/
 
@@ -51,6 +54,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build UI
+        run: cd ui && npm ci && npm run build
 
       - name: Build
         run: npm run build

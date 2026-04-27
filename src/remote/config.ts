@@ -1,7 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir, platform } from 'node:os';
 import { dirname, join } from 'node:path';
-import { safeJsonParse } from './CodeLoader.js';
+import { safeJsonParse } from '../CodeLoader.js';
 
 export interface RemoteConfig {
   url: string;

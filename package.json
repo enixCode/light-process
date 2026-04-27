@@ -1,6 +1,6 @@
 {
   "name": "light-process",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Lightweight DAG workflow engine for orchestrating code in Docker containers via light-run.",
   "main": "dist/index.js",
   "exports": {
@@ -16,9 +16,10 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
+    "prebuild": "cd ui && npm install && npm run build",
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/cli.js serve",
+    "start": "node --env-file=.env dist/cli.js serve",
     "link": "npm run build && npm link",
     "test": "node --test test/unit/*.test.js",
     "test:integration": "node --test test/integration/*.test.js",
@@ -64,6 +65,7 @@
   },
   "files": [
     "dist",
+    "ui/out",
     "README.md"
   ]
 }

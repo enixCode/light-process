@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 import { LightRunClient } from '../runner/index.js';
-import { createServer } from '../server.js';
+import { createServer } from '../server/index.js';
 import type { Command } from './utils.js';
 import { getFlagValue, getPositional, loadWorkflowsFromDir, wantsHelp } from './utils.js';
 

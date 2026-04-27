@@ -33,8 +33,8 @@ export { Execution, LightRunClient } from './runner/index.js';
 export type { IOSchema, JSONSchema, ValidationResult } from './schema.js';
 export { Schema, validate, validateInput, validateOutput } from './schema.js';
 // Server
-export type { ServerOptions } from './server.js';
-export { createServer } from './server.js';
+export type { ServerOptions } from './server/index.js';
+export { createServer } from './server/index.js';
 export type {
   ExecuteOptions,
   ExecutionResult,

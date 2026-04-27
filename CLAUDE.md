@@ -32,8 +32,8 @@ npm run test:all     # unit + integration
 src/
   cli.ts              CLI entry - dispatches to commands
   index.ts            SDK barrel exports
-  server.ts           REST API server (node:http) - /health, /api/workflows CRUD, /api/workflows/:id/run
-  Workflow.ts         Core DAG - nodes, links, batch execution
+  Workflow.ts         Core DAG class - nodes, links, graph queries, toJSON
+  executor.ts         Workflow execution engine (queue-based batches, link conditions, back-links)
   CodeLoader.ts       Load/export workflows from folder structure
   schema.ts           JSON Schema validation via AJV
   helpers.ts          Language helpers (lp.js, lp.py) + lp.d.ts generator
@@ -50,9 +50,20 @@ src/
                       Exported under the legacy name `DockerRunner` from runner/index.ts for backward compat
     Execution.ts      Async result wrapper with cancellation (NodeExecutionResult shape)
 
+  server/
+    index.ts          createServer(): bootstrap, auth, route table dispatch
+    routes.ts         REST route handlers (workflows CRUD, run, runs list/get, openapi/docs)
+    static.ts         Serve the built Next.js UI from ui/out
+    openapi.ts        Build OpenAPI 3.1 specs (static + per-workflow) + Scalar HTML
+    runStore.ts       In-memory store of recent runs (capped, evicted)
+
+  remote/
+    config.ts         Global config manager (~/.light/config.json - remotes, defaults, override resolution)
+    client.ts         HTTP client for the REST server (list/get/getFull/create/update/delete/ping/runWorkflow)
+
   cli/
     run.ts            Execute workflow or single node
-    serve.ts          Start the REST API server (wraps src/server.ts)
+    serve.ts          Start the REST API server (wraps src/server/index.ts)
     init.ts           Scaffold project or node
     check.ts          Validate workflow structure
     describe.ts       DAG visualization with I/O schemas (text + Mermaid HTML)
@@ -65,11 +76,9 @@ src/
     unpack.ts         Convert JSON file to workflow folder
     list.ts           List workflows in a directory
     link.ts           Manage links (inline flags or $EDITOR, no REPL)
-    node.ts           Node management (info, schema editor, register, helpers)
+    node.ts           Node management (info, register, helpers + interactive schema dispatch)
+    node-schema-editor.ts  Interactive prompts for editing node input/output schemas
     utils.ts          Arg parsing, workflow resolution
-
-  config.ts           Global config manager (remotes, defaults, override resolution)
-  remoteClient.ts     HTTP client for the REST server (list/get/getFull/create/update/delete/ping/runWorkflow)
 ```
 
 ## Key concepts

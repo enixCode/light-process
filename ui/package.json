@@ -1,0 +1,27 @@
+{
+  "name": "light-process-ui",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 4100",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@rjsf/core": "^6.5.1",
+    "@rjsf/utils": "^6.5.1",
+    "@rjsf/validator-ajv8": "^6.5.1",
+    "next": "^16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "swr": "^2.4.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.4",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^4.2.4",
+    "typescript": "^6.0.3"
+  }
+}

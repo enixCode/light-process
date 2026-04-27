@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { deleteWorkflow, listWorkflows, ping, runWorkflow, type WorkflowSummary } from '../remote/client.js';
 import {
   getRemote,
   listRemotes,
@@ -7,8 +8,7 @@ import {
   setDefaultRemote,
   setRemote,
   setRemoteKey,
-} from '../config.js';
-import { deleteWorkflow, listWorkflows, ping, runWorkflow, type WorkflowSummary } from '../remoteClient.js';
+} from '../remote/config.js';
 import type { Command } from './utils.js';
 import { confirm, getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
 

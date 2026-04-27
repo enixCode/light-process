@@ -1,8 +1,8 @@
 import { existsSync, rmSync } from 'node:fs';
 import { join, resolve as pathResolve } from 'node:path';
 import { exportWorkflowToFolder } from '../CodeLoader.js';
-import { getRemote } from '../config.js';
-import { getFullWorkflow, listWorkflows } from '../remoteClient.js';
+import { getFullWorkflow, listWorkflows } from '../remote/client.js';
+import { getRemote } from '../remote/config.js';
 import { Workflow } from '../Workflow.js';
 import type { Command } from './utils.js';
 import { getFlagValue, getPositional, hasFlag, wantsHelp } from './utils.js';
