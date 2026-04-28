@@ -1,5 +1,9 @@
 node_modules
+**/node_modules
 dist
+ui/.next
+ui/out
+ui/tsconfig.tsbuildinfo
 .git
 .github
 .artifacts
