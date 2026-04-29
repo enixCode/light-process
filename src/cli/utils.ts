@@ -2,7 +2,6 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadWorkflowFromFolder, slugify } from '../CodeLoader.js';
 import { Workflow } from '../Workflow.js';
-import 'node';
 
 export interface Command {
   desc: string;

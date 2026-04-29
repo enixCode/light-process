@@ -1,6 +1,6 @@
 {
   "name": "light-process",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Lightweight DAG workflow engine for orchestrating code in Docker containers via light-run.",
   "main": "dist/index.js",
   "exports": {
