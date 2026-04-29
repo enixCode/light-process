@@ -876,8 +876,10 @@ Checking: Example (from folder)
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-prompt">$ </span>light serve [dir] [<span class="hl-flag">--port</span> <span class="hl-num">3000</span>]</code></pre>
+  <pre><code><span class="hl-prompt">$ </span>light serve [dir] [<span class="hl-flag">--port</span> <span class="hl-num">3000</span>] [<span class="hl-flag">--runner-port</span> <span class="hl-num">3001</span>] [<span class="hl-flag">--install</span>]</code></pre>
 </div>
+
+<p>If <code>LIGHT_RUN_URL</code> is unset, <code>light serve</code> auto-spawns a local <code>light-run</code> on <code>--runner-port</code> (default 3001) with a generated bearer token, streams its logs prefixed with <code>[runner]</code>, and shuts it down on Ctrl+C. Pass <code>--install</code> to <code>npm i -g @enixcode/light-run</code> automatically when the binary is missing. When <code>LIGHT_RUN_URL</code> is set (typical prod), no spawn happens.</p>
 
 <h4>Endpoints</h4>
 <div class="table-wrap">
@@ -901,13 +903,21 @@ Checking: Example (from folder)
     <span class="code-lang">bash</span>
     <button class="code-copy" aria-label="Copy code">Copy</button>
   </div>
-  <pre><code><span class="hl-cm"># Serve all workflows in a directory</span>
+  <pre><code><span class="hl-cm"># Local dev - auto-spawns light-run as a child process</span>
 <span class="hl-prompt">$ </span>light serve
 
-<span class="hl-cm"># Custom port</span>
-<span class="hl-prompt">$ </span>light serve <span class="hl-flag">--port</span> <span class="hl-num">8080</span>
+<span class="hl-cm"># Same, plus auto-install @enixcode/light-run if the binary is missing</span>
+<span class="hl-prompt">$ </span>light serve <span class="hl-flag">--install</span>
 
-<span class="hl-cm"># Enable Bearer auth</span>
+<span class="hl-cm"># Custom ports for both</span>
+<span class="hl-prompt">$ </span>light serve <span class="hl-flag">--port</span> <span class="hl-num">8080</span> <span class="hl-flag">--runner-port</span> <span class="hl-num">3501</span>
+
+<span class="hl-cm"># Prod - point at an external runner, no auto-spawn</span>
+<span class="hl-prompt">$ </span><span class="hl-kw">export</span> LIGHT_RUN_URL=http://runner-host:3001
+<span class="hl-prompt">$ </span><span class="hl-kw">export</span> LIGHT_RUN_TOKEN=&lt;token&gt;
+<span class="hl-prompt">$ </span>light serve
+
+<span class="hl-cm"># Enable Bearer auth on the orchestrator</span>
 <span class="hl-prompt">$ </span>LP_API_KEY=my-secret-key light serve</code></pre>
 </div>
 
@@ -1854,6 +1864,8 @@ my-workflow.json                 <span class="hl-cm"># JSON format (portable)</s
   <pre><code><span class="hl-prompt">$ </span><span class="hl-kw">export</span> LIGHT_RUN_URL=http://localhost:3001
 <span class="hl-prompt">$ </span><span class="hl-kw">export</span> LIGHT_RUN_TOKEN=your-bearer-token    <span class="hl-cm"># optional</span></code></pre>
 </div>
+
+<p>If you skip the env vars, <code>light serve</code> will auto-spawn a local <code>light-run</code> on port 3001 with a generated token (see the <code>light serve</code> section above). The env-driven path is still the right one for prod, where the runner usually lives on a different host.</p>
 
 <p>Or programmatically via the SDK:</p>
 <div class="code-block">

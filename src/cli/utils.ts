@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { loadWorkflowFromFolder, slugify } from '../CodeLoader.js';
 import { Workflow } from '../Workflow.js';
+import 'node';
 
 export interface Command {
   desc: string;
@@ -17,6 +18,7 @@ const VALUE_FLAGS = new Set([
   '--dir',
   '--path',
   '--port',
+  '--runner-port',
   '--temp-dir',
   '--lang',
   '--timeout',

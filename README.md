@@ -30,15 +30,13 @@
 
 ## Install
 
-light-process is the DAG orchestrator. Container execution is delegated to a separate service called [light-run](https://github.com/enixCode/light-run). You install both:
+light-process is the DAG orchestrator. Container execution is delegated to a separate service called [light-run](https://github.com/enixCode/light-run). Install both:
 
 ```bash
-# 1. The runner (executes containers). Requires Node 22+ and Docker on the same host.
-npm install -g light-run
-
-# 2. The orchestrator (this package).
-npm install -g light-process
+npm install -g light-process @enixcode/light-run
 ```
+
+Requires Node 22+ and Docker running on the same host as `light-run`.
 
 Alpha snapshots from GitHub:
 
@@ -51,19 +49,34 @@ The `#alpha` variant installs the most recent commit on `main`. It always reflec
 
 ## Quick Start
 
+One command. `light serve` auto-spawns a local `light-run` when `LIGHT_RUN_URL` is unset:
+
 ```bash
-# In one terminal - start the runner (keeps running)
+light serve                     # boots light-run + the orchestrator, streams both logs
+```
+
+Or explicitly, with the runner on a separate host (prod):
+
+```bash
+# Host 1 - the runner
 light-run serve --token $(openssl rand -hex 32) --port 3001
 
-# In another terminal - point light-process at it
-export LIGHT_RUN_URL=http://localhost:3001
+# Host 2 - the orchestrator
+export LIGHT_RUN_URL=http://runner-host:3001
 export LIGHT_RUN_TOKEN=<same token as above>
+light serve
+```
 
+Other useful commands:
+
+```bash
 light doctor                    # check Node + light-run connectivity
 light init my-project           # scaffold a project
 cd my-project
 light run example               # run the example workflow
 ```
+
+`light serve --install` will also `npm i -g @enixcode/light-run` for you if the binary is missing.
 
 Output:
 
